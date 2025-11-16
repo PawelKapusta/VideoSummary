@@ -22,7 +22,10 @@ Głównym problemem, na który odpowiada YTInsights, jest przeciążenie informa
 ### 3.3. Generowanie Podsumowań
 - Automatyczne generowanie: Raz dziennie (godz. 19:00) system skanuje kanały i generuje podsumowanie dla jednego najnowszego filmu z każdego kanału.
 - Manualne generowanie: Użytkownik może ręcznie wygenerować podsumowanie dla filmu z kanału, który subskrybuje.
-- Dzienny limit jednego podsumowania na kanał (współdzielony przez automat i akcję manualną).
+- Dzienny limit jednego **udanego** podsumowania na kanał **globalnie** (współdzielony przez automat, akcję manualną i wszystkich użytkowników):
+  - Podsumowania są współdzielonym zasobem - jedno podsumowanie służy wszystkim użytkownikom subskrybującym dany kanał.
+  - Jeśli użytkownik A wygeneruje podsumowanie dla kanału X dzisiaj, użytkownik B zobaczy to samo podsumowanie (nie może wygenerować kolejnego tego samego dnia).
+  - Nieudane próby generowania (np. brak napisów) nie liczą się do limitu i można je ponawiać.
 - Dwa formaty podsumowań generowane w jednym zapytaniu LLM:
     - TL;DR (do 100 tokenów).
     - Pełne podsumowanie (do 500 tokenów, w formacie JSON z sekcjami: `summary`, `conclusions`, `key_points`).
@@ -31,7 +34,7 @@ Głównym problemem, na który odpowiada YTInsights, jest przeciążenie informa
 - Główny dashboard z listą podsumowań w formie kart, sortowanych chronologicznie.
 - Karta podsumowania zawiera: tytuł filmu, nazwę kanału, datę publikacji na YT oraz TL;DR.
 - Dedykowana podstrona dla każdego podsumowania (`/dashboard/[id]`) z pełną treścią, linkiem do oryginału oraz przyciskami do oceny (kciuk w górę/dół).
-- Opcja usuwania pojedynczych podsumowań.
+- Opcja ukrywania pojedynczych podsumowań z dashboardu użytkownika (podsumowania są współdzielone między użytkownikami, więc nie mogą być fizycznie usuwane).
 - Pełna responsywność interfejsu (RWD) dla przeglądarek mobilnych.
 
 ### 3.5. Obsługa Błędów i Powiadomień
@@ -40,12 +43,13 @@ Głównym problemem, na który odpowiada YTInsights, jest przeciążenie informa
 - Specjalny komunikat dla filmów dłuższych niż 45 minut.
 
 ### 3.6. Specyfikacja Techniczna
-- Frontend: Astro + React, Tailwind CSS, shadcn/ui.
-- Backend: Serverless Functions (Vercel).
-- Baza Danych i Auth: Supabase (PostgreSQL) z zaimplementowanym Row-Level Security (RLS).
+- Frontend: Astro 5 + React 19, Tailwind CSS 4, shadcn/ui.
+- Backend: Supabase (PostgreSQL + Auth) z zaimplementowanym Row-Level Security (RLS).
+- Baza Danych: PostgreSQL (przez Supabase).
 - Integracja z LLM: OpenRouter.
 - Testowanie: Testy jednostkowe (Vitest), testy E2E (Playwright).
 - Automatyzacja: CI/CD (GitHub Actions).
+- Hosting: DigitalOcean (Docker container).
 
 ## 4. Granice produktu
 
@@ -160,11 +164,13 @@ Następujące funkcjonalności są świadomie wyłączone z zakresu MVP i zostan
   - Po zagłosowaniu, interfejs może pokazać wizualne potwierdzenie oddania głosu.
 
 - ID: US-012
-- Tytuł: Usuwanie wygenerowanego podsumowania
-- Opis: Jako użytkownik, chcę mieć możliwość usunięcia pojedynczego podsumowania z mojego dashboardu, aby zachować porządek.
+- Tytuł: Ukrywanie wygenerowanego podsumowania
+- Opis: Jako użytkownik, chcę mieć możliwość ukrycia pojedynczego podsumowania z mojego dashboardu, aby zachować porządek i personalizować mój widok.
 - Kryteria akceptacji:
-  - Na karcie podsumowania lub na jego stronie szczegółowej znajduje się opcja "Usuń".
-  - Po potwierdzeniu, podsumowanie jest trwale usuwane z widoku użytkownika i z bazy danych.
+  - Na karcie podsumowania lub na jego stronie szczegółowej znajduje się opcja "Ukryj".
+  - Po potwierdzeniu, podsumowanie znika z dashboardu użytkownika, ale pozostaje w bazie danych (jest współdzielone z innymi użytkownikami).
+  - Podsumowanie może być przywrócone do widoku (odkryte) w przyszłości.
+  - Inne użytkowniki subskrybujący ten sam kanał nadal widzą to podsumowanie na swoich dashboardach.
 
 ### Scenariusze brzegowe i obsługa błędów
 

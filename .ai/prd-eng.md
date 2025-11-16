@@ -20,9 +20,12 @@ The main problem that YTInsights addresses is information overload and lack of t
 - Limit of 10 subscribed channels per user.
 
 ### 3.3. Summary Generation
-- Automatic generation: Once a day (at 7:00 PM), the system scans the channels and generates a summary for one, newest video from each channel.
+- Automatic generation: Once a day (at 7:00 PM UTC), the system scans the channels and generates a summary for one, newest video from each channel.
 - Manual generation: The user can manually generate a summary for a video from a channel they subscribe to.
-- Daily limit of one summary per channel (shared by automatic and manual actions).
+- Daily limit of one **successful** summary per channel **globally** (shared by automatic, manual actions, and all users):
+  - Summaries are shared resources - one summary serves all users subscribed to that channel.
+  - If user A generates a summary for channel X today, user B will see the same summary (cannot generate another one for that channel today).
+  - Failed generation attempts (e.g., no subtitles) do NOT count toward the limit and can be retried.
 - Two summary formats generated in a single LLM query:
     - TL;DR (up to 100 tokens).
     - Full summary (up to 500 tokens, in JSON format with sections: `summary`, `conclusions`, `key_points`).
@@ -31,7 +34,7 @@ The main problem that YTInsights addresses is information overload and lack of t
 - A main dashboard displaying a list of summaries as cards, sorted chronologically.
 - Each card includes: video title, channel name, YouTube publication date, and the TL;DR summary.
 - A dedicated subpage for each summary (`/dashboard/[id]`) with the full, formatted content, a link to the original, and rating buttons (thumbs up/down).
-- An option to delete individual summaries.
+- An option to hide individual summaries from the user's dashboard (summaries are shared resources between users, so they cannot be physically deleted).
 - The interface is fully responsive (RWD) for mobile browsers.
 
 ### 3.5. Error Handling and Notifications
@@ -40,12 +43,13 @@ The main problem that YTInsights addresses is information overload and lack of t
 - A special message for videos longer than 45 minutes.
 
 ### 3.6. Technical Specification
-- Frontend: Astro + React, Tailwind CSS, shadcn/ui.
-- Backend: Serverless Functions (Vercel).
-- Database and Auth: Supabase (PostgreSQL) with Row-Level Security (RLS) implemented.
+- Frontend: Astro 5 + React 19, Tailwind CSS 4, shadcn/ui.
+- Backend: Supabase (PostgreSQL + Auth) with Row-Level Security (RLS) implemented.
+- Database: PostgreSQL (via Supabase).
 - LLM Integration: OpenRouter.
 - Testing: Unit tests (Vitest), E2E tests (Playwright).
 - Automation: CI/CD (GitHub Actions).
+- Hosting: DigitalOcean (Docker container).
 
 ## 4. Product Boundaries
 
@@ -160,11 +164,13 @@ The following functionalities are intentionally excluded from the MVP scope and 
   - After voting, the interface may show a visual confirmation of the vote.
 
 - ID: US-012
-- Title: Deleting a generated summary
-- Description: As a user, I want to be able to delete a single summary from my dashboard to keep it organized.
+- Title: Hiding a generated summary
+- Description: As a user, I want to be able to hide a single summary from my dashboard to keep it organized and personalize my view.
 - Acceptance Criteria:
-  - There is a "Delete" option on the summary card or its detailed page.
-  - After confirmation, the summary is permanently removed from the user's view and the database.
+  - There is a "Hide" option on the summary card or its detailed page.
+  - After confirmation, the summary disappears from the user's dashboard but remains in the database (it's shared with other users).
+  - The summary can be unhidden (restored to view) in the future.
+  - Other users subscribed to the same channel continue to see this summary on their dashboards.
 
 ### Edge Cases and Error Handling
 

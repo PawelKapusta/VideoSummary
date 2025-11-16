@@ -1,11 +1,12 @@
 -- Migration: Create RLS Policies
 -- Purpose: Define row-level security policies for data access control
--- Affected: profiles, channels, subscriptions, videos, summaries, summary_ratings, generation_requests tables
+-- Affected: profiles, channels, subscriptions, videos, summaries, summary_ratings, generation_requests, hidden_summaries tables
 -- Special Considerations:
 --   - Backend operations use service_role_key to bypass RLS
 --   - Policies are granular: separate for each operation and role
 --   - Users can only access videos/summaries from subscribed channels
 --   - Shared resources (channels, videos, summaries) are preserved across user deletions
+--   - Users can only manage their own hidden summaries
 
 -- ============================================================================
 -- PROFILES TABLE RLS POLICIES
@@ -197,4 +198,33 @@ create policy "auth users insert own generation requests"
   with check (auth.uid() = user_id);
 
 -- note: update/delete on generation_requests should only be done by backend with service_role_key
+
+-- ============================================================================
+-- HIDDEN_SUMMARIES TABLE RLS POLICIES
+-- ============================================================================
+
+-- policy: authenticated users can read only their own hidden summaries
+create policy "auth users select own hidden summaries"
+  on hidden_summaries
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- policy: authenticated users can insert only their own hidden summaries
+-- users can only hide summaries for themselves
+create policy "auth users insert own hidden summaries"
+  on hidden_summaries
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+-- policy: authenticated users can delete only their own hidden summaries
+-- users can unhide summaries they previously hidden
+create policy "auth users delete own hidden summaries"
+  on hidden_summaries
+  for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- note: update on hidden_summaries is not needed - users can only hide/unhide (insert/delete)
 

@@ -1,9 +1,12 @@
 -- Migration: Create Indexes and Triggers
 -- Purpose: Add performance indexes and business logic triggers
--- Affected: subscriptions, videos, summary_ratings tables
+-- Affected: subscriptions, videos, channels, summaries, summary_ratings, profiles tables
 -- Special Considerations:
 --   - Composite indexes for uniqueness and performance
+--   - Partial index on summaries for rate limiting (only completed summaries)
+--   - Indexes on youtube_*_id columns for URL processing
 --   - Trigger enforces 10-channel subscription limit per user
+--   - Trigger automatically creates profile for new users
 --   - Index on videos.published_at for dashboard sorting performance
 
 -- ============================================================================
@@ -20,10 +23,31 @@ comment on constraint unique_user_channel_subscription on subscriptions is
 -- videos are primarily displayed sorted by publication date descending
 create index idx_videos_published_at on videos (published_at desc);
 
+-- create index on videos.youtube_video_id for fast lookups when processing YouTube URLs
+-- used when checking if a video already exists before creating it
+create index idx_videos_youtube_id on videos (youtube_video_id);
+
 -- create index on videos.channel_id for faster channel video lookups
 -- note: foreign key constraints automatically create indexes in postgres
 comment on column videos.channel_id is 
   'Foreign key to channels - automatically indexed for join performance';
+
+-- create index on channels.youtube_channel_id for fast lookups when processing channel URLs
+-- used when checking if a channel already exists before creating it
+create index idx_channels_youtube_id on channels (youtube_channel_id);
+
+-- create partial index on summaries for efficient rate limiting checks
+-- only indexes completed summaries as those are the only ones that count toward daily limit
+-- note: summaries don't have channel_id directly - use video_id and join to videos for channel
+-- this index helps filter completed summaries by date which is the most selective part of rate limit query
+create index idx_summaries_status_date 
+  on summaries (status, generated_at desc)
+  where status = 'completed';
+
+-- create index on summaries.video_id for faster joins to videos table
+-- note: foreign key constraints automatically create indexes in postgres
+comment on column summaries.video_id is 
+  'Foreign key to videos - automatically indexed for join performance';
 
 -- create index on summary_ratings for faster rating lookups
 -- the unique constraint already creates an index, but we're being explicit
@@ -70,4 +94,33 @@ comment on function check_subscription_limit() is
 
 comment on trigger enforce_subscription_limit on subscriptions is 
   'Prevents users from subscribing to more than 10 channels';
+
+-- ============================================================================
+-- PROFILE CREATION TRIGGER
+-- ============================================================================
+
+-- create function to automatically create profile when user registers
+-- this ensures every user has a profile record without requiring API-level logic
+create or replace function create_profile_for_new_user()
+returns trigger as $$
+begin
+  -- insert a profile record for the new user
+  -- id matches auth.users.id (foreign key)
+  insert into public.profiles (id, created_at)
+  values (new.id, new.created_at);
+  
+  -- return new is required for after insert triggers
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- create trigger that runs after user registration
+-- this trigger runs after each insert on auth.users table
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function create_profile_for_new_user();
+
+comment on function create_profile_for_new_user() is 
+  'Automatically creates a profile record when a new user registers';
 
