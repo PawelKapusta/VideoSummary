@@ -84,6 +84,35 @@ export type Database = {
           },
         ]
       }
+      hidden_summaries: {
+        Row: {
+          hidden_at: string
+          id: string
+          summary_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          id?: string
+          summary_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          id?: string
+          summary_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hidden_summaries_summary_id_fkey"
+            columns: ["summary_id"]
+            isOneToOne: false
+            referencedRelation: "summaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
