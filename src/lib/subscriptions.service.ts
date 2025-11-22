@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import type { SupabaseClient } from '../db/supabase.client';
-import type { Database } from '../db/database.types';
-import type { PaginatedResponse, SubscriptionWithChannel, ChannelInsert, SubscriptionInsert } from '../types';
+import { errorLogger } from './logger';
+import type { PaginatedResponse, SubscriptionWithChannel, ChannelInsert, SubscriptionInsert, AtomicSubscriptionResult } from '../types';
 import { extractYouTubeChannelId } from './youtube.utils';
 import { fetchYouTubeChannelMetadata } from './youtube.service';
 
@@ -108,7 +108,17 @@ export async function subscribeToChannel(
     channelId = existingChannel.id;
   } else {
     // Channel doesn't exist, fetch from YouTube API
-    const channelMetadata = await fetchYouTubeChannelMetadata(youtubeChannelId);
+    let channelMetadata;
+    try {
+      channelMetadata = await fetchYouTubeChannelMetadata(youtubeChannelId);
+    } catch (youtubeError) {
+      errorLogger.appError(youtubeError instanceof Error ? youtubeError : new Error(String(youtubeError)), {
+        service: 'subscriptions_service',
+        operation: 'youtube_api_call',
+        youtube_channel_id: youtubeChannelId,
+      });
+      throw youtubeError;
+    }
 
     // Create channel record
     const channelInsert: ChannelInsert = {
@@ -123,6 +133,12 @@ export async function subscribeToChannel(
       .single();
 
     if (insertError) {
+      errorLogger.appError(insertError, {
+        service: 'subscriptions_service',
+        operation: 'channel_insert',
+        youtube_channel_id: youtubeChannelId,
+        channel_name: channelMetadata.title,
+      });
       throw insertError;
     }
 
@@ -150,34 +166,50 @@ export async function subscribeToChannel(
   const lockKey = hashStringToInt32(channelId);
 
   // Use RPC function for atomic operation with advisory lock
-  const { data: subscription, error: subscribeError } = await supabase
-    .rpc('subscribe_to_channel_atomic', {
-      p_user_id: userId,
-      p_channel_id: channelId,
-      p_lock_key: lockKey,
-    });
+  let subscription: any;
+  try {
+    const result = await supabase
+      .rpc('subscribe_to_channel_atomic', {
+        p_user_id: userId,
+        p_channel_id: channelId,
+        p_lock_key: lockKey,
+      });
 
-  if (subscribeError) {
-    if (subscribeError.message.includes('SUBSCRIPTION_LIMIT_REACHED')) {
-      throw new Error('SUBSCRIPTION_LIMIT_REACHED');
+    subscription = result.data;
+    const subscribeError = result.error;
+
+    if (subscribeError) {
+      errorLogger.appError(subscribeError, {
+        service: 'subscriptions_service',
+        operation: 'atomic_subscription',
+        user_id: userId,
+        channel_id: channelId,
+      });
+
+      if (subscribeError.message.includes('SUBSCRIPTION_LIMIT_REACHED')) {
+        throw new Error('SUBSCRIPTION_LIMIT_REACHED');
+      }
+      if (subscribeError.message.includes('ALREADY_SUBSCRIBED')) {
+        throw new Error('ALREADY_SUBSCRIBED');
+      }
+      throw subscribeError;
     }
-    if (subscribeError.message.includes('ALREADY_SUBSCRIBED')) {
-      throw new Error('ALREADY_SUBSCRIBED');
+
+    if (!subscription) {
+      throw new Error('No subscription data returned from atomic function');
     }
-    throw subscribeError;
+  } catch (rpcError) {
+    errorLogger.appError(rpcError instanceof Error ? rpcError : new Error(String(rpcError)), {
+      service: 'subscriptions_service',
+      operation: 'rpc_call_failed',
+      user_id: userId,
+      channel_id: channelId,
+    });
+    throw rpcError;
   }
 
-  // Cast the JSON result to proper type
-  const subscriptionData = subscription as {
-    id: string;
-    created_at: string;
-    channels: {
-      id: string;
-      youtube_channel_id: string;
-      name: string;
-      created_at: string;
-    };
-  };
+  // Type the JSON result properly
+  const subscriptionData: AtomicSubscriptionResult = subscription;
 
   // Return formatted subscription data
   return {

@@ -20,9 +20,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
   });
   const traceId = getAwsTraceId(headers);
 
-  // Create Supabase client with trace ID for this request
-  context.locals.supabase = createSupabaseClient(traceId);
-  
+  // Extract and set authentication token if provided
+  const authHeader = headers['authorization'];
+  let authToken: string | undefined;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    authToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+  }
+
+  // Create Supabase client with trace ID and optional auth token
+  const supabase = createSupabaseClient(traceId, authToken);
+
+  context.locals.supabase = supabase;
+
   return next();
 });
 

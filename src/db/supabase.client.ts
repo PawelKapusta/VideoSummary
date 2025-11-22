@@ -9,8 +9,8 @@ const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 // Temporary default user ID for testing without auth
 export const DEFAULT_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
 
-// Create custom fetch function that adds trace ID to requests
-const createTracedFetch = (traceId?: string) => {
+// Create custom fetch function that adds trace ID and auth token to requests
+const createTracedFetch = (traceId?: string, authToken?: string) => {
   const traceHeaders = createTraceHeaders(traceId);
 
   return (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -19,6 +19,11 @@ const createTracedFetch = (traceId?: string) => {
       headers.set(key, value);
     });
 
+    // Add authorization header if token is provided
+    if (authToken) {
+      headers.set('Authorization', `Bearer ${authToken}`);
+    }
+
     return fetch(input, {
       ...init,
       headers,
@@ -26,11 +31,11 @@ const createTracedFetch = (traceId?: string) => {
   };
 };
 
-// Create Supabase client with trace ID support
-export const createSupabaseClient = (traceId?: string) => {
+// Create Supabase client with trace ID and optional auth token support
+export const createSupabaseClient = (traceId?: string, authToken?: string) => {
   return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     global: {
-      fetch: createTracedFetch(traceId),
+      fetch: createTracedFetch(traceId, authToken),
     },
   });
 };

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import type { ConfirmResetPasswordRequest, ApiSuccess, ApiError } from '../../../types';
-import { ConfirmResetPasswordRequestSchema } from '../../../lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
+import type { ConfirmResetPasswordRequest, ApiSuccess, ApiError } from '@/types';
+import { ConfirmResetPasswordRequestSchema } from '@/lib/validation/schemas';
+import { securityLogger, errorLogger, performanceLogger } from '@/lib/logger';
 
 /**
  * POST /api/auth/reset-password/confirm

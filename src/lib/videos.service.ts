@@ -70,7 +70,7 @@ export async function listVideos(
       name: video.channels.name,
       created_at: video.channels.created_at,
     },
-    has_summary: !!(video.summaries && video.summaries.length > 0),
+    has_summary: !!((video as any).summaries && (video as any).summaries.length > 0),
   }));
 
   // Return paginated response
@@ -136,10 +136,10 @@ export async function getVideoDetails(
       name: video.channels.name,
       created_at: video.channels.created_at,
     },
-    summary: video.summaries && video.summaries.length > 0 ? {
-      id: video.summaries[0].id,
-      status: video.summaries[0].status,
-      generated_at: video.summaries[0].generated_at,
+    summary: (video as any).summaries && (video as any).summaries.length > 0 ? {
+      id: (video as any).summaries[0].id,
+      status: (video as any).summaries[0].status,
+      generated_at: (video as any).summaries[0].generated_at,
     } : null,
   };
 }

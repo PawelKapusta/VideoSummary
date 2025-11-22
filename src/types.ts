@@ -185,6 +185,20 @@ export interface RatingResponse {
   message: string;
 }
 
+/** Atomic subscription function result */
+export interface AtomicSubscriptionResult {
+  id: string;
+  user_id: string;
+  channel_id: string;
+  created_at: string;
+  channels: {
+    id: string;
+    youtube_channel_id: string;
+    name: string;
+    created_at: string;
+  };
+}
+
 // ============================================================================
 // PAGINATION TYPES
 // ============================================================================
