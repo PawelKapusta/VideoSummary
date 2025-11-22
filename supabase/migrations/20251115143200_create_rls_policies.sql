@@ -31,15 +31,15 @@ create policy "auth users update own profile"
   on profiles
   for update
   to authenticated
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
 
 -- policy: authenticated users can insert only their own profile
 create policy "auth users insert own profile"
   on profiles
   for insert
   to authenticated
-  with check (auth.uid() = id);
+  with check ((select auth.uid()) = id);
 
 -- ============================================================================
 -- CHANNELS TABLE RLS POLICIES
@@ -71,29 +71,29 @@ create policy "auth users select own subscriptions"
   on subscriptions
   for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can insert only their own subscriptions
 create policy "auth users insert own subscriptions"
   on subscriptions
   for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can update only their own subscriptions
 create policy "auth users update own subscriptions"
   on subscriptions
   for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can delete only their own subscriptions
 create policy "auth users delete own subscriptions"
   on subscriptions
   for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- ============================================================================
 -- VIDEOS TABLE RLS POLICIES
@@ -110,7 +110,7 @@ create policy "auth users select videos from subscribed channels"
       select 1
       from subscriptions
       where subscriptions.channel_id = videos.channel_id
-        and subscriptions.user_id = auth.uid()
+        and subscriptions.user_id = (select auth.uid())
     )
   );
 
@@ -132,7 +132,7 @@ create policy "auth users select summaries from subscribed channels"
       from videos
       inner join subscriptions on subscriptions.channel_id = videos.channel_id
       where videos.id = summaries.video_id
-        and subscriptions.user_id = auth.uid()
+        and subscriptions.user_id = (select auth.uid())
     )
   );
 
@@ -162,22 +162,22 @@ create policy "auth users insert own ratings"
   on summary_ratings
   for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can update only their own ratings
 create policy "auth users update own ratings"
   on summary_ratings
   for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can delete only their own ratings
 create policy "auth users delete own ratings"
   on summary_ratings
   for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- ============================================================================
 -- GENERATION_REQUESTS TABLE RLS POLICIES
@@ -188,14 +188,14 @@ create policy "auth users select own generation requests"
   on generation_requests
   for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can insert only their own generation requests
 create policy "auth users insert own generation requests"
   on generation_requests
   for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 -- note: update/delete on generation_requests should only be done by backend with service_role_key
 
@@ -208,7 +208,7 @@ create policy "auth users select own hidden summaries"
   on hidden_summaries
   for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can insert only their own hidden summaries
 -- users can only hide summaries for themselves
@@ -216,7 +216,7 @@ create policy "auth users insert own hidden summaries"
   on hidden_summaries
   for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 -- policy: authenticated users can delete only their own hidden summaries
 -- users can unhide summaries they previously hidden
@@ -224,7 +224,7 @@ create policy "auth users delete own hidden summaries"
   on hidden_summaries
   for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- note: update on hidden_summaries is not needed - users can only hide/unhide (insert/delete)
 

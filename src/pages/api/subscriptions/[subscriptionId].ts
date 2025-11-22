@@ -3,6 +3,7 @@ import type { ApiSuccess, ApiError } from '../../../types';
 import { UUIDSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { unsubscribeFromChannel } from '../../../lib/subscriptions.service';
+import { DEFAULT_USER_ID } from '../../../db/supabase.client';
 
 /**
  * DELETE /api/subscriptions/:subscriptionId
@@ -34,7 +35,6 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
 
   try {
     // Use default user ID for testing (temporary)
-    const { DEFAULT_USER_ID } = await import('../../../db/supabase.client');
     const userId = DEFAULT_USER_ID;
 
     // Extract and validate subscription ID from path

@@ -15,7 +15,10 @@
 -- Create function to cleanup hidden summaries when user unsubscribes
 -- This function is called by the trigger before a subscription is deleted
 create or replace function cleanup_hidden_summaries_on_unsubscribe()
-returns trigger as $$
+returns trigger
+set search_path = public
+language plpgsql
+as $$
 begin
   -- Delete hidden_summaries records for summaries from the unsubscribed channel
   -- OLD contains the subscription record being deleted
@@ -33,7 +36,7 @@ begin
   -- This allows the original DELETE operation to proceed
   return old;
 end;
-$$ language plpgsql;
+$$;
 
 comment on function cleanup_hidden_summaries_on_unsubscribe() is 
   'Automatically removes hidden_summaries records when user unsubscribes from a channel to prevent orphaned data';

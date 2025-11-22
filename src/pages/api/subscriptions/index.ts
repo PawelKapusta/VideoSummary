@@ -3,6 +3,7 @@ import type { SubscriptionWithChannel, ApiSuccess, ApiError, PaginatedResponse }
 import { SubscribeRequestSchema, PaginationSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { subscribeToChannel, listUserSubscriptions } from '../../../lib/subscriptions.service';
+import { DEFAULT_USER_ID } from '../../../db/supabase.client';
 
 /**
  * POST /api/subscriptions
@@ -40,7 +41,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   try {
     // Use default user ID for testing (temporary)
-    const { DEFAULT_USER_ID } = await import('../../../db/supabase.client');
     const userId = DEFAULT_USER_ID;
 
     // Parse request body
@@ -210,7 +210,6 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
   try {
     // Use default user ID for testing (temporary)
-    const { DEFAULT_USER_ID } = await import('../../../db/supabase.client');
     const userId = DEFAULT_USER_ID;
 
     // Parse and validate query parameters

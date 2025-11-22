@@ -3,6 +3,7 @@ import type { PaginatedResponse, VideoSummary, ApiError } from '../../../types';
 import { VideoListFiltersSchema, UUIDSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { listVideos } from '../../../lib/videos.service';
+import { DEFAULT_USER_ID } from '../../../db/supabase.client';
 
 /**
  * GET /api/videos
@@ -40,7 +41,6 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
   try {
     // Use default user ID for testing (temporary)
-    const { DEFAULT_USER_ID } = await import('../../../db/supabase.client');
     const userId = DEFAULT_USER_ID;
 
     // Parse and validate query parameters

@@ -2,7 +2,9 @@ import type { APIRoute } from 'astro';
 import type { UserProfile, ApiError } from '../../types';
 import { securityLogger, errorLogger, performanceLogger } from '../../lib/logger';
 import { getUserProfile } from '../../lib/profile.service';
+import { DEFAULT_USER_ID } from '../../db/supabase.client';
 
+// export const prerender = false;
 /**
  * GET /api/profile
  *
@@ -34,7 +36,6 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   try {
     // Use default user ID for testing (temporary)
-    const { DEFAULT_USER_ID } = await import('../../../db/supabase.client');
     const userId = DEFAULT_USER_ID;
 
     // Get user profile with subscription data

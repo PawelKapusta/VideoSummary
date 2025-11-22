@@ -27,10 +27,8 @@ create index idx_videos_published_at on videos (published_at desc);
 -- used when checking if a video already exists before creating it
 create index idx_videos_youtube_id on videos (youtube_video_id);
 
--- create index on videos.channel_id for faster channel video lookups
--- note: foreign key constraints automatically create indexes in postgres
-comment on column videos.channel_id is 
-  'Foreign key to channels - automatically indexed for join performance';
+-- create index on videos.channel_id for faster channel video lookups and foreign key performance
+create index idx_videos_channel_id on videos (channel_id);
 
 -- create index on channels.youtube_channel_id for fast lookups when processing channel URLs
 -- used when checking if a channel already exists before creating it
@@ -44,10 +42,8 @@ create index idx_summaries_status_date
   on summaries (status, generated_at desc)
   where status = 'completed';
 
--- create index on summaries.video_id for faster joins to videos table
--- note: foreign key constraints automatically create indexes in postgres
-comment on column summaries.video_id is 
-  'Foreign key to videos - automatically indexed for join performance';
+-- create index on summaries.video_id for faster joins to videos table and foreign key performance
+create index idx_summaries_video_id on summaries (video_id);
 
 -- create index on summary_ratings for faster rating lookups
 -- the unique constraint already creates an index, but we're being explicit
@@ -55,13 +51,31 @@ comment on column summaries.video_id is
 comment on constraint unique_user_summary_rating on summary_ratings is 
   'Ensures one rating per user per summary and provides index for lookups';
 
+-- create index on summary_ratings.summary_id for faster joins and foreign key performance
+create index idx_summary_ratings_summary_id on summary_ratings (summary_id);
+
+-- create index on subscriptions.channel_id for faster channel subscription lookups and foreign key performance
+create index idx_subscriptions_channel_id on subscriptions (channel_id);
+
+-- create index on generation_requests.user_id for faster user request lookups and foreign key performance
+create index idx_generation_requests_user_id on generation_requests (user_id);
+
+-- create index on generation_requests.video_id for faster video request lookups and foreign key performance
+create index idx_generation_requests_video_id on generation_requests (video_id);
+
+-- create index on hidden_summaries.summary_id for faster joins and foreign key performance
+create index idx_hidden_summaries_summary_id on hidden_summaries (summary_id);
+
 -- ============================================================================
 -- TRIGGERS
 -- ============================================================================
 
 -- create function to enforce subscription limit of 10 channels per user
 create or replace function check_subscription_limit()
-returns trigger as $$
+returns trigger
+set search_path = public
+language plpgsql
+as $$
 declare
   subscription_count integer;
 begin
@@ -80,7 +94,7 @@ begin
   -- allow the insert if under limit
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 -- create trigger to enforce subscription limit before insert
 -- this trigger runs before each insert on subscriptions table
@@ -102,7 +116,11 @@ comment on trigger enforce_subscription_limit on subscriptions is
 -- create function to automatically create profile when user registers
 -- this ensures every user has a profile record without requiring API-level logic
 create or replace function create_profile_for_new_user()
-returns trigger as $$
+returns trigger
+set search_path = public
+language plpgsql
+security definer
+as $$
 begin
   -- insert a profile record for the new user
   -- id matches auth.users.id (foreign key)
@@ -112,7 +130,7 @@ begin
   -- return new is required for after insert triggers
   return new;
 end;
-$$ language plpgsql security definer;
+$$;
 
 -- create trigger that runs after user registration
 -- this trigger runs after each insert on auth.users table

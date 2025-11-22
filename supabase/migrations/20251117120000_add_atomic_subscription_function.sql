@@ -12,6 +12,7 @@ create or replace function subscribe_to_channel_atomic(
 returns json
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_subscription_count integer;
@@ -66,6 +67,3 @@ begin
   return v_result;
 end;
 $$;
-
--- Grant execute permission to authenticated users
-grant execute on function subscribe_to_channel_atomic(uuid, uuid, integer) to authenticated;
