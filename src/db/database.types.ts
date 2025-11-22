@@ -273,7 +273,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      subscribe_to_channel_atomic: {
+        Args: { p_channel_id: string; p_lock_key: number; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       summary_error_code: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG"

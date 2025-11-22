@@ -70,6 +70,9 @@ Follow these instructions to set up the project on your local machine.
     PUBLIC_SUPABASE_URL="your_supabase_project_url"
     PUBLIC_SUPABASE_ANON_KEY="your_supabase_anon_key"
 
+    # YouTube Data API v3 Key (get from Google Cloud Console)
+    YOUTUBE_API_KEY="your_youtube_api_key"
+
     # OpenRouter API Key
     OPENROUTER_API_KEY="your_openrouter_api_key"
     ```
@@ -126,6 +129,60 @@ The following features are planned for future releases and are not included in t
 ## Project Status
 
 This project is currently **in progress**. The focus is on developing the MVP features outlined above. Contributions, issues, and feature requests are welcome.
+
+## Logging System
+
+YTInsights uses **LogTape** for production-ready logging with the following features:
+
+- **Structured logging** with automatic data redaction for security and privacy
+- **Zero PII logging**: Emails and personal data are never logged
+- **AWS X-Ray distributed tracing**: `x-amzn-trace-id` header propagation to downstream services
+- **Trace ID correlation**: Request-level tracking across all services and logs
+- **Optional support tickets**: For exceptional cases requiring user-specific correlation
+- **Hierarchical categories**: `ytinsights`, `ytinsights.auth`, `ytinsights.api`, `ytinsights.db`, `ytinsights.external`
+- **Environment-aware configuration**: Development (console + file) vs Production (file only)
+- **Type-safe logging functions** with compile-time validation
+- **Performance monitoring** and error tracking
+
+### Installation
+```bash
+npm install @logtape/logtape @logtape/file @logtape/redaction
+```
+
+### Usage
+```typescript
+import { securityLogger, errorLogger, createAwsTraceId, getAwsTraceId, createSupportTicketId } from './lib/logger';
+
+// Successful authentication (logs user_id - safe internal identifier)
+securityLogger.auth('User login successful', {
+  trace_id: createAwsTraceId(), // AWS X-Ray style: 1-58406520-a006649127e371903a2de979
+  user_id: userId // Safe - internal UUID
+});
+
+// Failed registration (uses trace ID for correlation)
+const traceId = createAwsTraceId();
+securityLogger.authFailure('User registration failed', {
+  trace_id: traceId,
+  error_type: 'validation_error'
+});
+
+// Extract trace ID from x-amzn-trace-id header (distributed tracing)
+const traceId = getAwsTraceId(request.headers);
+
+// Propagate trace ID to downstream services automatically
+const supabase = createSupabaseClient(traceId); // Trace ID added to all Supabase requests
+// All external API calls automatically include: x-amzn-trace-id header
+
+// Optional: Support ticket for exceptional user assistance (rarely needed)
+const ticketId = createSupportTicketId(userId); // SUPPORT_ABC12345
+// Store mapping: ticketId -> userId in secure support database
+
+// API errors with context
+errorLogger.apiError(error, 'POST', '/api/auth/register', 400, {
+  component: 'auth_service',
+  validation_errors: ['email_required']
+});
+```
 
 ## License
 
