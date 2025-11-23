@@ -3,7 +3,6 @@ import type { PaginatedResponse, VideoSummary, ApiError } from '../../../types';
 import { VideoListFiltersSchema, UUIDSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { listVideos } from '../../../lib/videos.service';
-import { DEFAULT_USER_ID } from '../../../db/supabase.client';
 
 /**
  * GET /api/videos
@@ -40,8 +39,59 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   const supabase = locals.supabase;
 
   try {
-    // Use default user ID for testing (temporary)
-    const userId = DEFAULT_USER_ID;
+    // Extract auth token from request header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized videos list attempt - no token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/videos',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/videos', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized videos list attempt - invalid token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/videos',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/videos', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid authentication token',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Parse and validate query parameters
     const urlParams = new URL(url).searchParams;
@@ -53,8 +103,8 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     const validationResult = VideoListFiltersSchema.safeParse({
       limit: rawLimit,
       offset: rawOffset,
-      channel_id: rawChannelId,
-      sort: rawSort,
+      channel_id: rawChannelId || undefined,
+      sort: rawSort || undefined,
     });
 
     if (!validationResult.success) {

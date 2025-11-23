@@ -2,7 +2,6 @@ import type { APIRoute } from 'astro';
 import type { UserProfile, ApiError } from '../../types';
 import { securityLogger, errorLogger, performanceLogger } from '../../lib/logger';
 import { getUserProfile } from '../../lib/profile.service';
-import { DEFAULT_USER_ID } from '../../db/supabase.client';
 
 // export const prerender = false;
 /**
@@ -35,8 +34,59 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
 
   try {
-    // Use default user ID for testing (temporary)
-    const userId = DEFAULT_USER_ID;
+    // Extract auth token from request header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized profile access attempt - no token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/profile',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/profile', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized profile access attempt - invalid token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/profile',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/profile', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid authentication token',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Get user profile with subscription data
     const profile: UserProfile = await getUserProfile(supabase, userId);

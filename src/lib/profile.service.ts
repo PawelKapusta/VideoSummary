@@ -2,7 +2,6 @@ import type { SupabaseClient } from '../db/supabase.client';
 import type { Database } from '../db/database.types';
 import type { UserProfile } from '../types';
 import { errorLogger } from './logger';
-import { DEFAULT_USER_ID } from '../db/supabase.client';
 
 /**
  * Get user profile with subscription information
@@ -14,25 +13,47 @@ export async function getUserProfile(
   supabase: SupabaseClient,
   userId: string
 ): Promise<UserProfile> {
-  // For testing: if using DEFAULT_USER_ID, return mock user data
+  // Query profile from profiles table (which has the same ID as auth.users)
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, created_at')
+    .eq('id', userId)
+    .single();
 
-  let userEmail: string;
   let userCreatedAt: string;
+  let userEmail: string;
 
-  if (userId === DEFAULT_USER_ID) {
-    // Mock data for testing
-    userEmail = 'test@example.com';
-    userCreatedAt = new Date().toISOString();
-  } else {
-    // Query user basic information from auth.users
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+  // If profile doesn't exist, create it (fallback for when trigger doesn't work)
+  if (profileError || !profileData) {
+    // Get user info to create profile
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-    if (userError || !userData.user) {
+    if (userError || !user) {
       throw new Error('User not found');
     }
 
-    userEmail = userData.user.email!;
-    userCreatedAt = userData.user.created_at;
+    const { data: newProfile, error: createError } = await supabase
+      .from('profiles')
+      .insert({ id: userId, created_at: user.created_at })
+      .select('id, created_at')
+      .single();
+
+    if (createError || !newProfile) {
+      throw new Error('User not found');
+    }
+
+    userCreatedAt = newProfile.created_at;
+    userEmail = user.email!;
+  } else {
+    // Profile exists, get user email
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      throw new Error('User not found');
+    }
+
+    userCreatedAt = profileData.created_at;
+    userEmail = user.email!;
   }
 
   // Query subscriptions with channel information

@@ -1,32 +1,36 @@
 import type { APIRoute } from 'astro';
-import type { ApiSuccess, ApiError } from '../../../types';
+import type { GenerationStatusResponse, ApiError } from '../../../types';
 import { UUIDSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { unsubscribeFromChannel } from '../../../lib/subscriptions.service';
+import { checkGenerationStatus } from '../../../lib/generation-requests.service';
 
 /**
- * DELETE /api/subscriptions/:subscriptionId
+ * GET /api/generation-requests/status
  *
- * Unsubscribe the authenticated user from a channel.
- * This triggers automatic cleanup of the user's hidden summaries for that channel.
+ * Checks if a summary can be generated for a specific channel today by verifying
+ * the global daily limit (1 successful summary per channel per day across all users).
  *
  * Authentication: Required (Bearer token)
- * Path Parameters:
- * - subscriptionId (UUID) - ID of the subscription to delete
+ * Query Parameters:
+ * - channel_id (UUID, required) - ID of the channel to check
  *
  * Response (200 OK):
  * {
- *   message: "Successfully unsubscribed from channel"
+ *   channel_id: string,
+ *   can_generate: boolean,
+ *   successful_summaries_today_global: number,
+ *   limit: number,
+ *   last_successful_generation_at: string | null,
+ *   note: string
  * }
  *
  * Error Responses:
- * - 400 Bad Request: Invalid subscription ID format
+ * - 400 Bad Request: Missing or invalid channel_id
  * - 401 Unauthorized: Missing or invalid authentication token
- * - 403 Forbidden: Attempting to delete another user's subscription
- * - 404 Not Found: Subscription not found
+ * - 403 Forbidden: Channel not subscribed by user
  * - 500 Internal Server Error: Database error
  */
-export const DELETE: APIRoute = async ({ request, locals, params }) => {
+export const GET: APIRoute = async ({ request, locals, url }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)
@@ -37,13 +41,13 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unsubscribe attempt - no token');
+      securityLogger.auth('Unauthorized generation status check - no token');
       securityLogger.apiAccess({
-        method: 'DELETE',
-        path: `/api/subscriptions/${params.subscriptionId}`,
+        method: 'GET',
+        path: '/api/generation-requests/status',
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 401);
+      performanceLogger.apiResponseTime('GET', '/api/generation-requests/status', duration, 401);
 
       const errorResponse: ApiError = {
         error: {
@@ -66,13 +70,13 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
 
     if (!userId) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unsubscribe attempt - invalid token');
+      securityLogger.auth('Unauthorized generation status check - invalid token');
       securityLogger.apiAccess({
-        method: 'DELETE',
-        path: `/api/subscriptions/${params.subscriptionId}`,
+        method: 'GET',
+        path: '/api/generation-requests/status',
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 401);
+      performanceLogger.apiResponseTime('GET', '/api/generation-requests/status', duration, 401);
 
       const errorResponse: ApiError = {
         error: {
@@ -87,23 +91,25 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    // Extract and validate subscription ID from path
-    const subscriptionId = params.subscriptionId;
-    if (!subscriptionId) {
+    // Extract and validate channel_id from query params
+    const urlParams = new URL(url).searchParams;
+    const channelId = urlParams.get('channel_id');
+
+    if (!channelId) {
       const duration = performance.now() - startTime;
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'DELETE',
-        path: `/api/subscriptions/${params.subscriptionId}`,
+        method: 'GET',
+        path: '/api/generation-requests/status',
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 400);
+      performanceLogger.apiResponseTime('GET', '/api/generation-requests/status', duration, 400);
 
       const errorResponse: ApiError = {
         error: {
           code: 'INVALID_INPUT',
-          message: 'Subscription ID is required',
+          message: 'channel_id query parameter is required',
         },
       };
 
@@ -113,28 +119,28 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const validationResult = UUIDSchema.safeParse(subscriptionId);
+    const validationResult = UUIDSchema.safeParse(channelId);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
       errorLogger.validationError(
-        new Error('Path parameter validation failed'),
+        new Error('Query parameter validation failed'),
         undefined,
         undefined,
-        { endpoint: `/api/subscriptions/${params.subscriptionId}`, method: 'DELETE' }
+        { endpoint: '/api/generation-requests/status', method: 'GET' }
       );
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'DELETE',
-        path: `/api/subscriptions/${params.subscriptionId}`,
+        method: 'GET',
+        path: '/api/generation-requests/status',
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 400);
+      performanceLogger.apiResponseTime('GET', '/api/generation-requests/status', duration, 400);
 
       const errorResponse: ApiError = {
         error: {
           code: 'INVALID_INPUT',
-          message: 'Invalid subscription ID format',
+          message: 'Invalid channel_id format',
           details: validationResult.error.format(),
         },
       };
@@ -145,30 +151,30 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    // Unsubscribe from channel
-    await unsubscribeFromChannel(supabase, userId, subscriptionId);
+    // Check generation status
+    const status: GenerationStatusResponse = await checkGenerationStatus(
+      supabase,
+      userId,
+      channelId
+    );
 
-    // Log successful unsubscription
-    securityLogger.auth('Channel unsubscription successful', {
+    // Log successful status check
+    securityLogger.auth('Generation status checked successfully', {
       user_id: userId,
-      subscription_id: subscriptionId,
+      channel_id: channelId,
+      can_generate: status.can_generate,
     });
-
-    // Format successful response
-    const successResponse: ApiSuccess<void> = {
-      message: 'Successfully unsubscribed from channel',
-    };
 
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'DELETE',
-      path: `/api/subscriptions/${params.subscriptionId}`,
+      method: 'GET',
+      path: '/api/generation-requests/status',
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 200);
+    performanceLogger.apiResponseTime('GET', '/api/generation-requests/status', duration, 200);
 
-    return new Response(JSON.stringify(successResponse), {
+    return new Response(JSON.stringify(status), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
@@ -180,31 +186,45 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
     });
 
   } catch (error) {
-    // Handle unexpected errors
+    // Handle specific error types
     const duration = performance.now() - startTime;
+    let statusCode = 500;
+    let errorCode = 'INTERNAL_ERROR';
+    let message = 'An unexpected error occurred';
+
+    if (error instanceof Error) {
+      if (error.message === 'CHANNEL_NOT_SUBSCRIBED') {
+        statusCode = 403;
+        errorCode = 'CHANNEL_NOT_SUBSCRIBED';
+        message = 'You must be subscribed to this channel';
+      }
+    }
+
+    // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: `/api/subscriptions/${params.subscriptionId}`,
-      method: 'DELETE',
+      endpoint: '/api/generation-requests/status',
+      method: 'GET',
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'DELETE',
-      path: `/api/subscriptions/${params.subscriptionId}`,
-      statusCode: 500,
+      method: 'GET',
+      path: '/api/generation-requests/status',
+      statusCode,
     });
-    performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 500);
+    performanceLogger.apiResponseTime('GET', '/api/generation-requests/status', duration, statusCode);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: errorCode,
+        message,
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
-      status: 500,
+      status: statusCode,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 };
+

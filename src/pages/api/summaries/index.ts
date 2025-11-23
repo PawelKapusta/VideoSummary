@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
-import type { SummaryBasic, ApiSuccess, ApiError } from '../../../types';
-import { GenerateSummaryRequestSchema } from '../../../lib/validation/schemas';
+import type { SummaryBasic, SummaryWithVideo, PaginatedResponse, ApiSuccess, ApiError } from '../../../types';
+import { GenerateSummaryRequestSchema, SummaryListFiltersSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { generateSummary } from '../../../lib/summaries.service';
-import { DEFAULT_USER_ID } from '../../../db/supabase.client';
+import { generateSummary, listSummaries } from '../../../lib/summaries.service';
 
 /**
  * POST /api/summaries
@@ -42,8 +41,59 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
 
   try {
-    // Use default user ID for testing (temporary)
-    const userId = DEFAULT_USER_ID;
+    // Extract auth token from request header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized summary generation attempt - no token');
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: '/api/summaries',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('POST', '/api/summaries', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized summary generation attempt - invalid token');
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: '/api/summaries',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('POST', '/api/summaries', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid authentication token',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Parse request body
     const body = await request.json();
@@ -193,6 +243,219 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     return new Response(JSON.stringify(errorResponse), {
       status: statusCode,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+};
+
+/**
+ * GET /api/summaries
+ *
+ * Retrieves summaries for videos from the user's subscribed channels with pagination, filtering, and sorting.
+ * By default excludes hidden summaries unless explicitly requested.
+ *
+ * Authentication: Required (Bearer token)
+ * Query Parameters:
+ * - limit (number, default: 20, max: 100)
+ * - offset (number, default: 0, min: 0)
+ * - channel_id (UUID, optional) - Filter by specific channel
+ * - status (string, optional) - Filter by status: "pending", "in_progress", "completed", "failed"
+ * - sort (string, default: "published_at_desc") - Options: "published_at_desc", "published_at_asc", "generated_at_desc"
+ * - include_hidden (boolean, default: false) - Include hidden summaries
+ *
+ * Response (200 OK):
+ * {
+ *   data: SummaryWithVideo[],
+ *   pagination: {
+ *     total: number,
+ *     limit: number,
+ *     offset: number
+ *   }
+ * }
+ *
+ * Error Responses:
+ * - 400 Bad Request: Invalid query parameters
+ * - 401 Unauthorized: Missing or invalid authentication token
+ * - 500 Internal Server Error: Database query error
+ */
+export const GET: APIRoute = async ({ request, locals, url }) => {
+  const startTime = performance.now();
+
+  // Use Supabase client from middleware (already configured with trace ID)
+  const supabase = locals.supabase;
+
+  try {
+    // Extract auth token from request header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized summaries list attempt - no token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/summaries',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/summaries', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized summaries list attempt - invalid token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/summaries',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/summaries', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid authentication token',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Parse and validate query parameters
+    const urlParams = new URL(url).searchParams;
+    const rawLimit = urlParams.get('limit');
+    const rawOffset = urlParams.get('offset');
+    const rawChannelId = urlParams.get('channel_id');
+    const rawStatus = urlParams.get('status');
+    const rawSort = urlParams.get('sort');
+    const rawIncludeHidden = urlParams.get('include_hidden');
+
+    const validationResult = SummaryListFiltersSchema.safeParse({
+      limit: rawLimit,
+      offset: rawOffset,
+      channel_id: rawChannelId || undefined,
+      status: rawStatus || undefined,
+      sort: rawSort || undefined,
+      include_hidden: rawIncludeHidden || undefined,
+    });
+
+    if (!validationResult.success) {
+      const duration = performance.now() - startTime;
+      errorLogger.validationError(
+        new Error('Query parameter validation failed'),
+        undefined,
+        undefined,
+        { endpoint: '/api/summaries', method: 'GET' }
+      );
+
+      // Log API access and performance for validation error
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/summaries',
+        statusCode: 400,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/summaries', duration, 400);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Invalid query parameters',
+          details: validationResult.error.format(),
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const filters = validationResult.data;
+
+    // Get paginated summaries
+    const result: PaginatedResponse<SummaryWithVideo> = await listSummaries(
+      supabase,
+      userId,
+      filters
+    );
+
+    // Log successful summaries access
+    securityLogger.auth('Summaries list accessed successfully', {
+      user_id: userId,
+      total_summaries: result.pagination.total,
+      filters: {
+        limit: filters.limit,
+        offset: filters.offset,
+        channel_id: filters.channel_id,
+        status: filters.status,
+        sort: filters.sort,
+        include_hidden: filters.include_hidden,
+      },
+    });
+
+    // Log API access and performance
+    const duration = performance.now() - startTime;
+    securityLogger.apiAccess({
+      method: 'GET',
+      path: '/api/summaries',
+      statusCode: 200,
+    });
+    performanceLogger.apiResponseTime('GET', '/api/summaries', duration, 200);
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        // Add security headers
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'X-XSS-Protection': '1; mode=block',
+      },
+    });
+
+  } catch (error) {
+    // Handle unexpected errors
+    const duration = performance.now() - startTime;
+    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
+      endpoint: '/api/summaries',
+      method: 'GET',
+    });
+
+    // Log API access and performance for error response
+    securityLogger.apiAccess({
+      method: 'GET',
+      path: '/api/summaries',
+      statusCode: 500,
+    });
+    performanceLogger.apiResponseTime('GET', '/api/summaries', duration, 500);
+
+    const errorResponse: ApiError = {
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+      },
+    };
+
+    return new Response(JSON.stringify(errorResponse), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }
