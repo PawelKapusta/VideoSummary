@@ -3,7 +3,6 @@ import type { SubscriptionWithChannel, ApiSuccess, ApiError, PaginatedResponse }
 import { SubscribeRequestSchema, PaginationSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { subscribeToChannel, listUserSubscriptions } from '../../../lib/subscriptions.service';
-import { DEFAULT_USER_ID } from '../../../db/supabase.client';
 
 /**
  * POST /api/subscriptions
@@ -40,8 +39,59 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
 
   try {
-    // Use default user ID for testing (temporary)
-    const userId = DEFAULT_USER_ID;
+    // Extract auth token from request header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized subscription attempt - no token');
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: '/api/subscriptions',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('POST', '/api/subscriptions', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized subscription attempt - invalid token');
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: '/api/subscriptions',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('POST', '/api/subscriptions', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid authentication token',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Parse request body
     const body = await request.json();
@@ -209,8 +259,59 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   const supabase = locals.supabase;
 
   try {
-    // Use default user ID for testing (temporary)
-    const userId = DEFAULT_USER_ID;
+    // Extract auth token from request header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized subscriptions list attempt - no token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/subscriptions',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/subscriptions', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Unauthorized subscriptions list attempt - invalid token');
+      securityLogger.apiAccess({
+        method: 'GET',
+        path: '/api/subscriptions',
+        statusCode: 401,
+      });
+      performanceLogger.apiResponseTime('GET', '/api/subscriptions', duration, 401);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid authentication token',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Parse and validate query parameters
     const urlParams = new URL(url).searchParams;

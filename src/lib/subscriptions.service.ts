@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import type { SupabaseClient } from '../db/supabase.client';
-import { errorLogger } from './logger';
+import { errorLogger, appLogger, dbLogger, externalLogger } from './logger';
 import type { PaginatedResponse, SubscriptionWithChannel, ChannelInsert, SubscriptionInsert, AtomicSubscriptionResult } from '../types';
 import { extractYouTubeChannelId } from './youtube.utils';
 import { fetchYouTubeChannelMetadata } from './youtube.service';
@@ -75,22 +75,48 @@ export async function subscribeToChannel(
   userId: string,
   channelUrl: string
 ): Promise<SubscriptionWithChannel> {
-  // Extract YouTube channel ID from URL
-  const youtubeChannelId = extractYouTubeChannelId(channelUrl);
+  appLogger.debug('subscribeToChannel called', { userId, channelUrl });
+
+  // Extract YouTube channel ID or handle from URL
+  const youtubeChannelIdOrHandle = extractYouTubeChannelId(channelUrl);
+  appLogger.debug('Extracted YouTube identifier', { youtubeChannelIdOrHandle });
 
   // Check subscription limit (max 10 per user)
+  appLogger.debug('Checking subscription count', { userId });
   const { count: subscriptionCount, error: countError } = await supabase
     .from('subscriptions')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId);
 
   if (countError) {
+    dbLogger.error('Subscription count query failed', {
+      error: countError.message,
+      user_id: userId,
+      channel_url: channelUrl,
+    });
     throw countError;
   }
 
   if (subscriptionCount && subscriptionCount >= 10) {
     throw new Error('SUBSCRIPTION_LIMIT_REACHED');
   }
+
+  // Fetch channel metadata from YouTube API (handles both ID and handle)
+  appLogger.debug('Fetching YouTube channel metadata', { youtubeChannelIdOrHandle });
+  let channelMetadata;
+  try {
+    channelMetadata = await fetchYouTubeChannelMetadata(youtubeChannelIdOrHandle);
+  } catch (youtubeError) {
+    externalLogger.error('YouTube API call failed', {
+      error: youtubeError instanceof Error ? youtubeError.message : String(youtubeError),
+      youtube_channel_id_or_handle: youtubeChannelIdOrHandle,
+      user_id: userId,
+    });
+    throw youtubeError;
+  }
+
+  // Now we have the actual YouTube channel ID from the API response
+  const youtubeChannelId = channelMetadata.id;
 
   // Check if channel exists in database
   let channelId: string;
@@ -101,25 +127,17 @@ export async function subscribeToChannel(
     .single();
 
   if (channelError && channelError.code !== 'PGRST116') { // PGRST116 = no rows returned
+    dbLogger.error('Channel lookup failed', {
+      error: channelError.message,
+      youtube_channel_id: youtubeChannelId,
+      user_id: userId,
+    });
     throw channelError;
   }
 
   if (existingChannel) {
     channelId = existingChannel.id;
   } else {
-    // Channel doesn't exist, fetch from YouTube API
-    let channelMetadata;
-    try {
-      channelMetadata = await fetchYouTubeChannelMetadata(youtubeChannelId);
-    } catch (youtubeError) {
-      errorLogger.appError(youtubeError instanceof Error ? youtubeError : new Error(String(youtubeError)), {
-        service: 'subscriptions_service',
-        operation: 'youtube_api_call',
-        youtube_channel_id: youtubeChannelId,
-      });
-      throw youtubeError;
-    }
-
     // Create channel record
     const channelInsert: ChannelInsert = {
       youtube_channel_id: channelMetadata.id,
@@ -133,11 +151,11 @@ export async function subscribeToChannel(
       .single();
 
     if (insertError) {
-      errorLogger.appError(insertError, {
-        service: 'subscriptions_service',
-        operation: 'channel_insert',
+      dbLogger.error('Channel creation failed', {
+        error: insertError.message,
         youtube_channel_id: youtubeChannelId,
         channel_name: channelMetadata.title,
+        user_id: userId,
       });
       throw insertError;
     }
@@ -154,6 +172,11 @@ export async function subscribeToChannel(
     .single();
 
   if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+    dbLogger.error('Subscription check failed', {
+      error: subscriptionError.message,
+      user_id: userId,
+      channel_id: channelId,
+    });
     throw subscriptionError;
   }
 
@@ -179,11 +202,11 @@ export async function subscribeToChannel(
     const subscribeError = result.error;
 
     if (subscribeError) {
-      errorLogger.appError(subscribeError, {
-        service: 'subscriptions_service',
-        operation: 'atomic_subscription',
+      dbLogger.error('Atomic subscription failed', {
+        error: subscribeError.message,
         user_id: userId,
         channel_id: channelId,
+        lock_key: lockKey,
       });
 
       if (subscribeError.message.includes('SUBSCRIPTION_LIMIT_REACHED')) {
@@ -250,7 +273,7 @@ export async function unsubscribeFromChannel(
 /**
  * Generate 32-bit integer hash for advisory lock keys using crypto
  * @param str - String to hash
- * @returns 32-bit integer hash
+ * @returns 32-bit signed integer hash within PostgreSQL integer range
  */
 function hashStringToInt32(str: string): number {
   // Create SHA-256 hash of the string
@@ -260,6 +283,11 @@ function hashStringToInt32(str: string): number {
   // Take first 8 hex chars (32 bits) and convert to number
   const int32Hash = parseInt(hash.substring(0, 8), 16);
 
-  // Ensure positive number (advisory locks work with positive integers)
-  return Math.abs(int32Hash);
+  // Convert to signed 32-bit integer within PostgreSQL range (-2147483648 to 2147483647)
+  // Use bitwise OR to convert to signed 32-bit
+  const signedInt32 = int32Hash | 0;
+  
+  // Return absolute value to ensure positive (advisory locks prefer positive integers)
+  // But keep within valid range
+  return Math.abs(signedInt32);
 }

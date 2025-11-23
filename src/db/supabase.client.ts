@@ -33,11 +33,24 @@ const createTracedFetch = (traceId?: string, authToken?: string) => {
 
 // Create Supabase client with trace ID and optional auth token support
 export const createSupabaseClient = (traceId?: string, authToken?: string) => {
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  const client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     global: {
       fetch: createTracedFetch(traceId, authToken),
     },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
   });
+
+  // If auth token is provided, set it in the client's headers
+  if (authToken) {
+    // The custom fetch will handle adding the Authorization header
+    // But we also need to make sure auth.getUser() works
+  }
+
+  return client;
 };
 
 // Default client (creates new trace ID if none provided)

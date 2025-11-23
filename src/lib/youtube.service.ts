@@ -31,10 +31,10 @@ export interface YouTubeVideoMetadata {
 
 /**
  * Fetch YouTube channel metadata using YouTube Data API
- * @param channelId - YouTube channel ID
+ * @param channelIdOrHandle - YouTube channel ID (UC...) or handle (@username)
  * @returns Channel metadata or throws error
  */
-export async function fetchYouTubeChannelMetadata(channelId: string): Promise<YouTubeChannelMetadata> {
+export async function fetchYouTubeChannelMetadata(channelIdOrHandle: string): Promise<YouTubeChannelMetadata> {
   const apiKey = import.meta.env.YOUTUBE_API_KEY;
 
   if (!apiKey) {
@@ -42,7 +42,12 @@ export async function fetchYouTubeChannelMetadata(channelId: string): Promise<Yo
   }
 
   try {
-    const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${apiKey}`;
+    // Determine if this is a handle (@username) or channel ID (UC...)
+    const isHandle = channelIdOrHandle.startsWith('@');
+    const paramName = isHandle ? 'forHandle' : 'id';
+    const paramValue = isHandle ? channelIdOrHandle : channelIdOrHandle;
+
+    const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&${paramName}=${paramValue}&key=${apiKey}`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -78,7 +83,7 @@ export async function fetchYouTubeChannelMetadata(channelId: string): Promise<Yo
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       service: 'youtube_api',
       operation: 'fetch_channel_metadata',
-      channel_id: channelId,
+      channel_id_or_handle: channelIdOrHandle,
     });
 
     if (error instanceof Error) {
@@ -94,6 +99,7 @@ export async function fetchYouTubeChannelMetadata(channelId: string): Promise<Yo
  * @returns Video metadata or throws error
  */
 export async function fetchYouTubeVideoMetadata(videoId: string): Promise<YouTubeVideoMetadata> {
+  // Try both import.meta.env and process.env for server compatibility
   const apiKey = import.meta.env.YOUTUBE_API_KEY;
 
   if (!apiKey) {

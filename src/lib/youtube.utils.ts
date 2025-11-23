@@ -3,9 +3,9 @@
  */
 
 /**
- * Extract YouTube channel ID from various URL formats
+ * Extract YouTube channel ID or handle from various URL formats
  * @param url - YouTube channel URL
- * @returns YouTube channel ID or throws error
+ * @returns YouTube channel ID (UC...) or handle (@username)
  */
 export function extractYouTubeChannelId(url: string): string {
   try {
@@ -20,9 +20,9 @@ export function extractYouTubeChannelId(url: string): string {
     }
 
     if (cleanUrl.startsWith('youtube.com/@')) {
-      // youtube.com/@channelname - this needs API resolution
-      // For now, throw error as we need the actual channel ID
-      throw new Error('Handle format requires channel ID extraction via API');
+      // youtube.com/@channelname - return the handle with @
+      const match = cleanUrl.match(/youtube\.com\/(@[\w-]+)/);
+      if (match) return match[1];
     }
 
     if (cleanUrl.startsWith('youtube.com/c/') || cleanUrl.startsWith('youtube.com/user/')) {
