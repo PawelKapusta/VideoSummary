@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import type { Database } from '../db/database.types.ts';
-import { createTraceHeaders } from '../lib/logger.ts';
+import { createTraceHeaders } from '../lib/trace.ts';
 
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_KEY;

@@ -1,7 +1,8 @@
 import { defineMiddleware } from 'astro:middleware';
 
 import { createSupabaseClient } from '../db/supabase.client.ts';
-import { initializeLogging, getAwsTraceId } from '../lib/logger.ts';
+import { initializeLogging } from '../lib/logger.ts';
+import { getAwsTraceId } from '../lib/trace.ts';
 
 // Initialize logging once
 let loggingInitialized = false;
