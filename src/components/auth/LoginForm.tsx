@@ -138,7 +138,8 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
       {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full"
+        variant="outline"
+        className="w-full border-2 border-ring hover:border-primary focus-visible:border-primary"
         disabled={isSubmitting}
       >
         {isSubmitting ? (

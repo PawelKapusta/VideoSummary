@@ -281,6 +281,41 @@ export interface ToastNotification {
 }
 
 // ============================================================================
+// REGISTER VIEW SPECIFIC TYPES
+// ============================================================================
+
+/** Form data type for register form (extends RegisterRequest with confirmPassword for UI) */
+export interface RegisterFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+/** Form validation errors type for register form */
+export interface RegisterFormErrors {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  form?: string; // General form-level errors
+}
+
+/** Form state type for register form */
+export interface RegisterFormState {
+  data: RegisterFormData;
+  errors: RegisterFormErrors;
+  isSubmitting: boolean;
+  isValid: boolean;
+}
+
+/** Error codes from register API for type-safe error handling */
+export type RegisterErrorCode = 
+  | 'INVALID_INPUT'
+  | 'EMAIL_ALREADY_EXISTS'
+  | 'VALIDATION_ERROR'
+  | 'RATE_LIMIT_EXCEEDED'
+  | 'INTERNAL_ERROR';
+
+// ============================================================================
 // DATABASE INSERT/UPDATE TYPES (for internal use)
 // ============================================================================
 

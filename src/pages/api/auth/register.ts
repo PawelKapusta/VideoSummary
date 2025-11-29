@@ -1,13 +1,15 @@
 import type { APIRoute } from 'astro';
-import type { RegisterRequest, AuthResponse, ApiError } from '../../../types';
+import { supabase } from '../../../db/supabase.client';
 import { RegisterRequestSchema } from '../../../lib/validation/schemas';
+import type { RegisterRequest, AuthResponse, ApiError } from '../../../types';
+import { z } from 'zod';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 
 /**
  * POST /api/auth/register
  *
  * Creates a new user account with email and password authentication.
- * Upon successful registration, automatically creates a user profile via database trigger
+ * Upon successful registration, automatically creates a user profile 
  * and returns session tokens for immediate authentication.
  *
  * Request Body:
@@ -69,7 +71,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Request validation failed',
-          details: validationResult.error.format(),
+          details: validationResult.error.errors.reduce((acc, err) => {
+            const path = err.path.join('.');
+            acc[path] = err.message;
+            return acc;
+          }, {} as Record<string, string>),
         },
       };
 
@@ -81,22 +87,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { email, password }: RegisterRequest = validationResult.data;
 
-    // Call Supabase Auth signUp
-    const { data, error } = await supabase.auth.signUp({
+    // Call Supabase Auth signUp first (handles uniqueness on auth.users)
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // Auto-confirm email for development (in production, this should be false)
-        // Note: This setting is configured in Supabase dashboard
+        data: { email }, // Metadata for profile sync
       },
     });
 
-    if (error) {
-      // Handle Supabase Auth errors
-      if (error.message.includes('already registered') || error.message.includes('already exists')) {
-        const duration = performance.now() - startTime;
-
-        // Log API access and performance for duplicate email error
+    if (authError) {
+      // Map Supabase Auth errors to custom codes
+      const duration = performance.now() - startTime;
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
         securityLogger.apiAccess({
           method: 'POST',
           path: '/api/auth/register',
@@ -107,7 +110,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
         const errorResponse: ApiError = {
           error: {
             code: 'EMAIL_ALREADY_EXISTS',
-            message: 'An account with this email already exists',
+            message: 'An account with this email already exists. Please login.',
+            details: {}, // No field-specific details for duplicate
           },
         };
 
@@ -117,10 +121,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
       }
 
-      if (error.message.includes('Password should be at least')) {
-        const duration = performance.now() - startTime;
-
-        // Log API access and performance for password validation error
+      if (authError.message.includes('Password should be at least') || authError.message.includes('weak')) {
         securityLogger.apiAccess({
           method: 'POST',
           path: '/api/auth/register',
@@ -132,6 +133,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           error: {
             code: 'INVALID_INPUT',
             message: 'Password does not meet strength requirements',
+            details: { password: authError.message },
           },
         };
 
@@ -141,10 +143,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
       }
 
-      if (error.message.includes('Invalid email')) {
-        const duration = performance.now() - startTime;
-
-        // Log API access and performance for email validation error
+      if (authError.message.includes('Invalid email') || authError.message.includes('login')) {
         securityLogger.apiAccess({
           method: 'POST',
           path: '/api/auth/register',
@@ -156,6 +155,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           error: {
             code: 'INVALID_INPUT',
             message: 'Invalid email format',
+            details: { email: authError.message },
           },
         };
 
@@ -165,15 +165,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
       }
 
-      // Log authentication errors with structured data
-      const duration = performance.now() - startTime;
-      errorLogger.apiError(error, 'POST', '/api/auth/register');
+      // Log and return generic error for other auth issues
+      errorLogger.apiError(authError, 'POST', '/api/auth/register');
       securityLogger.authFailure('User registration failed', {
         error_type: 'supabase_auth_error',
-        supabase_status: error.status,
+        supabase_status: authError.status,
       });
-
-      // Log API access and performance for internal error
       securityLogger.apiAccess({
         method: 'POST',
         path: '/api/auth/register',
@@ -185,6 +182,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         error: {
           code: 'INTERNAL_ERROR',
           message: 'Failed to create user account',
+          details: { /* No sensitive details */ },
         },
       };
 
@@ -203,8 +201,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
         '/api/auth/register'
       );
       securityLogger.authFailure('User registration failed: no user data returned');
-
-      // Log API access and performance for no user data error
       securityLogger.apiAccess({
         method: 'POST',
         path: '/api/auth/register',
@@ -232,8 +228,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
         user_id: data.user.id,
         reason: 'email_confirmation_required',
       });
-
-      // Log API access and performance for session creation error
       securityLogger.apiAccess({
         method: 'POST',
         path: '/api/auth/register',
@@ -254,9 +248,28 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
+    // Create profile row explicitly after auth success (RLS allows insert for new auth users: auth.uid() = id)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        email: data.user.email!,
+        created_at: data.user.created_at!,
+      });
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+      // Log but don't fail response (auth succeeded; profile can be created on login if needed)
+      securityLogger.authFailure('Profile creation failed after registration', {
+        user_id: data.user.id,
+        error: profileError.message,
+      });
+      // Optional: Trigger a function to retry profile creation
+    }
+
     // Log successful registration
     securityLogger.auth('User registration successful', {
-      user_id: data.user.id, // Safe to log - this is an internal UUID
+      user_id: data.user.id, // Safe to log - internal UUID
     });
 
     // Format successful response according to AuthResponse type
@@ -264,7 +277,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       user: {
         id: data.user.id,
         email: data.user.email!,
-        created_at: data.user.created_at,
+        created_at: data.user.created_at!,
       },
       session: {
         access_token: data.session.access_token,
@@ -286,7 +299,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       status: 201,
       headers: {
         'Content-Type': 'application/json',
-        // Add security headers
+        // Security headers
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'X-XSS-Protection': '1; mode=block',
@@ -294,14 +307,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
 
   } catch (error) {
-    // Handle unexpected errors
+    // Handle unexpected errors (e.g., JSON parse, network)
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: '/api/auth/register',
       method: 'POST',
     });
 
-    // Log API access and performance for error response
     securityLogger.apiAccess({
       method: 'POST',
       path: '/api/auth/register',
@@ -313,6 +325,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       error: {
         code: 'INTERNAL_ERROR',
         message: 'An unexpected error occurred',
+        details: {},
       },
     };
 
