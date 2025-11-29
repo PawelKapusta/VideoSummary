@@ -242,6 +242,45 @@ export interface ApiSuccess<T = void> {
 }
 
 // ============================================================================
+// LOGIN VIEW SPECIFIC TYPES
+// ============================================================================
+
+/** Form data type for login form (matches LoginRequest but can be extended with UI-specific fields) */
+export interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+/** Form validation errors type for login form */
+export interface LoginFormErrors {
+  email?: string;
+  password?: string;
+  form?: string; // General form-level errors
+}
+
+/** Form state type for login form */
+export interface LoginFormState {
+  data: LoginFormData;
+  errors: LoginFormErrors;
+  isSubmitting: boolean;
+  isValid: boolean;
+}
+
+/** Error codes from login API for type-safe error handling */
+export type LoginErrorCode = 
+  | 'INVALID_INPUT'
+  | 'INVALID_CREDENTIALS'
+  | 'RATE_LIMIT_EXCEEDED'
+  | 'INTERNAL_ERROR';
+
+/** Toast notification type */
+export interface ToastNotification {
+  type: 'success' | 'error' | 'info';
+  message: string;
+  duration?: number;
+}
+
+// ============================================================================
 // DATABASE INSERT/UPDATE TYPES (for internal use)
 // ============================================================================
 

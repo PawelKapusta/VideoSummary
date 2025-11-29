@@ -1,4 +1,4 @@
-import type { ApiError } from '@/types';
+import type { ApiError, LoginRequest, AuthResponse } from '@/types';
 
 export class ApiClientError extends Error {
   constructor(
@@ -46,6 +46,34 @@ export const clearAccessToken = (): void => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
   }
 };
+
+/**
+ * Authenticates a user with email and password
+ * @param credentials - User login credentials
+ * @returns AuthResponse with user and session data
+ * @throws ApiError on failure
+ */
+export async function loginUser(
+  credentials: LoginRequest
+): Promise<AuthResponse> {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    // Response is ApiError
+    throw data as ApiError;
+  }
+
+  // Response is AuthResponse
+  return data as AuthResponse;
+}
 
 export const apiClient = {
   async get<T>(path: string): Promise<T> {

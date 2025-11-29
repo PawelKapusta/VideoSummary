@@ -1,0 +1,1012 @@
+{
+  "info": {
+    "name": "YTInsights API (Complete)",
+    "description": "Complete API collection with all status codes and error examples",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "SecurePassword123!",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register New User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.session.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', response.session.refresh_token);",
+                  "    console.log('✅ User registered and tokens saved');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Creates a new user account with email and password. Returns user info and session tokens.\n\n**Success:** 201 Created\n**Errors:** 400 (Invalid input), 409 (Email exists), 422 (Validation errors)"
+          },
+          "response": [
+            {
+              "name": "201 - Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"email\": \"user@example.com\",\n    \"created_at\": \"2025-11-29T10:00:00Z\"\n  },\n  \"session\": {\n    \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refresh_token\": \"8f7b3d2c-1a4e-9b5f-7c6d-8e9f0a1b2c3d\",\n    \"expires_at\": 1732964400\n  }\n}"
+            },
+            {
+              "name": "400 - Bad Request (Invalid email)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"SecurePassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "register"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_EMAIL\",\n    \"message\": \"Please provide a valid email address\",\n    \"details\": {\n      \"field\": \"email\"\n    }\n  }\n}"
+            },
+            {
+              "name": "409 - Conflict (Email exists)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"existing@example.com\",\n  \"password\": \"SecurePassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "register"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"EMAIL_EXISTS\",\n    \"message\": \"An account with this email already exists\",\n    \"details\": {}\n  }\n}"
+            },
+            {
+              "name": "422 - Unprocessable Entity (Weak password)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"weak\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "register"]
+                }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Password must be at least 8 characters and contain uppercase, lowercase, and numbers\",\n    \"details\": {\n      \"field\": \"password\",\n      \"requirements\": [\n        \"Minimum 8 characters\",\n        \"At least one uppercase letter\",\n        \"At least one lowercase letter\",\n        \"At least one number\"\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.session.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', response.session.refresh_token);",
+                  "    console.log('✅ Login successful, tokens saved');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticates a user and returns session tokens\n\n**Success:** 200 OK\n**Errors:** 400 (Missing fields), 401 (Invalid credentials)"
+          },
+          "response": [
+            {
+              "name": "200 - OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"email\": \"user@example.com\"\n  },\n  \"session\": {\n    \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refresh_token\": \"8f7b3d2c-1a4e-9b5f-7c6d-8e9f0a1b2c3d\",\n    \"expires_at\": 1732964400\n  }\n}"
+            },
+            {
+              "name": "401 - Unauthorized (Invalid credentials)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"WrongPassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "login"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"message\": \"Invalid email or password\",\n    \"details\": {}\n  }\n}"
+            },
+            {
+              "name": "400 - Bad Request (Missing fields)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "login"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"MISSING_FIELDS\",\n    \"message\": \"Email and password are required\",\n    \"details\": {\n      \"missing_fields\": [\"password\"]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Terminates the current user session\n\n**Success:** 200 OK\n**Errors:** 401 (Invalid/expired token)"
+          },
+          "response": [
+            {
+              "name": "200 - OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/logout",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "logout"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Successfully logged out\"\n}"
+            },
+            {
+              "name": "401 - Unauthorized (Invalid token)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer invalid_token"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/logout",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "logout"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_TOKEN\",\n    \"message\": \"Invalid or expired authentication token\",\n    \"details\": {}\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Authentication endpoints with all possible status codes"
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Subscribe to Channel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('subscription_id', response.subscription_id);",
+                  "    pm.collectionVariables.set('channel_id', response.channel.id);",
+                  "    console.log('✅ Subscribed to channel:', response.channel.name);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channel_url\": \"https://www.youtube.com/@fireship\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscriptions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subscriptions"]
+            },
+            "description": "Adds a YouTube channel to user's subscriptions. Max 10 channels per user.\n\n**Success:** 201 Created\n**Errors:** 400 (Invalid URL), 401 (Not authenticated), 404 (Channel not found), 409 (Already subscribed), 422 (Limit reached)"
+          },
+          "response": [
+            {
+              "name": "201 - Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel_url\": \"https://www.youtube.com/@fireship\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/subscriptions",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "subscriptions"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"subscription_id\": \"a3b2c1d0-e4f5-6789-abcd-ef0123456789\",\n  \"channel\": {\n    \"id\": \"7f6e5d4c-3b2a-1098-7654-321098fedcba\",\n    \"youtube_channel_id\": \"UCsBjURrPoezykLs9EqgamOA\",\n    \"name\": \"Fireship\",\n    \"created_at\": \"2025-11-29T10:00:00Z\"\n  },\n  \"subscribed_at\": \"2025-11-29T10:00:00Z\",\n  \"message\": \"Successfully subscribed to channel\"\n}"
+            },
+            {
+              "name": "400 - Bad Request (Invalid URL)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel_url\": \"not-a-valid-url\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/subscriptions",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "subscriptions"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_URL\",\n    \"message\": \"Invalid YouTube channel URL format\",\n    \"details\": {\n      \"expected_formats\": [\n        \"https://www.youtube.com/@username\",\n        \"https://www.youtube.com/channel/UC...\",\n        \"https://www.youtube.com/c/channelname\"\n      ]\n    }\n  }\n}"
+            },
+            {
+              "name": "404 - Not Found (Channel not found)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel_url\": \"https://www.youtube.com/@nonexistentchannel123456789\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/subscriptions",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "subscriptions"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"CHANNEL_NOT_FOUND\",\n    \"message\": \"YouTube channel not found or invalid\",\n    \"details\": {}\n  }\n}"
+            },
+            {
+              "name": "409 - Conflict (Already subscribed)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel_url\": \"https://www.youtube.com/@fireship\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/subscriptions",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "subscriptions"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"ALREADY_SUBSCRIBED\",\n    \"message\": \"You are already subscribed to this channel\",\n    \"details\": {}\n  }\n}"
+            },
+            {
+              "name": "422 - Unprocessable Entity (Limit reached)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel_url\": \"https://www.youtube.com/@newchannel\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/subscriptions",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "subscriptions"]
+                }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"SUBSCRIPTION_LIMIT_REACHED\",\n    \"message\": \"You have reached the maximum of 10 channel subscriptions\",\n    \"details\": {\n      \"current_count\": 10,\n      \"max_allowed\": 10\n    }\n  }\n}"
+            },
+            {
+              "name": "401 - Unauthorized",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer invalid_token"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel_url\": \"https://www.youtube.com/@fireship\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/subscriptions",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "subscriptions"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_TOKEN\",\n    \"message\": \"Invalid or expired authentication token\",\n    \"details\": {}\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Subscription management with comprehensive error examples"
+    },
+    {
+      "name": "Summaries",
+      "item": [
+        {
+          "name": "Generate Summary (Manual)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('summary_id', response.id);",
+                  "    pm.collectionVariables.set('video_id', response.video.id);",
+                  "    console.log('✅ Summary generation initiated for:', response.video.title);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/summaries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "summaries"]
+            },
+            "description": "Manually initiates summary generation for a YouTube video. Subject to daily per-channel limits (global).\n\n**Success:** 202 Accepted\n**Errors:** 400 (Invalid URL), 401 (Not authenticated), 403 (Not subscribed), 404 (Video not found), 409 (Already exists/in progress), 422 (Video constraints), 429 (Rate limit)"
+          },
+          "response": [
+            {
+              "name": "202 - Accepted",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"9f8e7d6c-5b4a-3210-9876-543210fedcba\",\n  \"video\": {\n    \"id\": \"1a2b3c4d-5e6f-7890-abcd-ef0123456789\",\n    \"youtube_video_id\": \"dQw4w9WgXcQ\",\n    \"title\": \"Rick Astley - Never Gonna Give You Up (Official Video)\"\n  },\n  \"status\": \"pending\",\n  \"message\": \"Summary generation initiated\"\n}"
+            },
+            {
+              "name": "400 - Bad Request (Invalid URL)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"not-a-video-url\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_URL\",\n    \"message\": \"Invalid YouTube video URL format\",\n    \"details\": {\n      \"expected_formats\": [\n        \"https://www.youtube.com/watch?v=...\",\n        \"https://youtu.be/...\"\n      ]\n    }\n  }\n}"
+            },
+            {
+              "name": "403 - Forbidden (Not subscribed to channel)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"CHANNEL_NOT_SUBSCRIBED\",\n    \"message\": \"You must be subscribed to the channel to generate summaries\",\n    \"details\": {}\n  }\n}"
+            },
+            {
+              "name": "404 - Not Found (Video not found)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=invalidvideoid\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"VIDEO_NOT_FOUND\",\n    \"message\": \"YouTube video not found or unavailable\",\n    \"details\": {}\n  }\n}"
+            },
+            {
+              "name": "409 - Conflict (Summary already exists)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"SUMMARY_EXISTS\",\n    \"message\": \"A summary already exists for this video\",\n    \"details\": {\n      \"summary_id\": \"9f8e7d6c-5b4a-3210-9876-543210fedcba\"\n    }\n  }\n}"
+            },
+            {
+              "name": "422 - Unprocessable Entity (Video too long)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=longvideo123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"VIDEO_TOO_LONG\",\n    \"message\": \"Video exceeds maximum duration of 45 minutes\",\n    \"details\": {\n      \"video_duration_seconds\": 3600,\n      \"max_duration_seconds\": 2700\n    }\n  }\n}"
+            },
+            {
+              "name": "422 - Unprocessable Entity (No subtitles)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=nosubtitles\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"NO_SUBTITLES\",\n    \"message\": \"Video does not have available subtitles or captions\",\n    \"details\": {}\n  }\n}"
+            },
+            {
+              "name": "429 - Too Many Requests (Rate limit)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"video_url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/summaries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "summaries"]
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Retry-After",
+                  "value": "43200"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": {\n    \"code\": \"GENERATION_LIMIT_REACHED\",\n    \"message\": \"Daily summary generation limit reached for this channel (1 successful summary per day globally)\",\n    \"details\": {\n      \"retry_after_seconds\": 43200,\n      \"note\": \"This is a global limit per channel. Only successful summaries count toward the limit.\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Summary generation with all possible error scenarios"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log current request info",
+          "console.log('📤 Request:', pm.request.method, pm.request.url.toString());",
+          "",
+          "// Show if using auth token",
+          "const token = pm.collectionVariables.get('access_token');",
+          "if (token) {",
+          "    console.log('🔐 Using authentication token');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log response status",
+          "console.log('📥 Response:', pm.response.code, pm.response.status);",
+          "",
+          "// Pretty print JSON responses",
+          "if (pm.response.headers.get('Content-Type')?.includes('application/json')) {",
+          "    try {",
+          "        const jsonData = pm.response.json();",
+          "        console.log('Response body:', JSON.stringify(jsonData, null, 2));",
+          "    } catch (e) {",
+          "        console.log('Could not parse JSON response');",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}
+

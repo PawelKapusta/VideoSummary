@@ -1,0 +1,20 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import LoginView from '@/components/views/LoginView';
+
+// Check if user is already authenticated
+const supabase = Astro.locals.supabase;
+const { data: { session } } = await supabase.auth.getSession();
+
+// If authenticated, redirect to dashboard
+if (session) {
+  return Astro.redirect('/dashboard');
+}
+
+export const prerender = false;
+---
+
+<Layout title="Sign In | YTInsights">
+  <LoginView client:load />
+</Layout>
+
