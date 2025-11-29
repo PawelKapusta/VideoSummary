@@ -16,7 +16,7 @@ const createTracedFetch = (traceId?: string, authToken?: string) => {
   return (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const headers = new Headers(init?.headers);
     Object.entries(traceHeaders).forEach(([key, value]) => {
-      headers.set(key, value);
+      headers.set(key, value as string);
     });
 
     // Add authorization header if token is provided

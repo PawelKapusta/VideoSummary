@@ -1,51 +1,60 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { SummaryWithVideo, ApiError, PaginatedResponse } from '@/types';
-import { apiClient, ApiClientError } from '@/lib/api';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import type { SummaryWithVideo, PaginatedResponse } from '@/types';
+import { apiClient } from '@/lib/api';
 
-type Status = 'idle' | 'loading' | 'success' | 'error';
+const LIMIT = 20;
+
+const fetchSummaries = async ({ pageParam = 0 }: { pageParam?: number }) => {
+  const data = await apiClient.get<PaginatedResponse<SummaryWithVideo>>(
+    `/api/summaries?limit=${LIMIT}&offset=${pageParam}`,
+  );
+  return data;
+};
 
 const useSummaries = () => {
-  const [summaries, setSummaries] = useState<SummaryWithVideo[]>([]);
-  const [status, setStatus] = useState<Status>('idle');
-  const [error, setError] = useState<ApiClientError | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const limit = 20;
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useInfiniteQuery({
+    queryKey: ['summaries'],
+    queryFn: fetchSummaries,
+    getNextPageParam: (lastPage) => {
+      const nextOffset = lastPage.pagination.offset + lastPage.data.length;
+      const hasMore = nextOffset < lastPage.pagination.total;
+      console.log('getNextPageParam:', { nextOffset, total: lastPage.pagination.total, hasMore });
+      return hasMore ? nextOffset : undefined;
+    },
+    initialPageParam: 0,
+  });
 
-  const fetchSummaries = useCallback(async (currentOffset: number) => {
-    setStatus('loading');
-    setError(null);
+  // Flatten all pages into a single array
+  const summaries = data?.pages.flatMap((page) => page.data) ?? [];
 
-    try {
-      const data = await apiClient.get<PaginatedResponse<SummaryWithVideo>>(
-        `/api/summaries?limit=${limit}&offset=${currentOffset}`,
-      );
+  // Determine status for backward compatibility
+  const status = isLoading ? 'loading' : isError ? 'error' : 'success';
 
-      setSummaries((prev) => (currentOffset === 0 ? data.data : [...prev, ...data.data]));
-      setHasMore(data.pagination.offset + data.data.length < data.pagination.total);
-      setOffset(currentOffset + data.data.length);
-      setStatus('success');
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        setError(err);
-      } else {
-        setError(new ApiClientError('UNKNOWN_ERROR', 'An unexpected error occurred.'));
-      }
-      setStatus('error');
-    }
-  }, []);
+  console.log('useSummaries hook:', {
+    isLoading,
+    isError,
+    status,
+    summariesCount: summaries.length,
+    pagesCount: data?.pages.length,
+    error,
+  });
 
-  useEffect(() => {
-    fetchSummaries(0);
-  }, [fetchSummaries]);
-
-  const loadMore = () => {
-    if (status !== 'loading' && hasMore) {
-      fetchSummaries(offset);
-    }
+  return {
+    summaries,
+    status,
+    error,
+    hasMore: hasNextPage,
+    loadMore: fetchNextPage,
+    isLoadingMore: isFetchingNextPage,
   };
-
-  return { summaries, status, error, hasMore, loadMore };
 };
 
 export default useSummaries;

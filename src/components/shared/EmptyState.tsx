@@ -4,9 +4,16 @@ import React from 'react';
 
 const EmptyState = () => {
   return (
-    <div className="text-center p-8">
+    <div 
+      className="text-center p-8"
+      role="status"
+      aria-live="polite"
+    >
       <div className="flex justify-center items-center mb-4">
-        <FileText className="w-16 h-16 text-muted-foreground" />
+        <FileText 
+          className="w-16 h-16 text-muted-foreground" 
+          aria-hidden="true"
+        />
       </div>
       <h2 className="text-2xl font-semibold mb-2">No summaries yet</h2>
       <p className="text-muted-foreground mb-4">
