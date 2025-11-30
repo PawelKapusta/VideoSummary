@@ -316,6 +316,54 @@ export type RegisterErrorCode =
   | 'INTERNAL_ERROR';
 
 // ============================================================================
+// RESET PASSWORD VIEW SPECIFIC TYPES
+// ============================================================================
+
+/** Form data type for reset password form */
+export interface ResetFormData {
+  email: string;
+}
+
+/** Form validation errors type for reset password form */
+export interface ResetFormErrors {
+  email?: string;
+  form?: string; // General form-level errors
+}
+
+/** Form state type for reset password form */
+export interface ResetFormState {
+  data: ResetFormData;
+  errors: ResetFormErrors;
+  isSubmitting: boolean;
+  isValid: boolean;
+}
+
+// ============================================================================
+// CONFIRM PASSWORD RESET VIEW SPECIFIC TYPES
+// ============================================================================
+
+/** Form data type for confirm reset password form */
+export interface ConfirmResetFormData {
+  password: string;
+  confirmPassword: string;
+}
+
+/** Form validation errors type for confirm reset password form */
+export interface ConfirmResetFormErrors {
+  password?: string;
+  confirmPassword?: string;
+  form?: string; // General form-level errors
+}
+
+/** Form state type for confirm reset password form */
+export interface ConfirmResetFormState {
+  data: ConfirmResetFormData;
+  errors: ConfirmResetFormErrors;
+  isSubmitting: boolean;
+  isValid: boolean;
+}
+
+// ============================================================================
 // DATABASE INSERT/UPDATE TYPES (for internal use)
 // ============================================================================
 

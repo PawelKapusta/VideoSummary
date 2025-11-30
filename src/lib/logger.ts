@@ -172,45 +172,54 @@ export async function initializeLogging(): Promise<void> {
     );
   }
 
-  await configure({
-    sinks,
-    filters: {
-      excludeDebugInProduction,
-    },
-    loggers: [
-      // Main application logger
-      {
-        category: ["ytinsights"],
-        lowestLevel: isDevelopment ? "debug" : "info",
-        sinks: isDevelopment ? ["console", "file"] : ["file"],
-        filters: isTest ? [] : ["excludeDebugInProduction"],
+  try {
+    await configure({
+      sinks,
+      filters: {
+        excludeDebugInProduction,
       },
-      // Authentication logger (more security-focused)
-      {
-        category: ["ytinsights", "auth"],
-        lowestLevel: "info", // Always log auth events at info level or higher
-        sinks: ["console", "file"], // Always log auth to both console and file
-      },
-      // API logger
-      {
-        category: ["ytinsights", "api"],
-        lowestLevel: isDevelopment ? "debug" : "info",
-        sinks: isDevelopment ? ["console", "file"] : ["file"],
-      },
-      // Database logger
-      {
-        category: ["ytinsights", "db"],
-        lowestLevel: isDevelopment ? "debug" : "warning",
-        sinks: ["console", "file"],
-      },
-      // External API logger (YouTube, OpenRouter)
-      {
-        category: ["ytinsights", "external"],
-        lowestLevel: isDevelopment ? "debug" : "info",
-        sinks: isDevelopment ? ["console", "file"] : ["file"],
-      },
-    ],
-  });
+      loggers: [
+        // Main application logger
+        {
+          category: ["ytinsights"],
+          lowestLevel: isDevelopment ? "debug" : "info",
+          sinks: isDevelopment ? ["console", "file"] : ["file"],
+          filters: isTest ? [] : ["excludeDebugInProduction"],
+        },
+        // Authentication logger (more security-focused)
+        {
+          category: ["ytinsights", "auth"],
+          lowestLevel: "info", // Always log auth events at info level or higher
+          sinks: ["console", "file"], // Always log auth to both console and file
+        },
+        // API logger
+        {
+          category: ["ytinsights", "api"],
+          lowestLevel: isDevelopment ? "debug" : "info",
+          sinks: isDevelopment ? ["console", "file"] : ["file"],
+        },
+        // Database logger
+        {
+          category: ["ytinsights", "db"],
+          lowestLevel: isDevelopment ? "debug" : "warning",
+          sinks: ["console", "file"],
+        },
+        // External API logger (YouTube, OpenRouter)
+        {
+          category: ["ytinsights", "external"],
+          lowestLevel: isDevelopment ? "debug" : "info",
+          sinks: isDevelopment ? ["console", "file"] : ["file"],
+        },
+      ],
+      reset: isDevelopment, // Safe reset in dev
+    });
+  } catch (error) {
+    if ((error as Error).message?.includes('Already configured')) {
+      console.warn('Logging already configured; skipping re-init (likely HMR)');
+    } else {
+      console.error('Failed to initialize logging:', error);
+    }
+  }
 
   isLoggingConfigured = true;
 

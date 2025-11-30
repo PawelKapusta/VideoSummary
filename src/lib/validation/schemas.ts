@@ -15,8 +15,8 @@ export const EmailSchema = z
 export const PasswordSchema = z
   .string()
   .min(8, { message: 'Password must be at least 8 characters long' })
-  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
   })
   .max(128, { message: 'Password is too long' }); // Reasonable limit for security
 

@@ -99,24 +99,59 @@ export function useRegisterForm({
   }, [validateField, state.data]);
 
   const handleInputChange = useCallback((field: keyof RegisterFormData, value: string) => {
-    updateData({ [field]: value });
-
-    // Clear field error on change
-    if (state.errors[field as keyof RegisterFormErrors]) {
-      setFieldError(field as keyof RegisterFormErrors, undefined);
-    }
-
-    // Clear form error on change
-    if (state.errors.form) {
-      clearFormError();
-    }
-
-    // Update isValid if previously invalid
-    if (!state.isValid) {
-      // Revalidate to update isValid
-      validateForm();
-    }
-  }, [updateData, state.errors, setFieldError, clearFormError, validateForm, state.isValid]);
+    setState(prev => {
+      const newData = { ...prev.data, [field]: value };
+      
+      // Validate the field in real-time
+      const newErrors = { ...prev.errors };
+      
+      // Clear field error on change
+      if (newErrors[field as keyof RegisterFormErrors]) {
+        delete newErrors[field as keyof RegisterFormErrors];
+      }
+      
+      // Clear form error on change
+      if (newErrors.form) {
+        delete newErrors.form;
+      }
+      
+      // Validate the changed field
+      try {
+        if (field === 'email') {
+          RegisterFormSchema.pick({ email: true }).parse({ email: value });
+        } else if (field === 'password') {
+          RegisterFormSchema.pick({ password: true }).parse({ password: value });
+          // Also revalidate confirmPassword if it has a value
+          if (newData.confirmPassword && newData.confirmPassword !== value) {
+            newErrors.confirmPassword = 'Passwords do not match';
+          } else if (newData.confirmPassword && newData.confirmPassword === value) {
+            delete newErrors.confirmPassword;
+          }
+        } else if (field === 'confirmPassword') {
+          RegisterFormSchema.pick({ confirmPassword: true }).parse({ confirmPassword: value });
+          if (value !== newData.password) {
+            newErrors.confirmPassword = 'Passwords do not match';
+          }
+        }
+      } catch (error) {
+        // Don't set error on change, only on blur
+      }
+      
+      // Calculate isValid
+      const isValid = Object.values(newErrors).every(e => !e) && 
+                     newData.email.trim() !== '' && 
+                     newData.password.trim() !== '' && 
+                     newData.confirmPassword.trim() !== '' &&
+                     newData.confirmPassword === newData.password;
+      
+      return {
+        ...prev,
+        data: newData,
+        errors: newErrors,
+        isValid,
+      };
+    });
+  }, []);
 
   const handleBlur = useCallback((field: keyof RegisterFormData) => {
     const error = validateField(field, state.data[field]);

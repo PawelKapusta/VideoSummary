@@ -105,6 +105,7 @@ export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
         error={errors.password}
         disabled={isSubmitting}
         showToggle={true}
+        showStrength={true}
         aria-required="true"
       />
 
@@ -113,8 +114,9 @@ export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
         onChange={(value) => handleInputChange('confirmPassword', value)}
         onBlur={() => handleBlur('confirmPassword')}
         error={errors.confirmPassword}
-        passwordValue={data.password}
+        password={data.password}
         disabled={isSubmitting}
+        showToggle={true}
         aria-required="true"
       />
 

@@ -1,4 +1,4 @@
-import type { ApiError, LoginRequest, AuthResponse, RegisterRequest } from '@/types';
+import type { ApiError, LoginRequest, AuthResponse, RegisterRequest, ConfirmResetPasswordRequest, ApiSuccess } from '@/types';
 
 export class ApiClientError extends Error {
   constructor(
@@ -101,6 +101,59 @@ export async function registerUser(
 
   // Response is AuthResponse
   return data as AuthResponse;
+}
+
+/**
+ * Initiates password reset by sending email to user
+ * @param request - Email address for reset link
+ * @throws ApiClientError on failure (400, 429, 500)
+ */
+export async function resetPassword(
+  request: { email: string }
+): Promise<void> {
+  const response = await fetch('/api/auth/reset-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorData: ApiError = await response.json();
+    throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
+  }
+
+  // Success: no body needed
+}
+
+/**
+ * Confirms password reset by updating the user's password
+ * @param request - Confirmation request with token and new password
+ * @returns ApiSuccess<void> on success
+ * @throws ApiClientError on failure (400, 422, 500)
+ */
+export async function confirmResetPassword(
+  request: ConfirmResetPasswordRequest
+): Promise<ApiSuccess<void>> {
+  const response = await fetch('/api/auth/reset-password/confirm', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    // Response is ApiError
+    const errorData: ApiError = data;
+    throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
+  }
+
+  // Response is ApiSuccess<void>
+  return data as ApiSuccess<void>;
 }
 
 export const apiClient = {

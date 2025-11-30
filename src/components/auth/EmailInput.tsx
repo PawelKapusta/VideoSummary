@@ -12,7 +12,7 @@ export interface EmailInputProps {
 export function EmailInput({ value, onChange, onBlur, error, disabled }: EmailInputProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor="email">
+      <Label htmlFor="email" className={error ? 'text-red-500' : ''}>
         Email <span className="text-red-500" aria-label="required">*</span>
       </Label>
       <Input
@@ -20,7 +20,6 @@ export function EmailInput({ value, onChange, onBlur, error, disabled }: EmailIn
         name="email"
         type="email"
         autoComplete="email"
-        autoFocus
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}
