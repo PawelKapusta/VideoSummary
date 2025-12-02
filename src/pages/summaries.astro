@@ -1,0 +1,7 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import SummariesView from '@/components/views/SummariesView.tsx';
+---
+<Layout title="Your Summaries" showNavigation={true}>
+  <SummariesView client:only="react" />
+</Layout>

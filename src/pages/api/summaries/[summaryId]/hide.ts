@@ -10,7 +10,7 @@ import { hideSummary, unhideSummary } from '../../../../lib/hidden-summaries.ser
  * Hides a summary from the user's dashboard without deleting it from the database.
  * Since summaries are shared resources, this allows personalization without affecting other users.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Path Parameters:
  * - summaryId (UUID) - ID of the summary to hide
  *
@@ -21,7 +21,7 @@ import { hideSummary, unhideSummary } from '../../../../lib/hidden-summaries.ser
  *
  * Error Responses:
  * - 400 Bad Request: Invalid summary ID format
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 403 Forbidden: Cannot hide summaries from non-subscribed channels
  * - 404 Not Found: Summary not found
  * - 409 Conflict: Summary already hidden
@@ -34,11 +34,12 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized hide summary attempt - no token');
+      securityLogger.auth('Unauthorized hide summary attempt - no valid session');
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/hide`,
@@ -59,34 +60,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized hide summary attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'POST',
-        path: `/api/summaries/${params.summaryId}/hide`,
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate summary ID from path
     const summaryId = params.summaryId;
@@ -232,7 +206,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
  *
  * Removes a summary from the user's hidden list, making it appear in their dashboard again.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Path Parameters:
  * - summaryId (UUID) - ID of the summary to unhide
  *
@@ -243,7 +217,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
  *
  * Error Responses:
  * - 400 Bad Request: Invalid summary ID format
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 404 Not Found: Summary not found or not hidden
  * - 500 Internal Server Error: Database error
  */
@@ -254,11 +228,12 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unhide summary attempt - no token');
+      securityLogger.auth('Unauthorized unhide summary attempt - no valid session');
       securityLogger.apiAccess({
         method: 'DELETE',
         path: `/api/summaries/${params.summaryId}/hide`,
@@ -279,34 +254,7 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unhide summary attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'DELETE',
-        path: `/api/summaries/${params.summaryId}/hide`,
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('DELETE', `/api/summaries/${params.summaryId}/hide`, duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate summary ID from path
     const summaryId = params.summaryId;
@@ -442,4 +390,3 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
     });
   }
 };
-

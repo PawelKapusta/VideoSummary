@@ -10,7 +10,7 @@ import { getSummaryDetails } from '../../../lib/summaries.service';
  * Retrieves complete details of a specific summary including full summary content,
  * video information, rating statistics, and the user's personal rating.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Path Parameters:
  * - summaryId (UUID) - ID of the summary
  *
@@ -30,7 +30,7 @@ import { getSummaryDetails } from '../../../lib/summaries.service';
  *
  * Error Responses:
  * - 400 Bad Request: Invalid summary ID format
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 403 Forbidden: Summary belongs to non-subscribed channel
  * - 404 Not Found: Summary not found
  * - 500 Internal Server Error: Database error
@@ -42,11 +42,12 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summary details attempt - no token');
+      securityLogger.auth('Unauthorized summary details attempt - no valid session');
       securityLogger.apiAccess({
         method: 'GET',
         path: `/api/summaries/${params.summaryId}`,
@@ -67,34 +68,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summary details attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'GET',
-        path: `/api/summaries/${params.summaryId}`,
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('GET', `/api/summaries/${params.summaryId}`, duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate summary ID from path
     const summaryId = params.summaryId;
@@ -225,4 +199,3 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     });
   }
 };
-

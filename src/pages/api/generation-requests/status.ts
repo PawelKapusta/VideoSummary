@@ -10,7 +10,7 @@ import { checkGenerationStatus } from '../../../lib/generation-requests.service'
  * Checks if a summary can be generated for a specific channel today by verifying
  * the global daily limit (1 successful summary per channel per day across all users).
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Query Parameters:
  * - channel_id (UUID, required) - ID of the channel to check
  *
@@ -26,7 +26,7 @@ import { checkGenerationStatus } from '../../../lib/generation-requests.service'
  *
  * Error Responses:
  * - 400 Bad Request: Missing or invalid channel_id
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 403 Forbidden: Channel not subscribed by user
  * - 500 Internal Server Error: Database error
  */
@@ -37,11 +37,12 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized generation status check - no token');
+      securityLogger.auth('Unauthorized generation status check - no valid session');
       securityLogger.apiAccess({
         method: 'GET',
         path: '/api/generation-requests/status',
@@ -62,34 +63,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized generation status check - invalid token');
-      securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/generation-requests/status',
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('GET', '/api/generation-requests/status', duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate channel_id from query params
     const urlParams = new URL(url).searchParams;
@@ -227,4 +201,3 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     });
   }
 };
-

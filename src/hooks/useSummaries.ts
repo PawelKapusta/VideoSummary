@@ -1,60 +1,47 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import type { SummaryWithVideo, PaginatedResponse } from '@/types';
-import { apiClient } from '@/lib/api';
+import { toast } from 'sonner';
+import { apiClient as api } from '../lib/api'; // Named import with alias
+import type { PaginatedResponse, SummaryWithVideo, FilterOptions, SummaryStatus } from '../../types';
 
-const LIMIT = 20;
+interface PageParam {
+  offset: number;
+}
 
-const fetchSummaries = async ({ pageParam = 0 }: { pageParam?: number }) => {
-  const data = await apiClient.get<PaginatedResponse<SummaryWithVideo>>(
-    `/api/summaries?limit=${LIMIT}&offset=${pageParam}`,
-  );
-  return data;
-};
-
-const useSummaries = () => {
-  const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-  } = useInfiniteQuery({
-    queryKey: ['summaries'],
-    queryFn: fetchSummaries,
-    getNextPageParam: (lastPage) => {
-      const nextOffset = lastPage.pagination.offset + lastPage.data.length;
-      const hasMore = nextOffset < lastPage.pagination.total;
-      console.log('getNextPageParam:', { nextOffset, total: lastPage.pagination.total, hasMore });
-      return hasMore ? nextOffset : undefined;
+export function useSummaries(filters: FilterOptions) {
+  return useInfiniteQuery<
+    PaginatedResponse<SummaryWithVideo>,
+    Error
+  >({
+    queryKey: ['summaries', filters],
+    queryFn: async ({ pageParam = { offset: 0 } }) => {
+      const params = {
+        ...filters,
+        limit: 20,
+        offset: pageParam.offset,
+        include_hidden: filters.include_hidden ?? false,
+        sort: filters.sort ?? 'published_at_desc',
+      };
+      const { data } = await api.get<PaginatedResponse<SummaryWithVideo>>('/api/summaries', { params });
+      return data;
     },
-    initialPageParam: 0,
+    initialPageParam: { offset: 0 },
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      const offset = lastPageParam?.offset ?? 0;
+      if (!lastPage?.pagination) return undefined;
+      if (offset + 20 < lastPage.pagination.total) {
+        return { offset: offset + 20 };
+      }
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    retry: (failureCount, error) => failureCount < 3 && !error.message.includes('401'), // No retry on auth
+    onError: (error) => {
+      if (error.message.includes('offline')) {
+        toast.info('Using cached data (offline)');
+      } else if (!error.message.includes('401')) {
+        toast.error(`Failed to load summaries: ${error.message}`);
+      }
+    },
   });
-
-  // Flatten all pages into a single array
-  const summaries = data?.pages.flatMap((page) => page.data) ?? [];
-
-  // Determine status for backward compatibility
-  const status = isLoading ? 'loading' : isError ? 'error' : 'success';
-
-  console.log('useSummaries hook:', {
-    isLoading,
-    isError,
-    status,
-    summariesCount: summaries.length,
-    pagesCount: data?.pages.length,
-    error,
-  });
-
-  return {
-    summaries,
-    status,
-    error,
-    hasMore: hasNextPage,
-    loadMore: fetchNextPage,
-    isLoadingMore: isFetchingNextPage,
-  };
-};
-
-export default useSummaries;
+}

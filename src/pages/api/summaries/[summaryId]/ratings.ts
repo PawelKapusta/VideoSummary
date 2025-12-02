@@ -10,7 +10,7 @@ import { rateSummary, removeRating } from '../../../../lib/ratings.service';
  * Creates or updates the user's rating for a summary.
  * Uses upsert operation to handle both new ratings and rating changes.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Path Parameters:
  * - summaryId (UUID) - ID of the summary to rate
  *
@@ -30,7 +30,7 @@ import { rateSummary, removeRating } from '../../../../lib/ratings.service';
  *
  * Error Responses:
  * - 400 Bad Request: Invalid summary ID or rating value
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 403 Forbidden: Cannot rate summaries from non-subscribed channels
  * - 404 Not Found: Summary not found
  * - 500 Internal Server Error: Database error
@@ -42,11 +42,12 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized rating attempt - no token');
+      securityLogger.auth('Unauthorized rating attempt - no valid session');
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/ratings`,
@@ -67,34 +68,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized rating attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'POST',
-        path: `/api/summaries/${params.summaryId}/ratings`,
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/ratings`, duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate summary ID from path
     const summaryId = params.summaryId;
@@ -281,7 +255,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
  *
  * Removes the user's rating from a summary.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Path Parameters:
  * - summaryId (UUID) - ID of the summary
  *
@@ -292,7 +266,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
  *
  * Error Responses:
  * - 400 Bad Request: Invalid summary ID format
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 404 Not Found: Rating not found
  * - 500 Internal Server Error: Database error
  */
@@ -303,11 +277,12 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized rating removal attempt - no token');
+      securityLogger.auth('Unauthorized rating removal attempt - no valid session');
       securityLogger.apiAccess({
         method: 'DELETE',
         path: `/api/summaries/${params.summaryId}/ratings`,
@@ -328,34 +303,7 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized rating removal attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'DELETE',
-        path: `/api/summaries/${params.summaryId}/ratings`,
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('DELETE', `/api/summaries/${params.summaryId}/ratings`, duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate summary ID from path
     const summaryId = params.summaryId;
@@ -491,4 +439,3 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
     });
   }
 };
-

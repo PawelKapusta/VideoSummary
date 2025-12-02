@@ -10,7 +10,7 @@ import { unsubscribeFromChannel } from '../../../lib/subscriptions.service';
  * Unsubscribe the authenticated user from a channel.
  * This triggers automatic cleanup of the user's hidden summaries for that channel.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Path Parameters:
  * - subscriptionId (UUID) - ID of the subscription to delete
  *
@@ -21,7 +21,7 @@ import { unsubscribeFromChannel } from '../../../lib/subscriptions.service';
  *
  * Error Responses:
  * - 400 Bad Request: Invalid subscription ID format
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 403 Forbidden: Attempting to delete another user's subscription
  * - 404 Not Found: Subscription not found
  * - 500 Internal Server Error: Database error
@@ -33,11 +33,12 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unsubscribe attempt - no token');
+      securityLogger.auth('Unauthorized unsubscribe attempt - no valid session');
       securityLogger.apiAccess({
         method: 'DELETE',
         path: `/api/subscriptions/${params.subscriptionId}`,
@@ -58,34 +59,7 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unsubscribe attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'DELETE',
-        path: `/api/subscriptions/${params.subscriptionId}`,
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate subscription ID from path
     const subscriptionId = params.subscriptionId;

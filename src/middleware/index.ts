@@ -1,11 +1,21 @@
 import { defineMiddleware } from 'astro:middleware';
-
-import { createSupabaseClient } from '../db/supabase.client.ts';
+import { createSupabaseServerClient } from '../db/supabase.client.ts';
 import { initializeLogging } from '../lib/logger.ts';
 import { getAwsTraceId } from '../lib/trace.ts';
 
 // Initialize logging once
 let loggingInitialized = false;
+
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/summaries',
+  '/profile',
+  '/generate',
+  '/videos',
+  '/settings',
+];
+
+const AUTH_ROUTES = ['/login', '/register', '/reset-password'];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   // Initialize logging on first request
@@ -21,19 +31,33 @@ export const onRequest = defineMiddleware(async (context, next) => {
   });
   const traceId = getAwsTraceId(headers);
 
-  // Extract and set authentication token if provided
-  const authHeader = headers['authorization'];
-  let authToken: string | undefined;
+  // Create Supabase client with trace ID and cookie handling
+  const supabase = createSupabaseServerClient(context, traceId);
+  context.locals.supabase = supabase;
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    authToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+  // Check authentication status
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = context.url.pathname;
+
+  // Root redirect
+  if (pathname === '/') {
+    return context.redirect('/dashboard');
   }
 
-  // Create Supabase client with trace ID and optional auth token
-  const supabase = createSupabaseClient(traceId, authToken);
+  // Protected routes redirect
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+  if (isProtectedRoute && !user) {
+    return context.redirect('/login');
+  }
 
-  context.locals.supabase = supabase;
+  // Auth routes redirect (if already logged in)
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  if (isAuthRoute && user) {
+    return context.redirect('/dashboard');
+  }
 
   return next();
 });
-

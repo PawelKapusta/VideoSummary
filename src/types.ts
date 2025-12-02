@@ -138,6 +138,7 @@ export interface SummaryWithVideo {
   status: Database['public']['Enums']['summary_status'];
   generated_at: string | null;
   user_rating: boolean | null;
+  error_code?: SummaryErrorCode | null; // Add optional for failed
 }
 
 /** Detailed summary with full information */
@@ -384,3 +385,11 @@ export type HiddenSummaryInsert = Database['public']['Tables']['hidden_summaries
 export type HiddenSummaryUpdate = Database['public']['Tables']['hidden_summaries']['Update'];
 export type GenerationRequestInsert = Database['public']['Tables']['generation_requests']['Insert'];
 export type GenerationRequestUpdate = Database['public']['Tables']['generation_requests']['Update'];
+
+export interface FilterOptions {
+  search?: string;
+  channel_id?: string | null;
+  status?: SummaryStatus;
+  sort?: string;
+  include_hidden?: boolean;
+}

@@ -1,4 +1,5 @@
 import type { ApiError, LoginRequest, AuthResponse, RegisterRequest, ConfirmResetPasswordRequest, ApiSuccess } from '@/types';
+import { getSession } from './auth';
 
 export class ApiClientError extends Error {
   constructor(
@@ -10,42 +11,6 @@ export class ApiClientError extends Error {
     this.name = 'ApiClientError';
   }
 }
-
-const ACCESS_TOKEN_KEY = 'yt_insights_access_token';
-
-/**
- * Get access token from localStorage
- * Token is stored after successful login via /api/auth/login
- */
-const getAccessToken = (): string | null => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-  console.log('getAccessToken:', token ? 'Token found' : 'No token');
-  return token;
-};
-
-/**
- * Save access token to localStorage
- * Should be called after successful login
- */
-export const setAccessToken = (token: string): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  }
-};
-
-/**
- * Remove access token from localStorage
- * Should be called on logout
- */
-export const clearAccessToken = (): void => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-  }
-};
 
 /**
  * Authenticates a user with email and password
@@ -157,17 +122,25 @@ export async function confirmResetPassword(
 }
 
 export const apiClient = {
-  async get<T>(path: string): Promise<T> {
-    const token = getAccessToken();
-    if (!token) {
-      throw new ApiClientError('UNAUTHORIZED', 'No active session found. Please log in.');
+  async get<T>(path: string, options?: { params?: Record<string, any> }): Promise<T> {
+    let url = path;
+    if (options?.params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
     }
 
-    console.log('Making GET request to:', path);
+    console.log('Making GET request to:', url);
 
-    const response = await fetch(path, {
+    const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
@@ -185,5 +158,96 @@ export const apiClient = {
     return data as T;
   },
 
-  // TODO: Implement post, put, delete methods as needed
+  async post<T>(path: string, body?: any): Promise<T> {
+    console.log('Making POST request to:', path);
+
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    console.log('Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData: ApiError = await response.json();
+      console.error('API Error:', errorData);
+      throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
+    }
+
+    const data = await response.json();
+    console.log('Response data:', data);
+    return data as T;
+  },
 };
+
+// Create a new client for authenticated requests
+export const authApiClient = {
+  async get<T>(path: string, options?: { params?: Record<string, any> }): Promise<T> {
+    const session = getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(pathWithParams(path, options?.params), {
+      headers,
+    });
+
+    return handleResponse<T>(response);
+  },
+
+  async post<T>(path: string, body?: any): Promise<T> {
+    const session = getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(path, {
+      method: 'POST',
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    return handleResponse<T>(response);
+  },
+};
+
+function pathWithParams(path: string, params?: Record<string, any>): string {
+  if (!params) return path;
+
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      searchParams.append(key, String(value));
+    }
+  });
+
+  const queryString = searchParams.toString();
+  return queryString ? `${path}?${queryString}` : path;
+}
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorData: ApiError = await response.json();
+    console.error('API Error:', errorData);
+    throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
+  }
+
+  // Handle cases where the response may be empty
+  const text = await response.text();
+  if (!text) {
+    return {} as T;
+  }
+  
+  return JSON.parse(text) as T;
+}

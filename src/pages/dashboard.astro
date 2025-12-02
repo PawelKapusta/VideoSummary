@@ -3,6 +3,6 @@ import Layout from '@/layouts/Layout.astro';
 import DashboardView from '@/components/views/DashboardView';
 ---
 
-<Layout title="Dashboard">
-  <DashboardView client:load />
+<Layout title="Dashboard" showNavigation={true}>
+  <DashboardView client:only="react" />
 </Layout>

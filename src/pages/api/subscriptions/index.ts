@@ -10,7 +10,7 @@ import { subscribeToChannel, listUserSubscriptions } from '../../../lib/subscrip
  * Subscribe the authenticated user to a YouTube channel.
  * If the channel doesn't exist in the database, it fetches metadata from YouTube API and creates a new channel record.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Request Body:
  * {
  *   channel_url: string // YouTube channel URL
@@ -26,7 +26,7 @@ import { subscribeToChannel, listUserSubscriptions } from '../../../lib/subscrip
  *
  * Error Responses:
  * - 400 Bad Request: Invalid YouTube channel URL
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 404 Not Found: YouTube channel not found
  * - 409 Conflict: User already subscribed to this channel
  * - 422 Unprocessable Entity: Subscription limit reached (10 channels max)
@@ -39,11 +39,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized subscription attempt - no token');
+      securityLogger.auth('Unauthorized subscription attempt - no valid session');
       securityLogger.apiAccess({
         method: 'POST',
         path: '/api/subscriptions',
@@ -64,34 +65,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized subscription attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/subscriptions',
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('POST', '/api/subscriptions', duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Parse request body
     const body = await request.json();
@@ -232,7 +206,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
  * Retrieves all YouTube channels that the authenticated user is subscribed to,
  * with pagination support.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Query Parameters:
  * - limit (number, default: 50, max: 100)
  * - offset (number, default: 0, min: 0)
@@ -249,7 +223,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
  *
  * Error Responses:
  * - 400 Bad Request: Invalid query parameters
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 500 Internal Server Error: Database query error
  */
 export const GET: APIRoute = async ({ request, locals, url }) => {
@@ -259,11 +233,12 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized subscriptions list attempt - no token');
+      securityLogger.auth('Unauthorized subscriptions list attempt - no valid session');
       securityLogger.apiAccess({
         method: 'GET',
         path: '/api/subscriptions',
@@ -284,34 +259,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized subscriptions list attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/subscriptions',
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('GET', '/api/subscriptions', duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Parse and validate query parameters
     const urlParams = new URL(url).searchParams;

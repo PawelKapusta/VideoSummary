@@ -98,11 +98,14 @@ export const PaginationSchema = z.object({
 /**
  * Summary list filter validation schema
  */
-export const SummaryListFiltersSchema = PaginationSchema.extend({
-  channel_id: UUIDSchema.optional(),
+export const SummaryListFiltersSchema = z.object({
+  limit: z.coerce.number().min(1).max(100).default(20),
+  offset: z.coerce.number().min(0).default(0),
+  channel_id: z.string().uuid().optional(),
   status: z.enum(['pending', 'in_progress', 'completed', 'failed']).optional(),
   sort: z.enum(['published_at_desc', 'published_at_asc', 'generated_at_desc']).default('published_at_desc'),
   include_hidden: z.coerce.boolean().default(false),
+  search: z.string().min(3).optional(), // New: for title/channel search
 });
 
 /**

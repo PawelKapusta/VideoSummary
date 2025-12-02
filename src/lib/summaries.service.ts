@@ -1,10 +1,10 @@
 import { createHash } from 'crypto';
 import type { SupabaseClient } from '../db/supabase.client';
 import { errorLogger } from './logger';
-import type { SummaryBasic, SummaryWithVideo, DetailedSummary, PaginatedResponse, GenerationRequestInsert, SummaryInsert } from '../types';
+import type { SummaryBasic, SummaryWithVideo, DetailedSummary, PaginatedResponse, SummaryStatus } from '../types';
 import { extractYouTubeVideoId } from './youtube.utils';
 import { fetchYouTubeVideoMetadata } from './youtube.service';
-
+import type { Database } from '../db/database.types';
 /**
  * Generate a summary for a YouTube video (manual generation)
  * @param supabase - Supabase client instance
@@ -242,14 +242,37 @@ export async function listSummaries(
     limit: number;
     offset: number;
     channel_id?: string;
-    status?: string;
+    status?: SummaryStatus;
     sort?: string;
     include_hidden?: boolean;
+    search?: string;
   }
 ): Promise<PaginatedResponse<SummaryWithVideo>> {
-  const { limit, offset, channel_id, status, sort = 'published_at_desc', include_hidden = false } = filters;
+  // Filter by subscriptions (implicit filter for "my summaries")
+  // We need to join with subscriptions to only show summaries from channels the user is subscribed to
+  // BUT Supabase PostgREST doesn't support filtering on a non-embedded table easily without !inner join on a path
+  // We have channels!inner already? No, channels is left joined above. 
+  
+  // Let's restructure the query to filter by channels the user is subscribed to.
+  // Option 1: Get user's subscribed channel IDs first (two queries, but cleaner)
+  const { data: subscriptions } = await supabase
+    .from('subscriptions')
+    .select('channel_id')
+    .eq('user_id', userId);
+    
+  const subscribedChannelIds = subscriptions?.map(s => s.channel_id) || [];
 
-  // Build query
+  if (subscribedChannelIds.length === 0) {
+    return {
+      data: [],
+      pagination: {
+        total: 0,
+        limit: filters.limit,
+        offset: filters.offset,
+      },
+    };
+  }
+
   let query = supabase
     .from('summaries')
     .select(`
@@ -257,6 +280,7 @@ export async function listSummaries(
       tldr,
       status,
       generated_at,
+      error_code,
       videos!inner (
         id,
         youtube_video_id,
@@ -264,107 +288,81 @@ export async function listSummaries(
         thumbnail_url,
         published_at,
         channel_id,
-        channels!inner (
-          id,
-          name,
-          youtube_channel_id,
-          created_at
+      channels (
+        id,
+        name,
+        youtube_channel_id,
+        created_at
         )
+      ),
+      summary_ratings (
+        rating
       )
-    `, { count: 'exact' });
+    `, { count: 'exact' })
+    .in('videos.channel_id', subscribedChannelIds) // Filter by subscribed channels using video's channel_id
+    .order('published_at', { ascending: filters.sort === 'published_at_asc', foreignTable: 'videos' }); // Ordering by video published_at
 
-  // Filter by channel if provided
-  if (channel_id) {
-    query = query.eq('videos.channel_id', channel_id);
+  // Filter by channel
+  if (filters.channel_id) {
+    query = query.eq('channel_id', filters.channel_id);
   }
 
-  // Filter by status if provided
-  if (status) {
-    query = query.eq('status', status as 'pending' | 'in_progress' | 'completed' | 'failed');
+  // Filter by status
+  if (filters.status) {
+    query = query.eq('status', filters.status);
   }
 
-  // Exclude hidden summaries unless include_hidden is true
-  if (!include_hidden) {
-    const { data: hiddenSummaries } = await supabase
-      .from('hidden_summaries')
-      .select('summary_id')
-      .eq('user_id', userId);
-
-    if (hiddenSummaries && hiddenSummaries.length > 0) {
-      const hiddenIds = hiddenSummaries.map(h => h.summary_id).filter((id): id is string => id !== null);
-      if (hiddenIds.length > 0) {
-        query = query.not('id', 'in', `(${hiddenIds.map(id => `'${id}'`).join(',')})`);
-      }
-    }
+  // Exclude hidden if not included
+  if (!filters.include_hidden) {
+    query = query.not('id', 'in', 
+      supabase.from('hidden_summaries').select('summary_id').eq('user_id', userId)
+    );
   }
 
-  // Apply sorting
-  if (sort === 'published_at_asc') {
-    query = query.order('published_at', { ascending: true, foreignTable: 'videos' });
-  } else if (sort === 'published_at_desc') {
-    query = query.order('published_at', { ascending: false, foreignTable: 'videos' });
-  } else if (sort === 'generated_at_desc') {
-    query = query.order('generated_at', { ascending: false, nullsFirst: false });
+  // Search: full-text on video title and channel name
+  if (filters.search) {
+    // Note: Cross-table OR filters in PostgREST can be complex. 
+    // For now, we'll strictly search on video title to avoid "failed to find relationship" errors with deep nesting in OR clauses
+    // If needed later, we can implement a more complex search strategy or use a database function.
+    query = query.ilike('videos.title', `%${filters.search}%`);
   }
 
   // Apply pagination
-  query = query.range(offset, offset + limit - 1);
+  const { data, count, error } = await query
+    .range(filters.offset, filters.offset + filters.limit - 1);
 
-  const { data: summaries, error: summariesError, count } = await query;
-
-  if (summariesError) {
-    throw summariesError;
+  if (error) {
+    throw new Error(`Database query failed: ${error.message}`);
   }
 
-  // Get user ratings for returned summaries
-  const summaryIds = (summaries || []).map(s => s.id);
-  let userRatings: Record<string, boolean> = {};
-
-  if (summaryIds.length > 0) {
-    const { data: ratings } = await supabase
-      .from('summary_ratings')
-      .select('summary_id, rating')
-      .eq('user_id', userId)
-      .in('summary_id', summaryIds);
-
-    if (ratings) {
-      userRatings = ratings.reduce((acc, r) => {
-        if (r.summary_id) {
-          acc[r.summary_id] = r.rating;
-        }
-        return acc;
-      }, {} as Record<string, boolean>);
-    }
-  }
-
-  // Format response
-  const data: SummaryWithVideo[] = (summaries || []).map(summary => ({
-    id: summary.id,
+  const summaries: SummaryWithVideo[] = data?.map((row: any) => ({
+    id: row.id,
     video: {
-      id: summary.videos.id,
-      youtube_video_id: summary.videos.youtube_video_id,
-      title: summary.videos.title,
-      thumbnail_url: summary.videos.thumbnail_url,
-      published_at: summary.videos.published_at,
+      id: row.videos.id,
+      youtube_video_id: row.videos.youtube_video_id,
+      title: row.videos.title,
+      thumbnail_url: row.videos.thumbnail_url,
+      published_at: row.videos.published_at,
     },
     channel: {
-      id: summary.videos.channels.id,
-      name: summary.videos.channels.name,
-      youtube_channel_id: summary.videos.channels.youtube_channel_id,
-      created_at: summary.videos.channels.created_at,
+      id: row.videos.channels.id,
+      youtube_channel_id: row.videos.channels.youtube_channel_id,
+      name: row.videos.channels.name,
+      created_at: row.videos.channels.created_at,
     },
-    tldr: summary.tldr,
-    status: summary.status,
-    generated_at: summary.generated_at,
-    user_rating: userRatings[summary.id] ?? null,
-  }));
+    tldr: row.tldr,
+    status: row.status,
+    generated_at: row.generated_at,
+    user_rating: row.summary_ratings?.length > 0 ? row.summary_ratings[0].rating : null, // Assume one per user
+    error_code: row.error_code, // Add if failed
+  })) || [];
 
   return {
-    data,
+    data: summaries,
     pagination: {
       total: count || 0,
-      limit,
-      offset,
+      limit: filters.limit,
+      offset: filters.offset,
     },
   };
 }

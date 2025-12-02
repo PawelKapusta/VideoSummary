@@ -1,75 +1,48 @@
 import type { AuthResponse } from '@/types';
-import { setAccessToken as saveAccessToken, clearAccessToken as removeAccessToken } from './api';
-
-const REFRESH_TOKEN_KEY = 'yt_insights_refresh_token';
-const EXPIRES_AT_KEY = 'yt_insights_expires_at';
 
 /**
- * Store session data in localStorage after successful login
- * @param session - Session data from AuthResponse
+ * NO-OP: Session is now managed via cookies by Supabase client.
+ * Kept for backward compatibility during refactor.
  */
-export function storeSession(session: AuthResponse['session']): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  saveAccessToken(session.access_token);
-  localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token);
-  localStorage.setItem(EXPIRES_AT_KEY, session.expires_at.toString());
+export function storeSession(_session: AuthResponse['session']): void {
+  // No-op
 }
 
 /**
- * Retrieve stored session data from localStorage
- * @returns Session data if exists and not expired, null otherwise
+ * NO-OP: Session is now managed via cookies by Supabase client.
+ * Kept for backward compatibility during refactor.
+ * @returns null as we don't read from localStorage anymore
  */
 export function getSession(): AuthResponse['session'] | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const accessToken = localStorage.getItem('yt_insights_access_token');
-  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-  const expiresAtStr = localStorage.getItem(EXPIRES_AT_KEY);
-
-  if (!accessToken || !refreshToken || !expiresAtStr) {
-    return null;
-  }
-
-  const expiresAt = parseInt(expiresAtStr, 10);
-  const now = Date.now() / 1000; // Convert to seconds
-
-  // Check if session is expired
-  if (now >= expiresAt) {
-    clearSession();
-    return null;
-  }
-
-  return {
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    expires_at: expiresAt,
-  };
+  // We return null here because client-side code should ideally rely on 
+  // Supabase client state or API responses, not localStorage.
+  // However, for components checking strictly for "isAuthenticated",
+  // we might need to adjust logic or rely on API 401s.
+  return null; 
 }
 
 /**
- * Clear all session data from localStorage
- * Should be called on logout
+ * NO-OP: Session is now managed via cookies by Supabase client.
+ * Kept for backward compatibility during refactor.
  */
 export function clearSession(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  removeAccessToken();
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(EXPIRES_AT_KEY);
+  // No-op
 }
 
 /**
- * Check if user has an active session
- * @returns true if session exists and not expired, false otherwise
+ * Check if user has an active session.
+ * Warning: This is now a naive check. Real auth status is determined by server cookies.
+ * @returns boolean
  */
 export function isAuthenticated(): boolean {
-  return getSession() !== null;
+  // Since we removed localStorage, we can't synchronously know if we are logged in.
+  // This function should likely be deprecated or use a different mechanism (e.g. React Context).
+  // For now, returning false to force safe defaults, or we could check document.cookie 
+  // but that's not reliable for HttpOnly cookies (if we used them).
+  // Given we use @supabase/ssr, the access token is in a cookie.
+  // If it's NOT HttpOnly, we can check it. Supabase cookies are usually not HttpOnly by default
+  // to allow client access, but best practice suggests HttpOnly.
+  
+  // Ideally, use useUser() hook or similar that queries the session.
+  return document.cookie.includes('sb-access-token') || document.cookie.includes('sb-');
 }
-

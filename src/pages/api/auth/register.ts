@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../db/supabase.client';
 import { RegisterRequestSchema } from '../../../lib/validation/schemas';
 import type { RegisterRequest, AuthResponse, ApiError } from '../../../types';
 import { z } from 'zod';

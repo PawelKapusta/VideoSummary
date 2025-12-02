@@ -10,7 +10,7 @@ import { generateSummary, listSummaries } from '../../../lib/summaries.service';
  * Manually initiates summary generation for a YouTube video.
  * This endpoint performs atomic rate limiting and creates a summary generation request.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Request Body:
  * {
  *   video_url: string // YouTube video URL (watch?v= or youtu.be/)
@@ -26,7 +26,7 @@ import { generateSummary, listSummaries } from '../../../lib/summaries.service';
  *
  * Error Responses:
  * - 400 Bad Request: Invalid YouTube video URL
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 403 Forbidden: Video belongs to non-subscribed channel
  * - 404 Not Found: YouTube video not found or unavailable
  * - 409 Conflict: Summary already exists or generation in progress
@@ -41,11 +41,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summary generation attempt - no token');
+      securityLogger.auth('Unauthorized summary generation attempt - no valid session');
       securityLogger.apiAccess({
         method: 'POST',
         path: '/api/summaries',
@@ -66,34 +67,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summary generation attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/summaries',
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('POST', '/api/summaries', duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Parse request body
     const body = await request.json();
@@ -254,7 +228,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
  * Retrieves summaries for videos from the user's subscribed channels with pagination, filtering, and sorting.
  * By default excludes hidden summaries unless explicitly requested.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Query Parameters:
  * - limit (number, default: 20, max: 100)
  * - offset (number, default: 0, min: 0)
@@ -275,7 +249,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
  *
  * Error Responses:
  * - 400 Bad Request: Invalid query parameters
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 500 Internal Server Error: Database query error
  */
 export const GET: APIRoute = async ({ request, locals, url }) => {
@@ -285,11 +259,12 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summaries list attempt - no token');
+      securityLogger.auth('Unauthorized summaries list attempt - no valid session');
       securityLogger.apiAccess({
         method: 'GET',
         path: '/api/summaries',
@@ -310,34 +285,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summaries list attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/summaries',
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('GET', '/api/summaries', duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Parse and validate query parameters
     const urlParams = new URL(url).searchParams;
@@ -347,6 +295,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     const rawStatus = urlParams.get('status');
     const rawSort = urlParams.get('sort');
     const rawIncludeHidden = urlParams.get('include_hidden');
+    const rawSearch = urlParams.get('search');
 
     const validationResult = SummaryListFiltersSchema.safeParse({
       limit: rawLimit,
@@ -355,6 +304,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       status: rawStatus || undefined,
       sort: rawSort || undefined,
       include_hidden: rawIncludeHidden || undefined,
+      search: rawSearch || undefined,
     });
 
     if (!validationResult.success) {

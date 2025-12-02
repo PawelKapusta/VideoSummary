@@ -10,7 +10,7 @@ import { getVideoDetails } from '../../../lib/videos.service';
  * Retrieves detailed information about a specific video, including its channel
  * and summary status. User must be subscribed to the video's channel to access it.
  *
- * Authentication: Required (Bearer token)
+ * Authentication: Required (Cookie session)
  * Path Parameters:
  * - videoId (UUID) - ID of the video
  *
@@ -28,7 +28,7 @@ import { getVideoDetails } from '../../../lib/videos.service';
  *
  * Error Responses:
  * - 400 Bad Request: Invalid video ID format
- * - 401 Unauthorized: Missing or invalid authentication token
+ * - 401 Unauthorized: Missing or invalid authentication session
  * - 403 Forbidden: Video belongs to non-subscribed channel
  * - 404 Not Found: Video not found
  * - 500 Internal Server Error: Database error
@@ -40,11 +40,12 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
   const supabase = locals.supabase;
 
   try {
-    // Extract auth token from request header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get user from session (cookie-based)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized video details attempt - no token');
+      securityLogger.auth('Unauthorized video details attempt - no valid session');
       securityLogger.apiAccess({
         method: 'GET',
         path: `/api/videos/${params.videoId}`,
@@ -65,34 +66,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const token = authHeader.substring(7);
-    
-    // Decode JWT to get user ID (basic decode without verification - Supabase RLS will verify)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized video details attempt - invalid token');
-      securityLogger.apiAccess({
-        method: 'GET',
-        path: `/api/videos/${params.videoId}`,
-        statusCode: 401,
-      });
-      performanceLogger.apiResponseTime('GET', `/api/videos/${params.videoId}`, duration, 401);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid authentication token',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const userId = user.id;
 
     // Extract and validate video ID from path
     const videoId = params.videoId;
@@ -223,4 +197,3 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     });
   }
 };
-
