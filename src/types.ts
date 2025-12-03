@@ -393,3 +393,29 @@ export interface FilterOptions {
   sort?: string;
   include_hidden?: boolean;
 }
+
+export interface FullSummaryContent {
+  summary: string;
+  conclusions: string[];
+  key_points: string[];
+}
+
+export interface SummaryDetailsViewModel {
+  id: string;
+  video: {
+    id: string;
+    title: string;
+    youtube_url: string;
+    published_at: string;
+  };
+  channel: {
+    id: string;
+    name: string;
+  };
+  tldr: string | null;
+  full_summary: FullSummaryContent | null;
+  status: SummaryStatus;
+  generated_at: string | null;
+  rating_stats: RatingStats;
+  user_rating: boolean | null;
+}

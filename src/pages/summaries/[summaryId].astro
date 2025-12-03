@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SummaryDetailsView from '../../components/views/SummaryDetailsView.tsx';
+---
+
+<Layout title="Summary Details">
+  <main class="container mx-auto p-4 max-w-4xl">
+    <SummaryDetailsView client:load summaryId={Astro.params.summaryId} />
+  </main>
+</Layout>

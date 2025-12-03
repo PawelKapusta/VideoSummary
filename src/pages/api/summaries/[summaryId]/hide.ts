@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import type { ApiSuccess, ApiError } from '../../../../types';
+import type { ApiError, ApiSuccess } from '../../../../types';
 import { UUIDSchema } from '../../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../../lib/logger';
 import { hideSummary, unhideSummary } from '../../../../lib/hidden-summaries.service';
@@ -7,39 +7,38 @@ import { hideSummary, unhideSummary } from '../../../../lib/hidden-summaries.ser
 /**
  * POST /api/summaries/:summaryId/hide
  *
- * Hides a summary from the user's dashboard without deleting it from the database.
- * Since summaries are shared resources, this allows personalization without affecting other users.
+ * Hides a summary from the user's dashboard.
  *
  * Authentication: Required (Cookie session)
  * Path Parameters:
- * - summaryId (UUID) - ID of the summary to hide
+ * - summaryId (UUID) - ID of the summary
+ * Body: None
  *
  * Response (200 OK):
  * {
- *   message: "Summary hidden from your dashboard"
+ *   message: string
  * }
  *
  * Error Responses:
- * - 400 Bad Request: Invalid summary ID format
- * - 401 Unauthorized: Missing or invalid authentication session
- * - 403 Forbidden: Cannot hide summaries from non-subscribed channels
+ * - 400 Bad Request: Invalid summary ID
+ * - 401 Unauthorized: Missing or invalid session
+ * - 403 Forbidden: Not subscribed to channel or already hidden
  * - 404 Not Found: Summary not found
- * - 409 Conflict: Summary already hidden
- * - 500 Internal Server Error: Database error
+ * - 500 Internal Server Error: Database or server error
  */
 export const POST: APIRoute = async ({ request, locals, params }) => {
   const startTime = performance.now();
 
-  // Use Supabase client from middleware (already configured with trace ID)
+  // Use Supabase client from middleware
   const supabase = locals.supabase;
 
   try {
-    // Get user from session (cookie-based)
+    // Get user from session
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized hide summary attempt - no valid session');
+      securityLogger.auth('Unauthorized summary hide attempt - no valid session');
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/hide`,
@@ -67,7 +66,6 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     if (!summaryId) {
       const duration = performance.now() - startTime;
 
-      // Log API access and performance for validation error
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/hide`,
@@ -98,7 +96,6 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
         { endpoint: `/api/summaries/${params.summaryId}/hide`, method: 'POST' }
       );
 
-      // Log API access and performance for validation error
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/hide`,
@@ -120,34 +117,84 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    // Hide the summary
-    const result = await hideSummary(supabase, userId, summaryId);
+    // Call service to hide summary
+    let hideResult: { message: string };
+    try {
+      hideResult = await hideSummary(supabase, userId, summaryId);
+    } catch (serviceError) {
+      let statusCode = 500;
+      let errorCode = 'INTERNAL_ERROR';
+      let message = 'An unexpected error occurred';
 
-    // Log successful hide
+      if (serviceError instanceof Error) {
+        switch (serviceError.message) {
+          case 'SUMMARY_NOT_FOUND':
+            statusCode = 404;
+            errorCode = 'SUMMARY_NOT_FOUND';
+            message = 'Summary not found';
+            break;
+          case 'CHANNEL_NOT_SUBSCRIBED':
+            statusCode = 403;
+            errorCode = 'FORBIDDEN';
+            message = 'You must be subscribed to the channel to hide this summary';
+            break;
+          case 'ALREADY_HIDDEN':
+            statusCode = 409;
+            errorCode = 'ALREADY_HIDDEN';
+            message = 'Summary is already hidden';
+            break;
+          // Add more cases as needed
+        }
+      }
+
+      const duration = performance.now() - startTime;
+      errorLogger.appError(serviceError instanceof Error ? serviceError : new Error(String(serviceError)), {
+        endpoint: `/api/summaries/${summaryId}/hide`,
+        method: 'POST',
+      });
+
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: `/api/summaries/${summaryId}/hide`,
+        statusCode,
+      });
+      performanceLogger.apiResponseTime('POST', `/api/summaries/${summaryId}/hide`, duration, statusCode);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: errorCode,
+          message,
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: statusCode,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Log success
     securityLogger.auth('Summary hidden successfully', {
       user_id: userId,
       summary_id: summaryId,
     });
 
-    // Format successful response
-    const successResponse: ApiSuccess<void> = {
-      message: result.message,
-    };
-
-    // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
       method: 'POST',
-      path: `/api/summaries/${params.summaryId}/hide`,
+      path: `/api/summaries/${summaryId}/hide`,
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, 200);
+    performanceLogger.apiResponseTime('POST', `/api/summaries/${summaryId}/hide`, duration, 200);
+
+    const successResponse: ApiSuccess = {
+      message: hideResult.message,
+    };
 
     return new Response(JSON.stringify(successResponse), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        // Add security headers
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'X-XSS-Protection': '1; mode=block',
@@ -155,47 +202,28 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     });
 
   } catch (error) {
-    // Handle specific error types
     const duration = performance.now() - startTime;
-    let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
-
-    if (error instanceof Error) {
-      if (error.message === 'SUMMARY_NOT_FOUND') {
-        statusCode = 404;
-        errorCode = 'RESOURCE_NOT_FOUND';
-        message = 'Summary not found';
-      } else if (error.message === 'ALREADY_HIDDEN') {
-        statusCode = 409;
-        errorCode = 'ALREADY_HIDDEN';
-        message = 'Summary is already hidden';
-      }
-    }
-
-    // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: `/api/summaries/${params.summaryId}/hide`,
       method: 'POST',
     });
 
-    // Log API access and performance for error response
     securityLogger.apiAccess({
       method: 'POST',
       path: `/api/summaries/${params.summaryId}/hide`,
-      statusCode,
+      statusCode: 500,
     });
-    performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, statusCode);
+    performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: errorCode,
-        message,
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
-      status: statusCode,
+      status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }

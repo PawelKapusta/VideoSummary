@@ -1,25 +1,22 @@
 import type { APIRoute } from 'astro';
-import type { RatingResponse, ApiSuccess, ApiError } from '../../../../types';
-import { UUIDSchema, RateSummaryRequestSchema } from '../../../../lib/validation/schemas';
+import type { RateSummaryRequest, RatingResponse, ApiError, ApiSuccess } from '../../../../types';
+import { UUIDSchema } from '../../../../lib/validation/schemas';
+import { z } from 'zod';
 import { securityLogger, errorLogger, performanceLogger } from '../../../../lib/logger';
 import { rateSummary, removeRating } from '../../../../lib/ratings.service';
 
 /**
  * POST /api/summaries/:summaryId/ratings
  *
- * Creates or updates the user's rating for a summary.
- * Uses upsert operation to handle both new ratings and rating changes.
+ * Rates a summary (upvote or downvote). Creates a new rating or updates existing one.
  *
  * Authentication: Required (Cookie session)
  * Path Parameters:
- * - summaryId (UUID) - ID of the summary to rate
+ * - summaryId (UUID) - ID of the summary
+ * Body:
+ * - rating: boolean (true = upvote, false = downvote)
  *
- * Request Body:
- * {
- *   rating: boolean // true = upvote, false = downvote
- * }
- *
- * Response (201 Created or 200 OK):
+ * Response (200 OK or 201 Created):
  * {
  *   id: string,
  *   summary_id: string,
@@ -29,25 +26,25 @@ import { rateSummary, removeRating } from '../../../../lib/ratings.service';
  * }
  *
  * Error Responses:
- * - 400 Bad Request: Invalid summary ID or rating value
- * - 401 Unauthorized: Missing or invalid authentication session
- * - 403 Forbidden: Cannot rate summaries from non-subscribed channels
+ * - 400 Bad Request: Invalid input (UUID, body)
+ * - 401 Unauthorized: Missing or invalid session
+ * - 403 Forbidden: Not subscribed to channel
  * - 404 Not Found: Summary not found
- * - 500 Internal Server Error: Database error
+ * - 500 Internal Server Error: Database or server error
  */
 export const POST: APIRoute = async ({ request, locals, params }) => {
   const startTime = performance.now();
 
-  // Use Supabase client from middleware (already configured with trace ID)
+  // Use Supabase client from middleware
   const supabase = locals.supabase;
 
   try {
-    // Get user from session (cookie-based)
+    // Get user from session
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized rating attempt - no valid session');
+      securityLogger.auth('Unauthorized summary rating attempt - no valid session');
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/ratings`,
@@ -75,7 +72,6 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     if (!summaryId) {
       const duration = performance.now() - startTime;
 
-      // Log API access and performance for validation error
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/ratings`,
@@ -106,7 +102,6 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
         { endpoint: `/api/summaries/${params.summaryId}/ratings`, method: 'POST' }
       );
 
-      // Log API access and performance for validation error
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/ratings`,
@@ -128,21 +123,50 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    // Parse request body
-    const body = await request.json();
-
-    // Validate request body using Zod schema
-    const bodyValidationResult = RateSummaryRequestSchema.safeParse(body);
-    if (!bodyValidationResult.success) {
+    // Parse and validate request body
+    let body;
+    try {
+      body = await request.json() as RateSummaryRequest;
+    } catch (parseError) {
       const duration = performance.now() - startTime;
       errorLogger.validationError(
-        new Error('Request validation failed'),
+        new Error('Invalid JSON body'),
         undefined,
         undefined,
         { endpoint: `/api/summaries/${params.summaryId}/ratings`, method: 'POST' }
       );
 
-      // Log API access and performance for validation error
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: `/api/summaries/${params.summaryId}/ratings`,
+        statusCode: 400,
+      });
+      performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/ratings`, duration, 400);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Invalid JSON body',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const bodySchema = z.object({ rating: z.boolean() });
+    const bodyValidation = bodySchema.safeParse(body);
+    if (!bodyValidation.success) {
+      const duration = performance.now() - startTime;
+      errorLogger.validationError(
+        new Error('Request body validation failed'),
+        undefined,
+        undefined,
+        { endpoint: `/api/summaries/${params.summaryId}/ratings`, method: 'POST' }
+      );
+
       securityLogger.apiAccess({
         method: 'POST',
         path: `/api/summaries/${params.summaryId}/ratings`,
@@ -154,7 +178,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
         error: {
           code: 'INVALID_INPUT',
           message: 'Invalid rating value',
-          details: bodyValidationResult.error.format(),
+          details: bodyValidation.error.format(),
         },
       };
 
@@ -164,43 +188,81 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       });
     }
 
-    const { rating } = bodyValidationResult.data;
+    const { rating } = bodyValidation.data;
 
-    // Rate the summary
-    const ratingResponse = await rateSummary(supabase, userId, summaryId, rating);
-    const statusCode = ratingResponse.statusCode;
+    // Call service to rate summary
+    let ratingResult: RatingResponse & { statusCode: number };
+    try {
+      ratingResult = await rateSummary(supabase, userId, summaryId, rating);
+    } catch (serviceError) {
+      let statusCode = 500;
+      let errorCode = 'INTERNAL_ERROR';
+      let message = 'An unexpected error occurred';
 
-    // Remove statusCode from response (internal use only)
-    const { statusCode: _, ...responseData } = ratingResponse;
+      if (serviceError instanceof Error) {
+        switch (serviceError.message) {
+          case 'SUMMARY_NOT_FOUND':
+            statusCode = 404;
+            errorCode = 'SUMMARY_NOT_FOUND';
+            message = 'Summary not found';
+            break;
+          case 'CHANNEL_NOT_SUBSCRIBED':
+            statusCode = 403;
+            errorCode = 'FORBIDDEN';
+            message = 'You must be subscribed to the channel to rate this summary';
+            break;
+          // Add more cases as needed from service errors
+        }
+      }
 
-    // Log successful rating
+      const duration = performance.now() - startTime;
+      errorLogger.appError(serviceError instanceof Error ? serviceError : new Error(String(serviceError)), {
+        endpoint: `/api/summaries/${summaryId}/ratings`,
+        method: 'POST',
+      });
+
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: `/api/summaries/${summaryId}/ratings`,
+        statusCode,
+      });
+      performanceLogger.apiResponseTime('POST', `/api/summaries/${summaryId}/ratings`, duration, statusCode);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: errorCode,
+          message,
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: statusCode,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Log success
     securityLogger.auth('Summary rated successfully', {
       user_id: userId,
       summary_id: summaryId,
-      rating: rating,
-      is_update: statusCode === 200,
+      rating,
     });
 
-    // Format successful response
-    const successResponse: ApiSuccess<RatingResponse> = {
-      data: responseData,
-      message: responseData.message,
-    };
-
-    // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
       method: 'POST',
-      path: `/api/summaries/${params.summaryId}/ratings`,
-      statusCode,
+      path: `/api/summaries/${summaryId}/ratings`,
+      statusCode: ratingResult.statusCode,
     });
-    performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/ratings`, duration, statusCode);
+    performanceLogger.apiResponseTime('POST', `/api/summaries/${summaryId}/ratings`, duration, ratingResult.statusCode);
 
-    return new Response(JSON.stringify(successResponse), {
-      status: statusCode,
+    // Remove statusCode from response as per type
+    const { statusCode, ...responseData } = ratingResult;
+
+    return new Response(JSON.stringify(responseData), {
+      status: ratingResult.statusCode,
       headers: {
         'Content-Type': 'application/json',
-        // Add security headers
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'X-XSS-Protection': '1; mode=block',
@@ -208,43 +270,28 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     });
 
   } catch (error) {
-    // Handle specific error types
     const duration = performance.now() - startTime;
-    let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
-
-    if (error instanceof Error) {
-      if (error.message === 'SUMMARY_NOT_FOUND') {
-        statusCode = 404;
-        errorCode = 'RESOURCE_NOT_FOUND';
-        message = 'Summary not found';
-      }
-    }
-
-    // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: `/api/summaries/${params.summaryId}/ratings`,
       method: 'POST',
     });
 
-    // Log API access and performance for error response
     securityLogger.apiAccess({
       method: 'POST',
       path: `/api/summaries/${params.summaryId}/ratings`,
-      statusCode,
+      statusCode: 500,
     });
-    performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/ratings`, duration, statusCode);
+    performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/ratings`, duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: errorCode,
-        message,
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
-      status: statusCode,
+      status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }
