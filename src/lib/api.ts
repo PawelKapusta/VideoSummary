@@ -1,4 +1,4 @@
-import type { ApiError, LoginRequest, AuthResponse, RegisterRequest, ConfirmResetPasswordRequest, ApiSuccess } from '@/types';
+import type { ApiError, LoginRequest, AuthResponse, RegisterRequest, ConfirmResetPasswordRequest, ApiSuccess, GenerateSummaryRequest, SummaryBasic, VideoMetaResponse, GenerationStatusResponse } from '@/types';
 import { getSession } from './auth';
 
 export class ApiClientError extends Error {
@@ -119,6 +119,55 @@ export async function confirmResetPassword(
 
   // Response is ApiSuccess<void>
   return data as ApiSuccess<void>;
+}
+
+export async function generateSummary(data: GenerateSummaryRequest): Promise<ApiSuccess<SummaryBasic & { message: string }>> {
+  const session = getSession();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch('/api/summaries', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData: ApiError = await response.json();
+    throw errorData;
+  }
+  return response.json();
+}
+
+export async function fetchVideoMeta(videoUrl: string): Promise<VideoMetaResponse> {
+  const session = getSession();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch(`/api/videos/meta?url=${encodeURIComponent(videoUrl)}`, { headers });
+  if (!response.ok) {
+    const errorData: ApiError = await response.json();
+    throw errorData;
+  }
+  return response.json();
+}
+
+export async function fetchGenerationStatus(channelId: string): Promise<GenerationStatusResponse> {
+  const session = getSession();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch(`/api/generation-requests/status?channel_id=${channelId}`, { headers });
+  if (!response.ok) {
+    const errorData: ApiError = await response.json();
+    throw errorData;
+  }
+  return response.json();
 }
 
 export const apiClient = {

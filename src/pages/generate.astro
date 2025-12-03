@@ -1,11 +1,11 @@
 ---
-import Layout from '@/layouts/Layout.astro';
+import Layout from '../layouts/Layout.astro';
+import GenerateSummaryView from '../components/views/GenerateSummaryView';
 ---
 
-<Layout title="Generate Summary" showNavigation={true}>
-  <div class="container mx-auto p-8">
-    <h1 class="text-3xl font-bold mb-4">Generate Summary</h1>
-    <p class="text-muted-foreground">Summary generation coming soon...</p>
-  </div>
+<Layout title="Generate Summary | YTInsights" showNavigation={true}>
+  <main class="container mx-auto px-4 py-8">
+    <GenerateSummaryView client:load />
+  </main>
 </Layout>
 

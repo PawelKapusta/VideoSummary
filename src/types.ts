@@ -419,3 +419,40 @@ export interface SummaryDetailsViewModel {
   rating_stats: RatingStats;
   user_rating: boolean | null;
 }
+
+// ============================================================================
+// GENERATE SUMMARY VIEW SPECIFIC TYPES
+// ============================================================================
+
+export interface VideoMetaResponse {
+  youtube_video_id: string;
+  title: string;
+  thumbnail_url: string;
+  duration_seconds: number;
+  channel: {
+    id: string; // Database UUID for the channel
+    youtube_channel_id: string;
+    name: string;
+  };
+  is_subscribed: boolean;
+}
+
+export interface VideoPreviewViewModel {
+  title: string;
+  channelName: string;
+  thumbnailUrl: string;
+  durationInMinutes: number;
+}
+
+export interface ValidationStep {
+  text: string;
+  status: 'pending' | 'checking' | 'success' | 'error';
+  error_message?: string;
+}
+
+export interface ValidationStatusViewModel {
+  isUrlValid: ValidationStep;
+  isSubscribed: ValidationStep;
+  isWithinLimit: ValidationStep;
+  isDurationValid: ValidationStep;
+}
