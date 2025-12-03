@@ -181,6 +181,24 @@ export const apiClient = {
     console.log('Response data:', data);
     return data as T;
   },
+
+  async delete<T>(path: string): Promise<T> {
+    const response = await fetch(path, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData: ApiError = await response.json();
+      throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
+    }
+
+    // DELETE requests might not have a body, handle that case
+    const text = await response.text();
+    return text ? (JSON.parse(text) as T) : ({} as T);
+  },
 };
 
 // Create a new client for authenticated requests

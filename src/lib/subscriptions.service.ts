@@ -258,14 +258,19 @@ export async function unsubscribeFromChannel(
   userId: string,
   subscriptionId: string
 ): Promise<void> {
-  // Delete subscription (RLS policy ensures user can only delete their own)
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('subscriptions')
     .delete()
     .eq('id', subscriptionId)
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .select()
+    .single();
 
   if (error) {
+    dbLogger.error('Unsubscribe failed', { error: error.message, userId, subscriptionId });
+    if (error.code === 'PGRST116') { // No rows returned
+      throw new Error('Subscription not found or user does not own it.');
+    }
     throw error;
   }
 }

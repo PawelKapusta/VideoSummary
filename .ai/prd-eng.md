@@ -141,7 +141,7 @@ The following functionalities are intentionally excluded from the MVP scope and 
 - Title: Viewing a full summary
 - Description: As a user, I want to be able to click on a summary card to navigate to a dedicated page with its full, formatted content.
 - Acceptance Criteria:
-  - Clicking a card navigates to a unique URL (e.g., `/dashboard/[id]`).
+  - Clicking a card navigates to a unique URL (e.g., `/summaries/[id]`).
   - The page displays the full summary divided into sections (`summary`, `conclusions`, `key_points`).
   - The page also includes a link to the original YouTube video, the publication date, and the summary generation date.
 

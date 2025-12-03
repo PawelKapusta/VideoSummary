@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { useLogout } from '@/hooks/useLogout';
 import { Button } from '@/components/ui/button';
-import { Menu, LogOut } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import QueryProvider from '@/components/providers/QueryProvider';
@@ -36,7 +35,6 @@ interface HeaderProps {
 }
 
 function HeaderContent({ currentPath = '' }: HeaderProps) {
-  const { logout, isLoading } = useLogout();
   const [isOpen, setIsOpen] = useState(false);
 
   const links = [
@@ -95,16 +93,7 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
               </NavLink>
             ))}
           </nav>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => logout()} 
-            disabled={isLoading}
-            className="hover:ring-1 hover:ring-primary hover:text-primary"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+          {/* Logout button removed */}
         </div>
       </div>
     </header>
