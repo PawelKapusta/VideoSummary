@@ -34,7 +34,7 @@ export default function LoginView() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold tracking-tight">
-            Sign in to YTInsights
+            Sign in to VideoSummary
           </CardTitle>
           <CardDescription>
             Enter your email and password to access your account

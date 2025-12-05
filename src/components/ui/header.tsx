@@ -51,7 +51,7 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
       <div className="w-full flex h-16 items-center px-4 md:px-8">
         <div className="mr-4 hidden md:flex">
           <a href="/dashboard" className="mr-6 flex items-center space-x-2">
-            <span className="hidden font-bold sm:inline-block">YTInsights</span>
+            <span className="hidden font-bold sm:inline-block">VideoSummary</span>
           </a>
         </div>
 
@@ -66,7 +66,7 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
             </SheetTrigger>
             <SheetContent side="left" className="pr-0">
               <SheetHeader>
-                <SheetTitle>YTInsights</SheetTitle>
+                <SheetTitle>VideoSummary</SheetTitle>
               </SheetHeader>
               <div className="grid gap-2 py-6">
                 {links.map((link) => (
@@ -82,7 +82,7 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
               </div>
             </SheetContent>
           </Sheet>
-          <span className="font-bold ml-2">YTInsights</span>
+          <span className="font-bold ml-2">VideoSummary</span>
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">

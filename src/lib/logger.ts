@@ -72,7 +72,7 @@ export function toLogProperties<T extends Record<string, any>>(properties: T): R
  */
 export function createSupportTicketId(userId: string): string {
   // Use environment-specific salt for consistency
-  const salt = process.env.LOG_SALT || 'ytinsights_default_salt_2024';
+  const salt = process.env.LOG_SALT || 'videosummary_default_salt_2024';
 
   // Create deterministic hash for support ticket
   const input = `${salt}:support:${userId}:${Date.now()}`;
@@ -93,11 +93,11 @@ export function createSupportTicketId(userId: string): string {
  * Logger categories for different application modules
  */
 export type LoggerCategory =
-  | ["ytinsights"]
-  | ["ytinsights", "auth"]
-  | ["ytinsights", "api"]
-  | ["ytinsights", "db"]
-  | ["ytinsights", "external"];
+  | ["VideoSummary"]
+  | ["VideoSummary", "auth"]
+  | ["VideoSummary", "api"]
+  | ["VideoSummary", "db"]
+  | ["VideoSummary", "external"];
 
 /**
  * Security event types for structured logging
@@ -181,32 +181,32 @@ export async function initializeLogging(): Promise<void> {
       loggers: [
         // Main application logger
         {
-          category: ["ytinsights"],
+          category: ["VideoSummary"],
           lowestLevel: isDevelopment ? "debug" : "info",
           sinks: isDevelopment ? ["console", "file"] : ["file"],
           filters: isTest ? [] : ["excludeDebugInProduction"],
         },
         // Authentication logger (more security-focused)
         {
-          category: ["ytinsights", "auth"],
+          category: ["VideoSummary", "auth"],
           lowestLevel: "info", // Always log auth events at info level or higher
           sinks: ["console", "file"], // Always log auth to both console and file
         },
         // API logger
         {
-          category: ["ytinsights", "api"],
+          category: ["VideoSummary", "api"],
           lowestLevel: isDevelopment ? "debug" : "info",
           sinks: isDevelopment ? ["console", "file"] : ["file"],
         },
         // Database logger
         {
-          category: ["ytinsights", "db"],
+          category: ["VideoSummary", "db"],
           lowestLevel: isDevelopment ? "debug" : "warning",
           sinks: ["console", "file"],
         },
         // External API logger (YouTube, OpenRouter)
         {
-          category: ["ytinsights", "external"],
+          category: ["VideoSummary", "external"],
           lowestLevel: isDevelopment ? "debug" : "info",
           sinks: isDevelopment ? ["console", "file"] : ["file"],
         },
@@ -224,7 +224,7 @@ export async function initializeLogging(): Promise<void> {
   isLoggingConfigured = true;
 
   // Log initialization
-  const logger = getLogger(["ytinsights"]);
+  const logger = getLogger(["VideoSummary"]);
   logger.info("Logging system initialized", {
     environment: process.env.NODE_ENV || "development",
     sinks: Object.keys(sinks),
@@ -232,13 +232,13 @@ export async function initializeLogging(): Promise<void> {
 }
 
 // Main application logger
-export const appLogger = getLogger(["ytinsights"]);
+export const appLogger = getLogger(["VideoSummary"]);
 
 // Specialized loggers for different modules
-export const authLogger = getLogger(["ytinsights", "auth"]);
-export const apiLogger = getLogger(["ytinsights", "api"]);
-export const dbLogger = getLogger(["ytinsights", "db"]);
-export const externalLogger = getLogger(["ytinsights", "external"]);
+export const authLogger = getLogger(["VideoSummary", "auth"]);
+export const apiLogger = getLogger(["VideoSummary", "api"]);
+export const dbLogger = getLogger(["VideoSummary", "db"]);
+export const externalLogger = getLogger(["VideoSummary", "external"]);
 
 // Security-focused logging functions
 export const securityLogger = {

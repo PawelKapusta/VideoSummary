@@ -1,8 +1,8 @@
-# Login View Implementation Plan
+# Implementation Plan: Login View
 
 ## 1. Overview
 
-The Login view is a public-facing page that allows registered users to authenticate into the YTInsights application using their email and password credentials. Upon successful authentication, users receive session tokens and are redirected to the main dashboard. The view emphasizes security, accessibility, and user experience with clear error messaging and validation feedback.
+The Login view is a public-facing page that allows registered users to authenticate into the VideoSummary application using their email and password credentials. Upon successful authentication, users receive session tokens and are redirected to the main dashboard. The view emphasizes security, accessibility, and user experience with clear error messaging and validation feedback.
 
 ## 2. View Routing
 
@@ -952,7 +952,7 @@ const logError = (error: ApiError | Error, context: string) => {
 4. Import LoginView React component
 5. Render LoginView with `client:load` directive
 6. Add SEO metadata in Layout
-7. Set page title: "Sign In | YTInsights"
+7. Set page title: "Sign In | VideoSummary"
 
 ### Step 10: Add Toast Notifications
 1. Install/configure shadcn/ui Toast component (if not already)

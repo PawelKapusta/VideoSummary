@@ -1,12 +1,21 @@
-# Product Requirements Document (PRD) - YTInsights
+# Product Requirements Document (PRD) - VideoSummary
 
-## 1. Product Overview
+## Executive Summary
 
-YTInsights is a web application designed for users who subscribe to many valuable YouTube channels but lack the time to regularly watch all the published content. The application solves this problem by automatically generating concise, structured summaries of new videos from the user's subscribed channels. The product's vision is to enable users to efficiently acquire knowledge and stay up-to-date with key information in a fraction of the time required to watch the full materials, thereby eliminating the "fear of missing out" (FOMO).
+VideoSummary is a web application designed for users who subscribe to many valuable YouTube channels but lack the time to regularly watch all the published content. The application solves this problem by automatically generating concise, structured summaries of new videos from the user's subscribed channels. The product's vision is to enable users to efficiently acquire knowledge and stay up-to-date with key information in a fraction of the time required to watch the full materials, thereby eliminating the "fear of missing out" (FOMO).
 
-## 2. User Problem
+## 1. Problem and Solution
 
-The main problem that YTInsights addresses is information overload and lack of time. Users follow educational, financial, or news-related channels to grow and stay informed. However, the hustle of daily life prevents them from regularly watching all interesting materials. As a result, valuable content is missed, and users feel frustrated and as if they are missing out on something important. YTInsights aims to resolve this conflict by delivering the condensed value of long video materials in an accessible format.
+The main problem that VideoSummary addresses is information overload and lack of time. Users follow educational, financial, or news-related channels to grow and stay informed. However, the hustle of daily life prevents them from regularly watching all interesting materials. As a result, valuable content is missed, and users feel frustrated and as if they are missing out on something important. VideoSummary aims to resolve this conflict by delivering the condensed value of long video materials in an accessible format.
+
+## 2. Target Audience
+
+The application is designed for users who:
+- Have a strong interest in staying informed about various topics.
+- Subscribe to multiple valuable YouTube channels.
+- Lack the time to watch all the content they are interested in.
+- Want to efficiently acquire knowledge and stay up-to-date with key information.
+- Are comfortable with web applications and have basic technical skills.
 
 ## 3. Functional Requirements
 

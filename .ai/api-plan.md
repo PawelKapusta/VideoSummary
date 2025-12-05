@@ -1,4 +1,8 @@
-# REST API Plan for YTInsights
+# REST API Plan for VideoSummary
+
+## 1. Overview
+This document outlines the complete REST API specification for the VideoSummary application.
+The API is designed to be RESTful, secure, and scalable, using Supabase for the backend and database.
 
 ## 1. Resources
 
@@ -1021,7 +1025,7 @@ Currently implementing **v1** of the API. Versioning strategy:
 ## 7. CORS Policy
 
 **Allowed Origins:**
-- Production: `https://ytinsights.app` (to be determined)
+- Production: `https://videosummary.app` (to be determined)
 - Development: `http://localhost:4321` (Astro default)
 
 **Allowed Methods:** `GET`, `POST`, `PATCH`, `PUT`, `DELETE`, `OPTIONS`

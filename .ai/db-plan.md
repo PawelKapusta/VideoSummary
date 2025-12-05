@@ -1,6 +1,6 @@
-# Final Database Schema for YTInsights
+# Final Database Schema for VideoSummary
 
-This document outlines the comprehensive database schema for the YTInsights application, designed for PostgreSQL and Supabase.
+This document outlines the comprehensive database schema for the VideoSummary application, designed for PostgreSQL and Supabase.
 
 ## 1. Tables and Data Structures
 

@@ -1,8 +1,8 @@
-# View Implementation Plan: Register View
+# Implementation Plan: Register View
 
 ## 1. Overview
 
-The Register View is the user interface for new users to create an account in the YTInsights application. It provides a form for entering email and password (with confirmation), handles validation, submits the registration request to the backend, and upon success, automatically logs the user in and redirects to the dashboard. The view ensures secure and user-friendly registration process, displaying appropriate feedback for errors and success.
+The Register View is the user interface for new users to create an account in the VideoSummary application. It provides a form for entering email and password (with confirmation), handles validation, submits the registration request to the backend, and upon success, automatically logs the user in and redirects to the dashboard. The view ensures secure and user-friendly registration process, displaying appropriate feedback for errors and success.
 
 ## 2. View Routing
 

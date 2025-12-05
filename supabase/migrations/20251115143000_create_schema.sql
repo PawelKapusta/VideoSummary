@@ -1,5 +1,16 @@
 -- Migration: Create Schema
--- Purpose: Create ENUM types and all core tables for YTInsights application
+-- Purpose: Create ENUM types and all core tables for VideoSummary application
+-- Version: 1.0
+--
+-- This script sets up the foundational database structure, including:
+--   - ENUM types for tracking summary generation status and error codes
+--   - Profiles table for user data
+--   - Channels table for YouTube channel information
+--   - Subscriptions table for user-channel relationships
+--   - Videos table for YouTube video information and metadata
+--   - Summaries table for generated video summaries
+--   - Summary_ratings table for user ratings of summaries
+--   - Generation_requests table for tracking summary generation requests
 -- Affected: ENUM types, profiles, channels, subscriptions, videos, summaries, summary_ratings, generation_requests tables
 -- Special Considerations: 
 --   - RLS is enabled on all tables but policies are added in a separate migration

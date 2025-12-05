@@ -1,7 +1,8 @@
 {
   "info": {
-    "name": "YTInsights API (Complete)",
-    "description": "Complete API collection with all status codes and error examples",
+    "_postman_id": "a1b2c3d4-e5f6-7890-1234-abcdef123456",
+    "name": "VideoSummary API (Complete)",
+    "description": "Postman collection for the VideoSummary API, covering all available endpoints for managing channels, summaries, and user profiles.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },

@@ -1,9 +1,9 @@
-# YTInsights
+# VideoSummary
 
-[![Project Status: In Progress](https://img.shields.io/badge/status-in%20progress-yellow.svg)](https://github.com/your-username/YTInsights)
+[![Project Status: In Progress](https://img.shields.io/badge/status-in%20progress-yellow.svg)](https://github.com/your-username/VideoSummary)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-YTInsights is a web application designed for users who subscribe to multiple valuable YouTube channels but lack the time to regularly watch all published content. The app solves this problem by automatically generating concise, structured summaries of new videos, enabling users to efficiently absorb key information in a fraction of the time and eliminate the "fear of missing out" (FOMO).
+VideoSummary is a web application designed for users who subscribe to multiple valuable YouTube channels but lack the time to regularly watch all published content. The app solves this problem by automatically generating concise, structured summaries of new videos, enabling users to efficiently absorb key information in a fraction of the time and eliminate the "fear of missing out" (FOMO).
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ YTInsights is a web application designed for users who subscribe to multiple val
 
 ## Project Description
 
-In an age of information overload, staying up-to-date with educational, financial, or news-related YouTube channels is a challenge. YTInsights addresses this by providing users with AI-powered summaries of the latest videos from their favorite creators. This allows users to stay informed and capture the core value of long-form video content without spending hours watching.
+In an age of information overload, staying up-to-date with educational, financial, or news-related YouTube channels is a challenge. VideoSummary addresses this by providing users with AI-powered summaries of the latest videos from their favorite creators. This allows users to stay informed and capture the core value of long-form video content without spending hours watching.
 
 ## Tech Stack
 
@@ -51,8 +51,8 @@ Follow these instructions to set up the project on your local machine.
 
 1.  **Clone the repository:**
     ```sh
-    git clone https://github.com/your-username/YTInsights.git
-    cd YTInsights
+    git clone https://github.com/your-username/VideoSummary.git
+    cd VideoSummary
     ```
 
 2.  **Install dependencies:**
@@ -132,14 +132,14 @@ This project is currently **in progress**. The focus is on developing the MVP fe
 
 ## Logging System
 
-YTInsights uses **LogTape** for production-ready logging with the following features:
+VideoSummary uses **LogTape** for production-ready logging with the following features:
 
 - **Structured logging** with automatic data redaction for security and privacy
 - **Zero PII logging**: Emails and personal data are never logged
 - **AWS X-Ray distributed tracing**: `x-amzn-trace-id` header propagation to downstream services
 - **Trace ID correlation**: Request-level tracking across all services and logs
 - **Optional support tickets**: For exceptional cases requiring user-specific correlation
-- **Hierarchical categories**: `ytinsights`, `ytinsights.auth`, `ytinsights.api`, `ytinsights.db`, `ytinsights.external`
+- **Hierarchical categories**: `VideoSummary`, `VideoSummary.auth`, `VideoSummary.api`, `VideoSummary.db`, `VideoSummary.external`
 - **Environment-aware configuration**: Development (console + file) vs Production (file only)
 - **Type-safe logging functions** with compile-time validation
 - **Performance monitoring** and error tracking

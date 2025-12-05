@@ -1,8 +1,12 @@
-# Architektura UI dla YTInsights
+# Architektura UI dla VideoSummary
 
-## 1. Przegląd struktury UI
+## Streszczenie
 
-Architektura interfejsu użytkownika YTInsights opiera się na hybrydowym podejściu z wykorzystaniem Astro 5 do renderowania statycznych powłok i wysp React 19 dla interaktywnych elementów. Struktura jest podzielona na widoki publiczne (takie jak logowanie i rejestracja) oraz chronione (dashboard, podsumowania, profil), z naciskiem na responsywność mobilną, dostępność WCAG AA i bezpieczeństwo poprzez middleware autoryzacyjne. Nawigacja opiera się na górnym pasku z menu użytkownika i wyszukiwaniem, a interakcje wykorzystują toasty do powiadomień i modale do potwierdzeń. Całość zapewnia szybki dostęp do podsumowań, minimalizując obciążenie użytkownika i optymalizując doświadczenie dla osób z ograniczonym czasem.
+Architektura interfejsu użytkownika VideoSummary opiera się na hybrydowym podejściu z wykorzystaniem Astro 5 do renderowania statycznych powłok i wysp React 19 dla interaktywnych elementów. Struktura jest podzielona na widoki publiczne (takie jak logowanie i rejestracja) oraz chronione (dashboard, podsumowania, profil), z naciskiem na responsywność mobilną, dostępność WCAG AA i bezpieczeństwo poprzez middleware autoryzacyjne. Nawigacja opiera się na górnym pasku z menu użytkownika i wyszukiwaniem, a interakcje wykorzystują toasty do powiadomień i modale do potwierdzeń. Całość zapewnia szybki dostęp do podsumowań, minimalizując obciążenie użytkownika i optymalizując doświadczenie dla osób z ograniczonym czasem.
+
+## 1. Główne założenia i technologie
+
+Architektura interfejsu użytkownika VideoSummary opiera się na hybrydowym podejściu z wykorzystaniem Astro 5 do renderowania statycznych powłok i wysp React 19 dla interaktywnych elementów. Struktura jest podzielona na widoki publiczne (takie jak logowanie i rejestracja) oraz chronione (dashboard, podsumowania, profil), z naciskiem na responsywność mobilną, dostępność WCAG AA i bezpieczeństwo poprzez middleware autoryzacyjne. Nawigacja opiera się na górnym pasku z menu użytkownika i wyszukiwaniem, a interakcje wykorzystują toasty do powiadomień i modale do potwierdzeń. Całość zapewnia szybki dostęp do podsumowań, minimalizując obciążenie użytkownika i optymalizując doświadczenie dla osób z ograniczonym czasem.
 
 ## 2. Lista widoków
 

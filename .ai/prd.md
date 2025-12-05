@@ -1,12 +1,14 @@
-# Dokument wymagań produktu (PRD) - YTInsights
+# Dokument wymagań produktu (PRD) - VideoSummary
 
-## 1. Przegląd produktu
+## Streszczenie
 
-YTInsights to aplikacja internetowa zaprojektowana dla użytkowników, którzy subskrybują wiele wartościowych kanałów YouTube, ale brakuje im czasu na regularne oglądanie wszystkich publikowanych treści. Aplikacja rozwiązuje ten problem, automatycznie generując zwięzłe, ustrukturyzowane podsumowania nowych filmów z kanałów subskrybowanych przez użytkownika. Wizją produktu jest umożliwienie użytkownikom efektywnego przyswajania wiedzy i bycia na bieżąco z kluczowymi informacjami w ułamku czasu wymaganego do obejrzenia pełnych materiałów, eliminując w ten sposób "strach przed przegapieniem" (FOMO).
+VideoSummary to aplikacja internetowa zaprojektowana dla użytkowników, którzy subskrybują wiele wartościowych kanałów YouTube, ale brakuje im czasu na regularne oglądanie wszystkich publikowanych treści. Aplikacja rozwiązuje ten problem, automatycznie generując zwięzłe, ustrukturyzowane podsumowania nowych filmów z kanałów subskrybowanych przez użytkownika. Wizją produktu jest umożliwienie użytkownikom efektywnego przyswajania wiedzy i bycia na bieżąco z kluczowymi informacjami w ułamku czasu wymaganego do obejrzenia pełnych materiałów, eliminując w ten sposób "strach przed przegapieniem" (FOMO).
 
-## 2. Problem użytkownika
+## 1. Problem i rozwiązanie
 
-Głównym problemem, na który odpowiada YTInsights, jest przeciążenie informacyjne i brak czasu. Użytkownicy śledzą kanały o tematyce edukacyjnej, finansowej, czy newsowej, aby się rozwijać i być na bieżąco. Jednak natłok codziennych obowiązków uniemożliwia im regularne oglądanie wszystkich interesujących materiałów. W rezultacie cenne treści umykają, a użytkownicy odczuwają frustrację i wrażenie, że coś ważnego ich omija. YTInsights celuje w rozwiązanie tego konfliktu, dostarczając skondensowaną wartość z długich materiałów wideo w przystępnej formie.
+Głównym problemem, na który odpowiada VideoSummary, jest przeciążenie informacyjne i brak czasu. Użytkownicy śledzą kanały o tematyce edukacyjnej, finansowej, czy newsowej, aby się rozwijać i być na bieżąco. Jednak natłok codziennych obowiązków uniemożliwia im regularne oglądanie wszystkich interesujących materiałów. W rezultacie cenne treści umykają, a użytkownicy odczuwają frustrację i wrażenie, że coś ważnego ich omija. VideoSummary celuje w rozwiązanie tego konfliktu, dostarczając skondensowaną wartość z długich materiałów wideo w przystępnej formie.
+
+## 2. Grupa docelowa
 
 ## 3. Wymagania funkcjonalne
 

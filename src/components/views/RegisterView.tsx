@@ -44,7 +44,7 @@ export default function RegisterView() {
       <Card className="w-full max-w-md shadow-lg dark:shadow-lg/50 border-border/20">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold tracking-tight">
-            Sign up for YTInsights
+            Sign up for VideoSummary
           </CardTitle>
           <CardDescription>
             Enter your email and password to create your account
