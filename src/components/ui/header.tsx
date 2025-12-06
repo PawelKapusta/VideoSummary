@@ -64,16 +64,21 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="pr-0">
-              <SheetHeader>
-                <SheetTitle>VideoSummary</SheetTitle>
+            <SheetContent side="left" className="w-[80%] max-w-[300px] pr-0 bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-50 rounded-r-xl">
+              <SheetHeader className="text-left px-4 pt-6">
+                <SheetTitle className="text-zinc-950 dark:text-zinc-50 text-xl font-bold">VideoSummary</SheetTitle>
               </SheetHeader>
-              <div className="grid gap-2 py-6">
+              <div className="grid gap-1 py-6 px-2">
                 {links.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
-                    className="block px-2 py-1 text-lg font-semibold hover:text-primary hover:underline"
+                    className={cn(
+                      "block px-4 py-3 text-base font-medium rounded-lg transition-colors",
+                      currentPath === link.href
+                        ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    )}
                     onClick={() => setIsOpen(false)}
                   >
                     {link.name}

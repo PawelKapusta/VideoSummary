@@ -2,7 +2,15 @@ import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
 import React from 'react';
 
-const EmptyState = () => {
+interface EmptyStateProps {
+  message?: string;
+  description?: string;
+}
+
+const EmptyState = ({
+  message = "No summaries yet",
+  description = "Subscribe to YouTube channels on your profile page to start generating summaries."
+}: EmptyStateProps) => {
   return (
     <div 
       className="text-center p-8"
@@ -15,9 +23,9 @@ const EmptyState = () => {
           aria-hidden="true"
         />
       </div>
-      <h2 className="text-2xl font-semibold mb-2">No summaries yet</h2>
+      <h2 className="text-2xl font-semibold mb-2">{message}</h2>
       <p className="text-muted-foreground mb-4">
-        Subscribe to YouTube channels on your profile page to start generating summaries.
+        {description}
       </p>
       <Button asChild>
         <a href="/profile">Go to Profile</a>

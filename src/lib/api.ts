@@ -1,4 +1,18 @@
-import type { ApiError, LoginRequest, AuthResponse, RegisterRequest, ConfirmResetPasswordRequest, ApiSuccess, GenerateSummaryRequest, SummaryBasic, VideoMetaResponse, GenerationStatusResponse } from '@/types';
+import type {
+  ApiError,
+  LoginRequest,
+  AuthResponse,
+  RegisterRequest,
+  ConfirmResetPasswordRequest,
+  ApiSuccess,
+  GenerateSummaryRequest,
+  SummaryBasic,
+  VideoMetaResponse,
+  GenerationStatusResponse,
+  PaginatedResponse,
+  VideoSummary,
+  VideosFilterState,
+} from '@/types';
 import { getSession } from './auth';
 
 export class ApiClientError extends Error {
@@ -168,6 +182,25 @@ export async function fetchGenerationStatus(channelId: string): Promise<Generati
     throw errorData;
   }
   return response.json();
+}
+
+export async function getVideos(
+  filters: VideosFilterState,
+  pageParam: number,
+  limit = 10,
+): Promise<PaginatedResponse<VideoSummary>> {
+  const params: Record<string, string | number> = {
+    offset: pageParam,
+    limit,
+  };
+
+  if (filters.channelId && filters.channelId !== 'all') {
+    params.channel_id = filters.channelId;
+  }
+
+  // Note: summaryStatus is handled client-side for now as per the plan.
+
+  return authApiClient.get<PaginatedResponse<VideoSummary>>('/api/videos', { params });
 }
 
 export const apiClient = {

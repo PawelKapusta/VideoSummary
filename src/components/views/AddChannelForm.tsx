@@ -70,13 +70,23 @@ export default function AddChannelForm({ isOpen, onClose }: AddChannelFormProps)
                 disabled={isPending}
               />
             </div>
-            {error && <p className="col-span-4 text-sm text-destructive text-center">{error}</p>}
+            {error && <p className="col-span-4 text-sm text-red-500 font-medium text-center mt-2">{error}</p>}
           </div>
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={onClose} disabled={isPending}>
+          <DialogFooter className="sm:flex-row sm:justify-end sm:space-x-2">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={onClose}
+              disabled={isPending}
+              className="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button 
+              type="submit" 
+              disabled={isPending}
+              className="hover:bg-transparent hover:text-primary hover:border hover:border-primary"
+            >
               {isPending ? 'Subscribing...' : 'Subscribe'}
             </Button>
           </DialogFooter>

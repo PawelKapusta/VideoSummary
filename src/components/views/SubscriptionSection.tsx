@@ -20,10 +20,10 @@ export default function SubscriptionSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
+        <CardTitle className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
           <span>Subscribed Channels ({profile.subscription_count}/10)</span>
           {canAdd ? (
-            <Button onClick={onAddClick} variant="outline">
+            <Button onClick={onAddClick} variant="outline" className="w-full sm:w-auto">
               Add Channel
             </Button>
           ) : (

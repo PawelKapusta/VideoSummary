@@ -456,3 +456,15 @@ export interface ValidationStatusViewModel {
   isWithinLimit: ValidationStep;
   isDurationValid: ValidationStep;
 }
+
+// ============================================================================
+// VIDEOS VIEW SPECIFIC TYPES
+// ============================================================================
+
+/**
+ * Represents the state of the filters applied to the videos list.
+ */
+export interface VideosFilterState {
+  channelId: string | 'all';
+  summaryStatus: 'all' | 'with' | 'without';
+}

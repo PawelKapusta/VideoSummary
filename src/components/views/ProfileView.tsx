@@ -22,15 +22,18 @@ function UserHeader({ profile }: UserHeaderProps) {
 
   return (
     <Card className="mb-6">
-      <CardHeader className="flex flex-row items-center space-x-4">
-        <Avatar>
-          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.email}`} />
-          <AvatarFallback>{profile.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-        </Avatar>
-        <div>
-          <CardTitle className="text-lg">{profile.email || 'Loading...'}</CardTitle>
-          <CardDescription>Joined on {joinDate}</CardDescription>
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
+        <div className="flex items-center space-x-4">
+          <Avatar>
+            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.email}`} />
+            <AvatarFallback>{profile.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle className="text-lg">{profile.email || 'Loading...'}</CardTitle>
+            <CardDescription>Joined on {joinDate}</CardDescription>
+          </div>
         </div>
+        <LogoutButton />
       </CardHeader>
     </Card>
   );
@@ -47,10 +50,9 @@ function LogoutButton() {
 
   return (
     <Button
-      variant="destructive"
       onClick={handleLogout}
       disabled={isLoading}
-      className="w-full md:w-auto"
+      className="w-full md:w-auto bg-red-500 hover:bg-red-600 text-white"
     >
       <LogOut className="mr-2 h-4 w-4" />
       {isLoading ? 'Logging out...' : 'Logout'}
@@ -69,7 +71,7 @@ function ProfileContent() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
+      <div className="container max-w-4xl mx-auto p-4 md:p-6 space-y-6">
         <Card className="mb-6">
           <CardHeader className="flex flex-row items-center space-x-4">
             <Skeleton className="h-12 w-12 rounded-full" />
@@ -93,7 +95,7 @@ function ProfileContent() {
     }
 
     return (
-      <div className="container max-w-4xl mx-auto p-6 text-center">
+      <div className="container max-w-4xl mx-auto p-4 md:p-6 text-center">
         <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/10 text-destructive">
           <p className="font-semibold mb-2">Could not load your profile.</p>
           <p className="text-sm mb-4">{errorMessage}</p>
@@ -108,14 +110,14 @@ function ProfileContent() {
 
   if (!profile) {
     return (
-        <div className="container max-w-4xl mx-auto p-6 text-center">
+        <div className="container max-w-4xl mx-auto p-4 md:p-6 text-center">
             <p>No profile data found.</p>
         </div>
     );
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6 space-y-6">
+    <div className="container max-w-4xl mx-auto p-4 md:p-6 space-y-6">
       <UserHeader 
         profile={profile} 
       />
@@ -126,10 +128,6 @@ function ProfileContent() {
         onAddClick={() => setAddModalOpen(true)}
       />
       
-      <div className="flex justify-end">
-        <LogoutButton />
-      </div>
-
       <AddChannelForm 
         isOpen={isAddModalOpen}
         onClose={() => setAddModalOpen(false)}

@@ -23,7 +23,7 @@ export function FormErrorMessage({ error, onDismiss }: FormErrorMessageProps) {
 
   return (
     <div 
-      className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 transition-all duration-300 animate-fade-in"
+      className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 transition-all duration-300 animate-in fade-in slide-in-from-top-1"
       role="alert"
       aria-live="assertive"
       aria-atomic="true"

@@ -17,13 +17,13 @@ interface SubscriptionTableProps {
 
 export default function SubscriptionTable({ channels, onRemove }: SubscriptionTableProps) {
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">Channel Name</TableHead>
-            <TableHead>Subscribed Date</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="min-w-[200px]">Channel Name</TableHead>
+            <TableHead className="min-w-[120px] hidden md:table-cell">Subscribed Date</TableHead>
+            <TableHead className="text-right min-w-[80px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

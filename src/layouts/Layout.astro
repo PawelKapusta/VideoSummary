@@ -1,5 +1,4 @@
 ---
-import '../styles/global.css';
 import { Toaster } from '@/components/ui/sonner';
 import { Header } from '@/components/ui/header';
 
@@ -25,6 +24,10 @@ const currentPath = Astro.url.pathname;
 	<body>
         {showNavigation && <Header client:load currentPath={currentPath} />}
 		<slot />
-		<Toaster client:load />
+		<Toaster client:load richColors />
 	</body>
 </html>
+
+<style is:global>
+  @import "tailwindcss";
+</style>
