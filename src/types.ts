@@ -147,7 +147,7 @@ export interface DetailedSummary {
   video: VideoWithUrl;
   channel: Channel;
   tldr: string | null;
-  full_summary: Database['public']['Tables']['summaries']['Row']['full_summary']; // JSON type from database
+  full_summary: FullSummaryContent | null;
   status: Database['public']['Enums']['summary_status'];
   error_code: Database['public']['Enums']['summary_error_code'] | null;
   generated_at: string | null;

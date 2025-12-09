@@ -1,10 +1,12 @@
 import { createBrowserClient, createServerClient, parseCookieHeader } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import { createTraceHeaders } from '../lib/trace.ts';
 import type { APIContext } from 'astro';
 
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Temporary default user ID for testing without auth
 export const DEFAULT_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
@@ -43,6 +45,39 @@ export const createSupabaseServerClient = (context: APIContext, traceId?: string
           context.cookies.set(name, value, options)
         );
       },
+    },
+    global: {
+      fetch: createTracedFetch(traceId),
+    },
+  });
+};
+
+/**
+ * Service role client for backend operations (bypasses RLS)
+ * 
+ * ⚠️ SECURITY WARNING:
+ * - This client has FULL database access and bypasses Row Level Security
+ * - Use ONLY in server-side code (API routes, background jobs)
+ * - NEVER expose this client or its key to the browser/client
+ * - NEVER import this in client-side components
+ * 
+ * Valid use cases:
+ * - Background processing (e.g., summary generation)
+ * - Admin operations
+ * - System-level database updates
+ * 
+ * @param traceId - Optional trace ID for distributed tracing
+ * @returns Supabase client with service role privileges
+ */
+export const createSupabaseServiceClient = (traceId?: string) => {
+  if (!supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
+  }
+  
+  return createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
     global: {
       fetch: createTracedFetch(traceId),

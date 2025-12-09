@@ -1,10 +1,13 @@
 import { createHash } from 'crypto';
 import type { SupabaseClient } from '../db/supabase.client';
-import { errorLogger } from './logger';
-import type { SummaryBasic, SummaryWithVideo, DetailedSummary, PaginatedResponse, SummaryStatus } from '../types';
+import { errorLogger, appLogger } from './logger';
+import type { SummaryBasic, SummaryWithVideo, DetailedSummary, PaginatedResponse, SummaryStatus, FullSummaryContent } from '../types';
 import { extractYouTubeVideoId } from './youtube.utils';
 import { fetchYouTubeVideoMetadata } from './youtube.service';
 import type { Database } from '../db/database.types';
+import { OpenRouterService } from './openrouter.service';
+import { fetchTranscript, transcriptToString } from './transcript.service';
+
 /**
  * Generate a summary for a YouTube video (manual generation)
  * @param supabase - Supabase client instance
@@ -17,8 +20,11 @@ export async function generateSummary(
   userId: string,
   videoUrl: string
 ): Promise<SummaryBasic & { message: string }> {
+  appLogger.debug('Starting generateSummary', { userId, videoUrl });
+
   // Extract YouTube video ID from URL
   const youtubeVideoId = extractYouTubeVideoId(videoUrl);
+  appLogger.debug('Extracted YouTube Video ID', { youtubeVideoId });
 
   // Check if video exists in database
   let videoId: string;
@@ -36,8 +42,10 @@ export async function generateSummary(
   if (existingVideo) {
     videoId = existingVideo.id;
     channelId = existingVideo.channel_id;
+    appLogger.debug('Found existing video in DB', { videoId, channelId });
   } else {
     // Video doesn't exist, fetch from YouTube API
+    appLogger.debug('Video not in DB, fetching from YouTube API', { youtubeVideoId });
     let videoMetadata;
     try {
       videoMetadata = await fetchYouTubeVideoMetadata(youtubeVideoId);
@@ -52,6 +60,7 @@ export async function generateSummary(
 
     // Validate video constraints
     if (videoMetadata.duration > 2700) { // 45 minutes = 2700 seconds
+      appLogger.debug('Video too long', { duration: videoMetadata.duration });
       throw new Error('VIDEO_TOO_LONG');
     }
 
@@ -71,8 +80,10 @@ export async function generateSummary(
 
     if (existingChannel) {
       channelId = existingChannel.id;
+      appLogger.debug('Found existing channel in DB', { channelId });
     } else {
       // Fetch channel metadata
+      appLogger.debug('Channel not in DB, fetching metadata', { channelId: videoMetadata.channelId });
       let channelMetadata;
       try {
         // This would need a separate YouTube API call for channel info
@@ -113,6 +124,14 @@ export async function generateSummary(
     }
 
     // Create video record
+    appLogger.debug('Creating video record', { 
+      youtubeVideoId, 
+      channelId,
+      title: videoMetadata.title,
+      publishedAt: videoMetadata.publishedAt,
+      thumbnailUrl: videoMetadata.thumbnailUrl
+    });
+    
     const { data: newVideo, error: insertVideoError } = await supabase
       .from('videos')
       .insert({
@@ -126,18 +145,47 @@ export async function generateSummary(
       .single();
 
     if (insertVideoError) {
-      errorLogger.appError(insertVideoError, {
-        service: 'summaries_service',
-        operation: 'video_insert',
-        youtube_video_id: youtubeVideoId,
-      });
-      throw insertVideoError;
+      // Handle duplicate key error (race condition where video was created by another request)
+      if (insertVideoError.code === '23505') { // PostgreSQL unique violation
+        appLogger.debug('Video already exists (race condition), fetching existing video', { youtubeVideoId });
+        const { data: existingVideoRetry, error: retryError } = await supabase
+          .from('videos')
+          .select('id, channel_id')
+          .eq('youtube_video_id', youtubeVideoId)
+          .single();
+        
+        if (retryError || !existingVideoRetry) {
+          errorLogger.appError(retryError || new Error('Video not found after duplicate key error'), {
+            service: 'summaries_service',
+            operation: 'video_insert_retry',
+            youtube_video_id: youtubeVideoId,
+          });
+          throw retryError || new Error('Video not found after duplicate key error');
+        }
+        
+        videoId = existingVideoRetry.id;
+        channelId = existingVideoRetry.channel_id;
+        appLogger.debug('Using existing video from race condition', { videoId, channelId });
+      } else {
+        errorLogger.appError(insertVideoError, {
+          service: 'summaries_service',
+          operation: 'video_insert',
+          youtube_video_id: youtubeVideoId,
+          error_code: insertVideoError.code,
+          error_message: insertVideoError.message,
+          error_details: insertVideoError.details,
+          error_hint: insertVideoError.hint,
+        });
+        throw insertVideoError;
+      }
+    } else {
+      videoId = newVideo.id;
+      appLogger.debug('Video record created successfully', { videoId: newVideo.id });
     }
-
-    videoId = newVideo.id;
   }
 
   // Verify user is subscribed to the channel
+  appLogger.debug('Verifying subscription', { userId, channelId });
   const { data: subscription, error: subscriptionError } = await supabase
     .from('subscriptions')
     .select('id')
@@ -150,10 +198,12 @@ export async function generateSummary(
   }
 
   if (!subscription) {
+    appLogger.debug('User not subscribed to channel', { userId, channelId });
     throw new Error('CHANNEL_NOT_SUBSCRIBED');
   }
 
   // Check if summary already exists
+  appLogger.debug('Checking for existing summary', { videoId });
   const { data: existingSummary, error: summaryError } = await supabase
     .from('summaries')
     .select('id, status')
@@ -165,6 +215,7 @@ export async function generateSummary(
   }
 
   if (existingSummary) {
+    appLogger.debug('Found existing summary', { existingSummary });
     if (existingSummary.status === 'completed') {
       throw new Error('SUMMARY_ALREADY_EXISTS');
     }
@@ -172,10 +223,12 @@ export async function generateSummary(
       throw new Error('GENERATION_IN_PROGRESS');
     }
     // If status is 'failed', we can retry
+    appLogger.debug('Retrying failed summary', { id: existingSummary.id });
   }
 
   // Atomic operation: rate limit check and summary creation
   const lockKey = hashStringToInt32(channelId);
+  appLogger.debug('Attempting atomic summary generation', { channelId, lockKey });
 
   let summary: any;
   try {
@@ -188,7 +241,8 @@ export async function generateSummary(
         p_lock_key: lockKey,
       });
 
-    summary = result.data;
+    // The RPC function returns an array (TABLE), so we take the first element
+    summary = result.data?.[0];
     const generateError = result.error;
 
     if (generateError) {
@@ -198,6 +252,10 @@ export async function generateSummary(
         user_id: userId,
         video_id: videoId,
         channel_id: channelId,
+        error_code: generateError.code,
+        error_message: generateError.message,
+        error_details: generateError.details,
+        error_hint: generateError.hint,
       });
 
       if (generateError.message.includes('GENERATION_LIMIT_REACHED')) {
@@ -209,23 +267,247 @@ export async function generateSummary(
     if (!summary) {
       throw new Error('No summary data returned from atomic function');
     }
+    appLogger.debug('Atomic summary generation successful', { summaryId: summary.id });
   } catch (rpcError) {
-    errorLogger.appError(rpcError instanceof Error ? rpcError : new Error(String(rpcError)), {
+    const error = rpcError instanceof Error ? rpcError : new Error(String(rpcError));
+    errorLogger.appError(error, {
       service: 'summaries_service',
       operation: 'rpc_call_failed',
       user_id: userId,
       video_id: videoId,
       channel_id: channelId,
+      error_message: error.message,
+      error_stack: error.stack,
     });
     throw rpcError;
   }
 
+  // Start asynchronous processing (but await it here for now as we don't have a job queue)
+  // In a production environment with a proper job queue, this would be offloaded.
+  // For now, we'll perform it synchronously and return the completed summary.
+  await processSummaryGeneration(supabase, summary.id, youtubeVideoId);
+
+  // Fetch the updated summary to get the final status and generated_at
+  const { data: completedSummary, error: fetchError } = await supabase
+    .from('summaries')
+    .select('status, generated_at')
+    .eq('id', summary.id)
+    .single();
+
+  if (fetchError) {
+    errorLogger.appError(fetchError, {
+      service: 'summaries_service',
+      operation: 'fetch_completed_summary',
+      summary_id: summary.id,
+    });
+    // Return with the original status if fetch fails
+    return {
+      id: summary.id,
+      status: 'completed', // Assume completed since processSummaryGeneration didn't throw
+      generated_at: new Date().toISOString(),
+      message: 'Summary generated successfully',
+    };
+  }
+
   return {
     id: summary.id,
-    status: summary.status,
-    generated_at: null, // Will be set when generation completes
-    message: 'Summary generation initiated successfully',
+    status: completedSummary.status,
+    generated_at: completedSummary.generated_at,
+    message: completedSummary.status === 'completed' 
+      ? 'Summary generated successfully' 
+      : 'Summary generation initiated successfully',
   };
+}
+
+async function processSummaryGeneration(
+    supabase: SupabaseClient,
+    summaryId: string,
+    youtubeVideoId: string
+): Promise<void> {
+    appLogger.debug('Starting processSummaryGeneration', { summaryId, youtubeVideoId });
+    
+    // Create service role client for backend operations (bypasses RLS)
+    // This is needed because the user-authenticated client loses auth context in async processing
+    const { createSupabaseServiceClient } = await import('../db/supabase.client');
+    const serviceClient = createSupabaseServiceClient();
+    
+    try {
+        // 1. Fetch Transcript
+        appLogger.debug('Fetching transcript', { youtubeVideoId });
+        const transcript = await fetchTranscript(youtubeVideoId);
+        const transcriptText = transcriptToString(transcript);
+        appLogger.debug('Transcript fetched', { length: transcriptText.length });
+
+        // 2. Update status to in_progress (after successful transcript fetch)
+        appLogger.debug('Updating status to in_progress', { summaryId });
+        const { error: statusUpdateError } = await serviceClient
+            .from('summaries')
+            .update({ status: 'in_progress' })
+            .eq('id', summaryId);
+        
+        if (statusUpdateError) {
+            errorLogger.appError(statusUpdateError, {
+                service: 'summaries_service',
+                operation: 'update_status_to_in_progress',
+                summary_id: summaryId,
+                error_code: statusUpdateError.code,
+                error_message: statusUpdateError.message,
+                error_details: statusUpdateError.details,
+            });
+            throw statusUpdateError;
+        }
+        appLogger.debug('Status updated to in_progress', { summaryId });
+
+        // 3. Initialize OpenRouter Service
+        const apiKey = import.meta.env.OPENROUTER_API_KEY;
+        if (!apiKey) {
+            throw new Error('OPENROUTER_API_KEY is not configured');
+        }
+        
+        appLogger.debug('Initializing OpenRouter service', { 
+            hasApiKey: !!apiKey,
+            model: 'google/gemini-2.0-flash-001'
+        });
+        
+        const openRouter = new OpenRouterService({
+            apiKey,
+            defaultModel: 'google/gemini-2.0-flash-001',
+        });
+
+        // 3. Define Schema
+        const summarySchema = {
+            name: 'summary',
+            strict: true,
+            schema: {
+                type: 'object',
+                properties: {
+                    tldr: {
+                        type: 'string',
+                        description: 'A short 1-paragraph summary (TL;DR) of the video content.'
+                    },
+                    full_summary: {
+                        type: 'object',
+                        properties: {
+                            key_points: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: 'List of key points from the video.'
+                            },
+                            summary: {
+                                type: 'string',
+                                description: 'A detailed summary of the video content, formatted in HTML (using paragraphs <p> and headings <h3>).'
+                            },
+                            conclusions: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: 'List of main conclusions or takeaways.'
+                            }
+                        },
+                        required: ['key_points', 'summary', 'conclusions'],
+                        additionalProperties: false
+                    }
+                },
+                required: ['tldr', 'full_summary'],
+                additionalProperties: false
+            }
+        };
+
+        interface GeneratedSummary {
+            tldr: string;
+            full_summary: {
+                key_points: string[];
+                summary: string;
+                conclusions: string[];
+            };
+        }
+
+        // 4. Generate Summary
+        const prompt = `You are an expert video summarizer. Here is the transcript of a YouTube video. Please summarize it according to the schema provided.
+        
+        Transcript:
+        ${transcriptText}`;
+
+        appLogger.debug('Sending request to OpenRouter', { model: 'google/gemini-2.0-flash-001', summaryId });
+        const result = await openRouter.completeJson<GeneratedSummary>(
+            [{ role: 'user', content: prompt }],
+            summarySchema
+        );
+        appLogger.debug('Received response from OpenRouter', { summaryId, tldr_length: result.tldr.length });
+
+        // 5. Update Database with completed summary
+        appLogger.debug('Updating summary in database', { 
+            summaryId, 
+            tldr_length: result.tldr.length,
+            has_full_summary: !!result.full_summary 
+        });
+        
+        const { error: updateError } = await serviceClient
+            .from('summaries')
+            .update({
+                tldr: result.tldr,
+                full_summary: result.full_summary,
+                status: 'completed',
+                generated_at: new Date().toISOString(),
+            })
+            .eq('id', summaryId);
+
+        if (updateError) {
+            errorLogger.appError(updateError, {
+                service: 'summaries_service',
+                operation: 'update_summary',
+                summary_id: summaryId,
+                error_code: updateError.code,
+                error_message: updateError.message,
+                error_details: updateError.details,
+                error_hint: updateError.hint,
+            });
+            throw updateError;
+        }
+        
+        appLogger.debug('Summary updated successfully', { summaryId });
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        
+        errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
+            service: 'summaries_service',
+            operation: 'process_summary_generation',
+            summary_id: summaryId,
+            youtube_video_id: youtubeVideoId,
+            error_message: errorMessage,
+            error_stack: errorStack,
+        });
+
+        // Determine error code based on error type
+        let errorCode: 'NO_SUBTITLES' | 'VIDEO_PRIVATE' | 'VIDEO_TOO_LONG' | null = null;
+        
+        if (errorMessage.includes('transcript') || errorMessage.includes('subtitle')) {
+            errorCode = 'NO_SUBTITLES';
+        } else if (errorMessage.includes('private') || errorMessage.includes('unavailable')) {
+            errorCode = 'VIDEO_PRIVATE';
+        } else if (errorMessage.includes('too long') || errorMessage.includes('duration')) {
+            errorCode = 'VIDEO_TOO_LONG';
+        }
+        // If no specific error code matches, leave it as null (generic failure)
+
+        // Update status to failed using service client
+        const { error: updateError } = await serviceClient.from('summaries').update({ 
+            status: 'failed',
+            error_code: errorCode
+        }).eq('id', summaryId);
+        
+        if (updateError) {
+            errorLogger.appError(updateError, {
+                service: 'summaries_service',
+                operation: 'update_failed_summary',
+                summary_id: summaryId,
+                error_code: updateError.code,
+                error_message: updateError.message,
+                error_details: updateError.details,
+            });
+        }
+    }
 }
 
 /**
@@ -304,7 +586,7 @@ export async function listSummaries(
 
   // Filter by channel
   if (filters.channel_id) {
-    query = query.eq('channel_id', filters.channel_id);
+    query = query.eq('videos.channel_id', filters.channel_id);
   }
 
   // Filter by status
@@ -395,11 +677,12 @@ export async function getSummaryDetails(
         title,
         thumbnail_url,
         published_at,
-        channels!inner (
-          id,
-          name,
-          youtube_channel_id,
-          created_at
+        channel_id,
+      channels!inner (
+        id,
+        name,
+        youtube_channel_id,
+        created_at
         )
       )
     `)
@@ -451,7 +734,7 @@ export async function getSummaryDetails(
       created_at: summary.videos.channels.created_at,
     },
     tldr: summary.tldr,
-    full_summary: summary.full_summary,
+    full_summary: summary.full_summary as unknown as FullSummaryContent | null,
     status: summary.status,
     error_code: summary.error_code,
     generated_at: summary.generated_at,

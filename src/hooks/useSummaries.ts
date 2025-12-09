@@ -21,8 +21,10 @@ export function useSummaries(filters: FilterOptions) {
         include_hidden: filters.include_hidden ?? false,
         sort: filters.sort ?? 'published_at_desc',
       };
-      const { data } = await api.get<PaginatedResponse<SummaryWithVideo>>('/api/summaries', { params });
-      return data;
+      const response = await api.get<PaginatedResponse<SummaryWithVideo>>('/api/summaries', { params });
+      // API returns PaginatedResponse<SummaryWithVideo> which has { data: [], pagination: {} }
+      // We need to return the full response for React Query infinite query
+      return response;
     },
     initialPageParam: { offset: 0 },
     getNextPageParam: (lastPage, allPages, lastPageParam) => {
@@ -36,12 +38,5 @@ export function useSummaries(filters: FilterOptions) {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes cache
     retry: (failureCount, error) => failureCount < 3 && !error.message.includes('401'), // No retry on auth
-    onError: (error) => {
-      if (error.message.includes('offline')) {
-        toast.info('Using cached data (offline)');
-      } else if (!error.message.includes('401')) {
-        toast.error(`Failed to load summaries: ${error.message}`);
-      }
-    },
   });
 }

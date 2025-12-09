@@ -1,8 +1,10 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { ResetPasswordConfirmView } from '../../components/views/ResetPasswordConfirmView.tsx';
+import ConfirmResetPasswordView from '@/components/views/ConfirmResetPasswordView';
+import Layout from '@/layouts/Layout.astro';
 ---
 
-<Layout title="Reset Password - YT Insights">
-  <ResetPasswordConfirmView client:load />
+<Layout title="Video Summary">
+	<div class="container mx-auto flex h-screen items-center justify-center">
+		<ConfirmResetPasswordView client:load />
+	</div>
 </Layout>

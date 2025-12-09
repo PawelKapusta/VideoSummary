@@ -1,4 +1,4 @@
-import { errorLogger } from './logger';
+import { errorLogger, appLogger } from './logger';
 
 /**
  * YouTube API service interfaces and types
@@ -48,6 +48,8 @@ export async function fetchYouTubeChannelMetadata(channelIdOrHandle: string): Pr
     const paramValue = isHandle ? channelIdOrHandle : channelIdOrHandle;
 
     const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&${paramName}=${paramValue}&key=${apiKey}`;
+
+    appLogger.debug('Fetching YouTube channel metadata', { url: url.replace(apiKey, 'REDACTED') });
 
     const response = await fetch(url);
     const data = await response.json();
@@ -108,6 +110,7 @@ export async function fetchYouTubeVideoMetadata(videoId: string): Promise<YouTub
 
   try {
     // Fetch video details and captions in parallel
+    appLogger.debug('Fetching YouTube video metadata', { videoId });
     const [videoResponse, captionsResponse] = await Promise.all([
       fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails,status&id=${videoId}&key=${apiKey}`),
       fetch(`https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${apiKey}`)

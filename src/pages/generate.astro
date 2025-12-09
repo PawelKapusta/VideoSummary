@@ -3,9 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import GenerateSummaryView from '../components/views/GenerateSummaryView';
 ---
 
-<Layout title="Generate Summary | VideoSummary" showNavigation={true}>
-  <main class="container mx-auto px-4 py-8">
-    <GenerateSummaryView client:load />
-  </main>
+<Layout title="Video Summary" showNavigation={true}>
+	<GenerateSummaryView client:only="react" />
 </Layout>
 

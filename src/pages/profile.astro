@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import ProfileView from '../components/views/ProfileView';
 ---
 
-<Layout title="Profile" showNavigation={true}>
-  <ProfileView client:load />
+<Layout title="Video Summary" showNavigation={true}>
+	<ProfileView client:only="react" />
 </Layout>
 
