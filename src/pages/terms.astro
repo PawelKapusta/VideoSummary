@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { TermsView } from '../components/views/TermsView';
+---
+
+<Layout title="Terms of Service - VideoSummary" showFooter={false}>
+  <TermsView client:load />
+</Layout>
