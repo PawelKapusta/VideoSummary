@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { useSummaries } from '../../hooks/useSummaries';
 import SummaryList from '../summaries/SummaryList';
-import SummaryCardSkeleton from '@/components/summaries/SummaryCardSkeleton';
+import FuturisticSkeleton from '../summaries/FuturisticSkeleton';
 import EmptyState from '../summaries/EmptyState';
 import { ApiClientError } from '../../lib/api';
 import type { FilterOptions } from '../../types';
@@ -52,7 +52,7 @@ const DashboardContent = () => {
           aria-busy="true"
         >
           {Array.from({ length: 6 }).map((_, index) => (
-            <SummaryCardSkeleton key={index} />
+            <FuturisticSkeleton key={index} />
           ))}
         </div>
       )}

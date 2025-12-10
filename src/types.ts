@@ -139,6 +139,7 @@ export interface SummaryWithVideo {
   generated_at: string | null;
   user_rating: boolean | null;
   error_code?: SummaryErrorCode | null; // Add optional for failed
+  summary_data?: Pick<SummaryData, 'duration' | 'language'>;
 }
 
 /** Detailed summary with full information */
@@ -147,7 +148,7 @@ export interface DetailedSummary {
   video: VideoWithUrl;
   channel: Channel;
   tldr: string | null;
-  full_summary: FullSummaryContent | null;
+  full_summary: SummaryData | null;
   status: Database['public']['Enums']['summary_status'];
   error_code: Database['public']['Enums']['summary_error_code'] | null;
   generated_at: string | null;
@@ -394,10 +395,15 @@ export interface FilterOptions {
   include_hidden?: boolean;
 }
 
-export interface FullSummaryContent {
-  summary: string;
-  conclusions: string[];
+export interface SummaryData {
+  genre: string;
   key_points: string[];
+  detailed_summary: string;
+  conclusions: string[];
+  memorable_quotes: string[];
+  duration: string;
+  language: string;
+  worth_watching: string;
 }
 
 export interface SummaryDetailsViewModel {
@@ -413,7 +419,7 @@ export interface SummaryDetailsViewModel {
     name: string;
   };
   tldr: string | null;
-  full_summary: FullSummaryContent | null;
+  full_summary: SummaryData | null;
   status: SummaryStatus;
   generated_at: string | null;
   rating_stats: RatingStats;

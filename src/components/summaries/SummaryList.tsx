@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, memo } from 'react';
 import SummaryCard from './SummaryCard';
-import SummaryCardSkeleton from './SummaryCardSkeleton';
 import type { SummaryWithVideo, FilterOptions } from '../../types';
+import FuturisticSkeleton from './FuturisticSkeleton';
 
 interface Props {
   data?: any; // InfiniteData<PaginatedResponse<SummaryWithVideo>>
@@ -84,7 +84,7 @@ const SummaryList: React.FC<Props> = memo(({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
         {Array.from({ length: skeletonCount }).map((_, i) => (
-          <SummaryCardSkeleton key={i} />
+          <FuturisticSkeleton key={i} />
         ))}
       </div>
     );
@@ -112,7 +112,7 @@ const SummaryList: React.FC<Props> = memo(({
         })}
       </div>
       <div ref={sentinelRef} className="h-10 flex justify-center items-center">
-        {isFetchingNextPage && <SummaryCardSkeleton />}
+        {isFetchingNextPage && <FuturisticSkeleton />}
         {!hasNextPage && flattenedData.length > 0 && (
           <p className="text-gray-500 text-center">No more summaries</p>
         )}

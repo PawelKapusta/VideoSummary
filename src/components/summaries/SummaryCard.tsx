@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { ThumbsUp, ThumbsDown, EyeOff, Clock, AlertCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, EyeOff, Clock, AlertCircle, Languages } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { SummaryWithVideo, SummaryStatus, SummaryErrorCode } from '../../types';
@@ -79,9 +79,19 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
         </CardTitle>
         <CardDescription className="flex items-center gap-2 text-sm">
           <span>{summary.channel.name}</span>
-          <Clock className="w-4 h-4" />
-          <span>{summary.video.published_at ? format(new Date(summary.video.published_at), 'MMM dd, yyyy') : 'Unknown date'}</span>
         </CardDescription>
+        <div className="flex items-center space-x-4 text-sm text-gray-400 pt-2">
+            <div className="flex items-center">
+              <Clock className="mr-1 h-4 w-4" />
+              <span>{summary.video.published_at ? format(new Date(summary.video.published_at), 'MMM dd, yyyy') : 'Unknown date'}</span>
+            </div>
+          {summary.summary_data && (
+            <div className="flex items-center">
+              <Languages className="mr-1 h-4 w-4" />
+              <span>{summary.summary_data.language}</span>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="pb-4">
         <p className="text-sm text-gray-600 line-clamp-3 mb-4">{displayText}</p>

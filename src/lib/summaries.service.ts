@@ -1,8 +1,28 @@
 import { createHash } from 'crypto';
 import type { SupabaseClient } from '../db/supabase.client';
 import { errorLogger, appLogger } from './logger';
-import type { SummaryBasic, SummaryWithVideo, DetailedSummary, PaginatedResponse, SummaryStatus, FullSummaryContent } from '../types';
-import { extractYouTubeVideoId } from './youtube.utils';
+import type {
+  Channel,
+  DetailedSummary,
+  FilterOptions,
+  GenerationRequest,
+  GenerationRequestInsert,
+  PaginatedResponse,
+  PaginationMeta,
+  Profile,
+  RatingStats,
+  SummaryBasic,
+  SummaryData,
+  SummaryInsert,
+  SummaryStatus,
+  SummaryUpdate,
+  SummaryWithVideo,
+  VideoBasic,
+  VideoInsert,
+  VideoUpdate,
+  VideoWithUrl
+} from '../types';
+import { extractYouTubeVideoId, YOUTUBE_VIDEO_URL_PREFIX } from './youtube.utils';
 import { fetchYouTubeVideoMetadata } from './youtube.service';
 import type { Database } from '../db/database.types';
 import { OpenRouterService } from './openrouter.service';
@@ -330,7 +350,7 @@ async function processSummaryGeneration(
     // This is needed because the user-authenticated client loses auth context in async processing
     const { createSupabaseServiceClient } = await import('../db/supabase.client');
     const serviceClient = createSupabaseServiceClient();
-    
+
     try {
         // 1. Fetch Transcript
         appLogger.debug('Fetching transcript', { youtubeVideoId });
@@ -376,56 +396,108 @@ async function processSummaryGeneration(
 
         // 3. Define Schema
         const summarySchema = {
-            name: 'summary',
-            strict: true,
-            schema: {
-                type: 'object',
+          name: "youtube_video_summary",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              tldr: {
+                type: "string",
+                description: "Ultra-concise 2–4 sentence TL;DR in English. After reading this alone, someone must fully understand the video’s core message and value."
+              },
+              full_summary: {
+                type: "object",
                 properties: {
-                    tldr: {
-                        type: 'string',
-                        description: 'A short 1-paragraph summary (TL;DR) of the video content.'
-                    },
-                    full_summary: {
-                        type: 'object',
-                        properties: {
-                            key_points: {
-                                type: 'array',
-                                items: { type: 'string' },
-                                description: 'List of key points from the video.'
-                            },
-                            summary: {
-                                type: 'string',
-                                description: 'A detailed summary of the video content, formatted in HTML (using paragraphs <p> and headings <h3>).'
-                            },
-                            conclusions: {
-                                type: 'array',
-                                items: { type: 'string' },
-                                description: 'List of main conclusions or takeaways.'
-                            }
-                        },
-                        required: ['key_points', 'summary', 'conclusions'],
-                        additionalProperties: false
-                    }
+                  genre: {
+                    type: "string",
+                    enum: [
+                      "Geopolitics", "Finance & Investing", "Personal Finance", "Economics",
+                      "Technology", "AI & Machine Learning", "Science", "History", "Philosophy",
+                      "Self-Improvement", "Productivity", "Health & Fitness", "Psychology",
+                      "Business & Entrepreneurship", "Startups", "Crypto & Blockchain",
+                      "Programming & Coding", "Book Summary", "Documentary", "News & Current Events",
+                      "Comedy", "Lifestyle", "Travel", "Gaming", "Movie Review", "Reaction",
+                      "Education", "Tutorial / How-to", "Vlog", "Interview", "Podcast Clip",
+                      "Conspiracy / Alternative", "Spirituality", "Other"
+                    ],
+                    description: "Primary genre/topic of the video. Pick the single most accurate one from the list."
+                  },
+                  key_points: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "8–15 most important takeaways. Each item is one complete, standalone sentence (no bullets/dashes inside the string)."
+                  },
+                  detailed_summary: {
+                    type: "string",
+                    description: "Full chronological summary in valid HTML using <h3> for major sections and <p> for paragraphs. So detailed that reading this completely replaces watching the video."
+                  },
+                  conclusions: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "5–10 strongest conclusions, lessons, or actionable takeaways the creator wants you to remember."
+                  },
+                  memorable_quotes: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "3–8 of the most powerful, funny, or insightful direct/near-direct quotes."
+                  },
+                  duration: { type: "string", description: "Video length as mm:ss or hh:mm:ss (e.g. '21:34' or '1:12:08')" },
+                  language: { type: "string", description: "Main spoken language (e.g. 'English', 'Polish')" },
+                  worth_watching: {
+                    type: "string",
+                    enum: ["Must watch", "Worth watching", "Watch only if you have time", "Skip – not worth it"],
+                    description: "Your honest recommendation using one of the exact four phrases."
+                  }
                 },
-                required: ['tldr', 'full_summary'],
+                required: [
+                  "genre",
+                  "key_points",
+                  "detailed_summary",
+                  "conclusions",
+                  "memorable_quotes",
+                  "duration",
+                  "language",
+                  "worth_watching"
+                ],
                 additionalProperties: false
-            }
+              }
+            },
+            required: ["tldr", "full_summary"],
+            additionalProperties: false
+          }
         };
 
         interface GeneratedSummary {
             tldr: string;
             full_summary: {
+                genre: string;
                 key_points: string[];
-                summary: string;
+                detailed_summary: string;
                 conclusions: string[];
+                memorable_quotes: string[];
+                duration: string;
+                language: string;
+                worth_watching: string;
             };
         }
 
         // 4. Generate Summary
-        const prompt = `You are an expert video summarizer. Here is the transcript of a YouTube video. Please summarize it according to the schema provided.
-        
-        Transcript:
-        ${transcriptText}`;
+        const prompt = `
+            You are the world’s best YouTube video summarizer. Create a summary so perfect that anyone reading it feels they’ve watched the entire video and captured 100% of its value.
+
+            Full transcript:
+            === TRANSCRIPT START ===
+            ${transcriptText}
+            === TRANSCRIPT END ===
+
+            YouTube video id: ${youtubeVideoId}
+
+            Return ONLY valid JSON that exactly matches the schema.
+            No explanations, no markdown, no extra text.
+
+            Use clear, native English throughout.
+            First determine the single most accurate genre from the list, then fill every field with maximum detail and precision.
+                 `;
 
         appLogger.debug('Sending request to OpenRouter', { model: 'google/gemini-2.0-flash-001', summaryId });
         const result = await openRouter.completeJson<GeneratedSummary>(
@@ -435,10 +507,10 @@ async function processSummaryGeneration(
         appLogger.debug('Received response from OpenRouter', { summaryId, tldr_length: result.tldr.length });
 
         // 5. Update Database with completed summary
-        appLogger.debug('Updating summary in database', { 
-            summaryId, 
+        appLogger.debug('Updating summary in database', {
+            summaryId,
             tldr_length: result.tldr.length,
-            has_full_summary: !!result.full_summary 
+            has_full_summary: !!result.full_summary
         });
         
         const { error: updateError } = await serviceClient
@@ -469,7 +541,17 @@ async function processSummaryGeneration(
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
+        const errorName = error instanceof Error ? error.name : 'UnknownError';
         
+        // Additional debug log to surface the real failure reason in dev logs
+        appLogger.error('processSummaryGeneration failed', {
+            summaryId,
+            youtubeVideoId,
+            errorName,
+            errorMessage,
+            errorStack,
+        });
+
         errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
             service: 'summaries_service',
             operation: 'process_summary_generation',
@@ -482,11 +564,20 @@ async function processSummaryGeneration(
         // Determine error code based on error type
         let errorCode: 'NO_SUBTITLES' | 'VIDEO_PRIVATE' | 'VIDEO_TOO_LONG' | null = null;
         
-        if (errorMessage.includes('transcript') || errorMessage.includes('subtitle')) {
+        if (errorMessage === 'TRANSCRIPT_NOT_AVAILABLE' || 
+            errorMessage.includes('transcript') || 
+            errorMessage.includes('subtitle') ||
+            errorMessage.includes('Transcript is disabled') ||
+            errorMessage.includes('No transcripts available')) {
             errorCode = 'NO_SUBTITLES';
-        } else if (errorMessage.includes('private') || errorMessage.includes('unavailable')) {
+        } else if (errorMessage === 'VIDEO_NOT_FOUND' ||
+                   errorMessage.includes('private') || 
+                   errorMessage.includes('unavailable') ||
+                   errorMessage.includes('Video unavailable')) {
             errorCode = 'VIDEO_PRIVATE';
-        } else if (errorMessage.includes('too long') || errorMessage.includes('duration')) {
+        } else if (errorMessage === 'VIDEO_TOO_LONG' ||
+                   errorMessage.includes('too long') || 
+                   errorMessage.includes('duration')) {
             errorCode = 'VIDEO_TOO_LONG';
         }
         // If no specific error code matches, leave it as null (generic failure)
@@ -555,6 +646,17 @@ export async function listSummaries(
     };
   }
 
+  // Get hidden summary IDs if we need to exclude them
+  let hiddenSummaryIds: string[] = [];
+  if (!filters.include_hidden) {
+    const { data: hiddenSummaries } = await supabase
+      .from('hidden_summaries')
+      .select('summary_id')
+      .eq('user_id', userId);
+    
+    hiddenSummaryIds = hiddenSummaries?.map(h => h.summary_id) || [];
+  }
+
   let query = supabase
     .from('summaries')
     .select(`
@@ -579,7 +681,7 @@ export async function listSummaries(
       ),
       summary_ratings (
         rating
-      )
+    )
     `, { count: 'exact' })
     .in('videos.channel_id', subscribedChannelIds) // Filter by subscribed channels using video's channel_id
     .order('published_at', { ascending: filters.sort === 'published_at_asc', foreignTable: 'videos' }); // Ordering by video published_at
@@ -594,11 +696,9 @@ export async function listSummaries(
     query = query.eq('status', filters.status);
   }
 
-  // Exclude hidden if not included
-  if (!filters.include_hidden) {
-    query = query.not('id', 'in', 
-      supabase.from('hidden_summaries').select('summary_id').eq('user_id', userId)
-    );
+  // Exclude hidden summaries
+  if (!filters.include_hidden && hiddenSummaryIds.length > 0) {
+    query = query.not('id', 'in', `(${hiddenSummaryIds.join(',')})`);
   }
 
   // Search: full-text on video title and channel name

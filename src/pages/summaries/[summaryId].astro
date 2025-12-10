@@ -1,8 +1,10 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import SummaryDetailsView from '@/components/views/SummaryDetailsView';
+
+const { summaryId } = Astro.params;
 ---
 
 <Layout title="Video Summary" showNavigation={true}>
-	<SummaryDetailsView client:only="react" />
+	<SummaryDetailsView client:only="react" summaryId={summaryId} />
 </Layout>

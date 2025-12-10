@@ -1,10 +1,8 @@
 ---
-import ConfirmResetPasswordView from '@/components/views/ConfirmResetPasswordView';
 import Layout from '@/layouts/Layout.astro';
+import { ResetPasswordConfirmView } from '@/components/views/ResetPasswordConfirmView';
 ---
 
 <Layout title="Video Summary">
-	<div class="container mx-auto flex h-screen items-center justify-center">
-		<ConfirmResetPasswordView client:load />
-	</div>
+	<ResetPasswordConfirmView client:load />
 </Layout>

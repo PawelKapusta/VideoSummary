@@ -102,3 +102,5 @@ export function isValidYouTubeVideoId(videoId: string): boolean {
   // YouTube video IDs are 11 characters long with specific allowed characters
   return /^[a-zA-Z0-9_-]{11}$/.test(videoId);
 }
+
+export const YOUTUBE_VIDEO_URL_PREFIX = 'https://www.youtube.com/watch?v=';

@@ -3,7 +3,6 @@ import { useVideos } from '@/hooks/useVideos';
 import VideosFilterBar from './VideosFilterBar';
 import VideosGrid from './VideosGrid';
 import GenerateSummaryDialog from './GenerateSummaryDialog';
-import { Header } from '@/components/ui/header';
 import QueryProvider from '@/components/providers/QueryProvider';
 
 const VideosContent = () => {
@@ -25,10 +24,6 @@ const VideosContent = () => {
   } = useVideos();
 
   return (
-    <>
-    <Header
-        currentPath="/videos"
-      /> 
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       
       <VideosFilterBar
@@ -53,7 +48,6 @@ const VideosContent = () => {
         onConfirm={generateSummary}
       />
     </div>
-     </>
   );
 };
 
