@@ -114,7 +114,7 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     const url = `https://www.youtube.com/watch?v=${videoId}`;
     console.log('[gradio-client] Connecting to HuggingFace Space...');
     
-    const client = await Client.connect("chrisduynguyen/BKE-youtubeVideoToText");
+    const client = await Client.connect(import.meta.env.GRADIO_TRANSCRIPT_MODEL);
     console.log('[gradio-client] Connected successfully, starting transcription...');
     console.log('[gradio-client] Target YouTube URL:', url);
 

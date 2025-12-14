@@ -68,12 +68,59 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <Badge
-          variant={summary.status === 'completed' ? "default" : "secondary"}
-          className="absolute top-2 right-2 text-xs font-semibold shadow-md z-10 backdrop-blur-md bg-opacity-90"
-        >
-          {summary.status.toUpperCase()}
-        </Badge>
+        {(() => {
+          const getStatusConfig = (status: string) => {
+            // Elegant "Tech Pill" design: dark glass, round, with a glowing status dot
+            const containerStyle = "absolute top-3 right-3 pl-2.5 pr-3 py-1.5 flex items-center gap-2 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-2xl z-10 transition-all duration-300 group-hover:bg-black/80 group-hover:border-white/20";
+
+            switch (status) {
+              case 'completed':
+                return {
+                  container: containerStyle,
+                  dot: "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] animate-pulse-slow",
+                  text: "text-[10px] font-bold text-emerald-100 tracking-widest uppercase",
+                  label: "Completed"
+                };
+              case 'failed':
+                return {
+                  container: containerStyle,
+                  dot: "w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]",
+                  text: "text-[10px] font-bold text-rose-100 tracking-widest uppercase",
+                  label: "Failed"
+                };
+              case 'processing':
+                return {
+                  container: containerStyle,
+                  dot: "w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.6)] animate-pulse",
+                  text: "text-[10px] font-bold text-blue-100 tracking-widest uppercase",
+                  label: "Processing"
+                };
+              case 'pending':
+                return {
+                  container: containerStyle,
+                  dot: "w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.6)]",
+                  text: "text-[10px] font-bold text-amber-100 tracking-widest uppercase",
+                  label: "Pending"
+                };
+              default:
+                return {
+                  container: containerStyle,
+                  dot: "w-2 h-2 rounded-full bg-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.6)]",
+                  text: "text-[10px] font-bold text-slate-100 tracking-widest uppercase",
+                  label: status
+                };
+            }
+          };
+
+          const config = getStatusConfig(summary.status);
+
+          return (
+            <div className={config.container}>
+              <div className={config.dot} />
+              <span className={config.text}>{config.label}</span>
+            </div>
+          );
+        })()}
       </div>
 
       <CardHeader className="flex-grow pb-2 p-4 space-y-2">

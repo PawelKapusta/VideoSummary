@@ -278,7 +278,7 @@ async function processSummaryGeneration(
 
     const openRouter = new OpenRouterService({
       apiKey,
-      defaultModel: 'x-ai/grok-4.1-fast',
+      defaultModel: import.meta.env.OPENROUTER_MODEL || 'x-ai/grok-4.1-fast',
     });
 
     const schema = {
