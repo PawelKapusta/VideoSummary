@@ -15,6 +15,7 @@
     "@astrojs/node": "^9.5.1",
     "@astrojs/react": "^4.4.2",
     "@astrojs/sitemap": "^3.6.0",
+    "@gradio/client": "^2.0.0",
     "@logtape/file": "^1.2.0",
     "@logtape/logtape": "^1.2.0",
     "@logtape/redaction": "^1.2.0",

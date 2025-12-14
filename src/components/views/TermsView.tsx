@@ -5,28 +5,28 @@ export function TermsView() {
   return (
     <>
       <LegalHeader activePage="terms" />
-      
+
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Hero Section */}
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold tracking-tight mb-3">Terms of Service</h1>
           <p className="text-muted-foreground text-base">Please read these terms carefully before using our service</p>
-          <p className="text-sm text-muted-foreground mt-2">Last Updated: December 10, 2025</p>
+          <p className="text-sm text-muted-foreground mt-2">Last Updated: December 13, 2025</p>
         </div>
 
         {/* Content */}
         <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-4 prose-h2:pt-8 prose-h2:border-t prose-h2:border-border prose-h2:first:mt-0 prose-h2:first:pt-0 prose-h2:first:border-t-0 prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-3 prose-h3:ml-4 prose-p:text-base prose-p:leading-7 prose-li:text-base prose-strong:text-foreground prose-ul:ml-8 prose-ol:ml-8">
-          
+
           <h2>1. Acceptance of Terms</h2>
           <p>By accessing and using VideoSummary ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement.</p>
 
           <h2>2. Description of Service</h2>
           <p>VideoSummary provides AI-powered summarization services for YouTube videos. We generate summaries based on publicly available captions and transcripts from YouTube videos.</p>
-          
+
           <div className="ml-4">
             <p><strong>What We Provide:</strong></p>
             <ul>
-              <li>AI-generated summaries of YouTube videos</li>
+              <li>AI-generated summaries of YouTube videos (provided in Polish)</li>
               <li>Access to video transcripts (when publicly available)</li>
               <li>Organization and management of your summaries</li>
               <li>Subscription to YouTube channels for automatic summaries</li>
@@ -41,7 +41,7 @@ export function TermsView() {
           </div>
 
           <h2>3. User Accounts and Service Limits</h2>
-          
+
           <div className="ml-4">
             <p><strong>Current Service Limits:</strong></p>
             <ul>
@@ -67,7 +67,7 @@ export function TermsView() {
           </div>
 
           <h2>4. Intellectual Property</h2>
-          
+
           <div className="ml-4">
             <p><strong>Your Rights:</strong></p>
             <ul>
@@ -104,7 +104,7 @@ export function TermsView() {
           </ul>
 
           <h2>6. Content and Copyright</h2>
-          
+
           <div className="ml-4">
             <p><strong>Respect for Creators:</strong></p>
             <ul>

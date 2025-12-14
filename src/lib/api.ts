@@ -198,7 +198,13 @@ export async function getVideos(
     params.channel_id = filters.channelId;
   }
 
-  // Note: summaryStatus is handled client-side for now as per the plan.
+  if (filters.searchQuery) {
+    params.search = filters.searchQuery;
+  }
+
+  if (filters.summaryStatus && filters.summaryStatus !== 'all') {
+    params.status = filters.summaryStatus;
+  }
 
   return authApiClient.get<PaginatedResponse<VideoSummary>>('/api/videos', { params });
 }

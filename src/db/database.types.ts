@@ -82,6 +82,13 @@ export type Database = {
             referencedRelation: "videos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "generation_requests_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos_with_summaries"
+            referencedColumns: ["id"]
+          },
         ]
       }
       hidden_summaries: {
@@ -193,6 +200,13 @@ export type Database = {
             referencedRelation: "videos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "summaries_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: true
+            referencedRelation: "videos_with_summaries"
+            referencedColumns: ["id"]
+          },
         ]
       }
       summary_ratings: {
@@ -270,9 +284,64 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      videos_with_summaries: {
+        Row: {
+          channel_id: string | null
+          created_at: string | null
+          summary_id: string | null
+          id: string | null
+          metadata_last_checked_at: string | null
+          published_at: string | null
+          thumbnail_url: string | null
+          title: string | null
+          youtube_video_id: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          created_at?: string | null
+          has_summary?: never
+          id?: string | null
+          metadata_last_checked_at?: string | null
+          published_at?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          youtube_video_id?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          created_at?: string | null
+          has_summary?: never
+          id?: string | null
+          metadata_last_checked_at?: string | null
+          published_at?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          youtube_video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      generate_summary_atomic: {
+        Args: {
+          p_channel_id: string
+          p_lock_key: number
+          p_user_id: string
+          p_video_id: string
+        }
+        Returns: {
+          id: string
+          status: Database["public"]["Enums"]["summary_status"]
+        }[]
+      }
       subscribe_to_channel_atomic: {
         Args: { p_channel_id: string; p_lock_key: number; p_user_id: string }
         Returns: Json

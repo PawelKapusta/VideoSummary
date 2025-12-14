@@ -126,7 +126,7 @@ export interface VideoSummary {
   thumbnail_url: string | null;
   published_at: string | null;
   channel: Channel;
-  has_summary: boolean;
+  summary_id: string | null;
 }
 
 /** Summary with video information for list views */
@@ -473,4 +473,5 @@ export interface ValidationStatusViewModel {
 export interface VideosFilterState {
   channelId: string | 'all';
   summaryStatus: 'all' | 'with' | 'without';
+  searchQuery?: string;
 }

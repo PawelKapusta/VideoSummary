@@ -5,23 +5,23 @@ export function PrivacyView() {
   return (
     <>
       <LegalHeader activePage="privacy" />
-      
+
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Hero Section */}
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold tracking-tight mb-3">Privacy Policy</h1>
           <p className="text-muted-foreground text-base">How we collect, use, and protect your data</p>
-          <p className="text-sm text-muted-foreground mt-2">Last Updated: December 10, 2025</p>
+          <p className="text-sm text-muted-foreground mt-2">Last Updated: December 13, 2025</p>
         </div>
 
         {/* Content */}
         <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-4 prose-h2:pt-8 prose-h2:border-t prose-h2:border-border prose-h2:first:mt-0 prose-h2:first:pt-0 prose-h2:first:border-t-0 prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-3 prose-h3:ml-4 prose-p:text-base prose-p:leading-7 prose-li:text-base prose-strong:text-foreground prose-ul:ml-8 prose-ol:ml-8">
-          
+
           <h2>1. Introduction</h2>
           <p>VideoSummary ("we", "our", "us") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, store, and protect your information.</p>
 
           <h2>2. Information We Collect</h2>
-          
+
           <div className="ml-4">
             <p><strong>2.1 Account Information:</strong></p>
             <ul>
@@ -48,7 +48,7 @@ export function PrivacyView() {
           </div>
 
           <h2>3. How We Use Your Information</h2>
-          
+
           <div className="ml-4">
             <p><strong>3.1 Provide the Service:</strong></p>
             <ul>
@@ -75,13 +75,14 @@ export function PrivacyView() {
             <p><strong>4.1 Service Providers:</strong></p>
             <ul>
               <li><strong>Supabase</strong>: Database and authentication</li>
-              <li><strong>OpenRouter/AI Providers</strong>: For generating summaries (video transcripts only)</li>
+              <li><strong>OpenRouter</strong>: AI model aggregation service</li>
+              <li><strong>Google (Gemini)</strong>: LLM provider for generating summaries (video transcripts are processed via OpenRouter)</li>
               <li><em><strong>Payment Processors</strong>: For payment processing (after MVP)</em></li>
             </ul>
           </div>
 
           <h2>5. YouTube Data</h2>
-          
+
           <div className="ml-4">
             <p><strong>5.1 What We Access:</strong></p>
             <ul>

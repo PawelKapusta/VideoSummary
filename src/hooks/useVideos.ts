@@ -9,6 +9,7 @@ export const useVideos = () => {
   const [filters, setFilters] = useState<VideosFilterState>({
     channelId: 'all',
     summaryStatus: 'all',
+    searchQuery: '',
   });
   const [selectedVideo, setSelectedVideo] = useState<VideoSummary | null>(null);
 
@@ -47,26 +48,14 @@ export const useVideos = () => {
     },
     onError: (error: any) => {
       const errorMessage = error?.error?.message || 'An unknown error occurred.';
-      toast.error(`Failed to start generation: ${errorMessage}`);
+      toast.error(`Failed to generate summary: ${errorMessage}`);
     },
   });
 
   const videos = data?.pages.flatMap(page => page.data) ?? [];
 
-  // Client-side filtering for summary status (api filtering for summary status is not implemented yet in this version)
-  const filteredVideos = videos.filter(video => {
-    // Note: channelId filtering is handled by the API, so we don't need to filter here for channelId unless 'all' case needs handling on client side (but API handles it).
-    // However, keeping it consistent if API returns mixed results or for optimistic updates. 
-    // Actually, API handles channelId, but let's double check summaryStatus.
-    
-    if (filters.summaryStatus === 'with') {
-      return video.has_summary;
-    }
-    if (filters.summaryStatus === 'without') {
-      return !video.has_summary;
-    }
-    return true;
-  });
+  // Client-side filtering removed as backend now handles all filters
+  const processedVideos = videos;
 
   const handleSetFilters = (newFilters: Partial<VideosFilterState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -87,7 +76,7 @@ export const useVideos = () => {
   };
 
   return {
-    videos: filteredVideos,
+    videos: processedVideos,
     isLoading: status === 'pending' || isFetching,
     isError: status === 'error',
     error,

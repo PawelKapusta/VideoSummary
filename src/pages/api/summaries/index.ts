@@ -159,11 +159,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         statusCode = 422;
         errorCode = 'VIDEO_TOO_LONG';
         message = 'Video exceeds 45-minute limit';
-      } else if (error.message === 'VIDEO_PRIVATE') {
+      } else if (error.message === 'VIDEO_PRIVATE' || error.message === 'YT_CAPTION_LIST_AUTH_REQUIRED' || error.message === 'YT_CAPTION_DOWNLOAD_AUTH_REQUIRED') {
         statusCode = 404;
         errorCode = 'VIDEO_PRIVATE';
         message = 'Video is private or unavailable';
-      } else if (error.message === 'NO_SUBTITLES') {
+      } else if (error.message === 'NO_SUBTITLES' || error.message === 'TRANSCRIPT_NOT_AVAILABLE' || error.message === 'TRANSCRIPT_EMPTY') {
         statusCode = 422;
         errorCode = 'NO_SUBTITLES';
         message = 'Video has no available subtitles';
@@ -344,7 +344,10 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     const result: PaginatedResponse<SummaryWithVideo> = await listSummaries(
       supabase,
       userId,
-      filters
+      {
+        ...filters,
+        sort: filters.sort === 'published_at_asc' ? 'oldest' : 'newest',
+      }
     );
 
     // Log successful summaries access

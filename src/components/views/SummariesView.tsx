@@ -7,6 +7,7 @@ import EmptyState from '../summaries/EmptyState';
 import { useSummaries } from '../../hooks/useSummaries';
 import { useUserChannels } from '../../hooks/useUserChannels';
 import type { FilterOptions, SummaryWithVideo } from '../../types';
+import AppLoader from '../ui/AppLoader';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
   constructor(props: any) {
@@ -54,7 +55,7 @@ const SummariesContent: React.FC = () => {
 
   const flattenedData = data?.pages.flatMap((page: any) => page.data) || [];
   const firstPage = data?.pages[0] as any;
-  const totalCount = firstPage?.pagination?.total || 0; 
+  const totalCount = firstPage?.pagination?.total || 0;
 
   // Handle auth errors - redirect to login
   useEffect(() => {
@@ -113,17 +114,17 @@ const SummariesContent: React.FC = () => {
     setFilters({});
   }, []);
 
-  const emptyMessage = flattenedData.length === 0 && Object.keys(filters).length > 0 
-    ? `No summaries match your current filters.` 
+  const emptyMessage = flattenedData.length === 0 && Object.keys(filters).length > 0
+    ? `No summaries match your current filters.`
     : 'No summaries available. Subscribe to channels to get started.';
+
+  // ... imports
 
   if (channelsLoading) {
     return (
       <div className="container mx-auto p-4 max-w-7xl">
         <Toaster position="top-right" richColors />
-        <div className="flex justify-center items-center min-h-[400px]">
-          <p>Loading your channels...</p> {/* TODO: Add spinner skeleton */}
-        </div>
+        <AppLoader loadingText="Loading your summaries..." />
       </div>
     );
   }
@@ -138,15 +139,16 @@ const SummariesContent: React.FC = () => {
             {totalCount > 0 ? `${totalCount} summaries found` : 'No summaries yet'}
           </p>
         </header>
-        <FilterPanel 
-          filters={filters} 
-          onFiltersChange={handleFiltersChange} 
-          channels={channelsData || []} 
+        <FilterPanel
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          channels={channelsData || []}
+          disabled={isLoading || isFetching}
         />
         {flattenedData.length === 0 && !isLoading ? (
-          <EmptyState 
-            message={emptyMessage} 
-            onClearFilters={handleClearFilters} 
+          <EmptyState
+            message={emptyMessage}
+            onClearFilters={handleClearFilters}
           />
         ) : (
           <SummaryList

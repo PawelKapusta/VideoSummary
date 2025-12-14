@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useCallback, memo } from 'react';
 import SummaryCard from './SummaryCard';
 import type { SummaryWithVideo, FilterOptions } from '../../types';
 import FuturisticSkeleton from './FuturisticSkeleton';
+import AppLoader from '../ui/AppLoader';
 
 interface Props {
   data?: any; // InfiniteData<PaginatedResponse<SummaryWithVideo>>
@@ -62,12 +63,12 @@ const SummaryList: React.FC<Props> = memo(({
     return (
       <div className="flex flex-col items-center py-12">
         <p className="text-red-500 mb-4">
-          {error.message.includes('401') ? 'Authentication failed. Please log in.' : 
-           error.message.includes('429') ? 'Rate limited. Please wait.' : 
-           `Error loading summaries: ${error.message}`}
+          {error.message.includes('401') ? 'Authentication failed. Please log in.' :
+            error.message.includes('429') ? 'Rate limited. Please wait.' :
+              `Error loading summaries: ${error.message}`}
         </p>
-        <button 
-          onClick={() => refetch()} 
+        <button
+          onClick={() => refetch()}
           className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
           disabled={!refetch}
         >
@@ -81,13 +82,7 @@ const SummaryList: React.FC<Props> = memo(({
   const skeletonCount = isFetching ? 3 : 5; // Fewer on refetch
 
   if (showSkeletons) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
-        {Array.from({ length: skeletonCount }).map((_, i) => (
-          <FuturisticSkeleton key={i} />
-        ))}
-      </div>
-    );
+    return <AppLoader loadingText="Loading summaries..." />;
   }
 
   if (flattenedData.length === 0) {

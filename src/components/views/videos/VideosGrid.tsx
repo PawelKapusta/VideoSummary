@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type { VideoSummary } from '@/types';
 import VideoCard from './VideoCard';
-import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/shared/EmptyState';
+import AppLoader from '@/components/ui/AppLoader';
 
 interface VideosGridProps {
   videos: VideoSummary[];
@@ -14,19 +14,7 @@ interface VideosGridProps {
   onSelectVideo: (video: VideoSummary) => void;
 }
 
-const SkeletonLoader = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-    {Array.from({ length: 8 }).map((_, index) => (
-      <div key={index} className="flex flex-col space-y-3">
-        <Skeleton className="h-[125px] w-full rounded-xl" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-      </div>
-    ))}
-  </div>
-);
+
 
 const VideosGrid: React.FC<VideosGridProps> = ({
   videos,
@@ -47,7 +35,7 @@ const VideosGrid: React.FC<VideosGridProps> = ({
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
-    return <SkeletonLoader />;
+    return <AppLoader loadingText="Loading videos..." />;
   }
 
   if (videos.length === 0) {
@@ -64,7 +52,7 @@ const VideosGrid: React.FC<VideosGridProps> = ({
         <div className="text-center py-4">
           <p>Loading more videos...</p>
         </div>
-      )}    
+      )}
     </div>
   );
 };

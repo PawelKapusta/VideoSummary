@@ -1,4 +1,5 @@
 /// <reference types="astro/client" />
+/// <reference path="./types/youtube-transcript-api.d.ts" />
 
 import type { SupabaseClient } from './db/supabase.client.ts';
 

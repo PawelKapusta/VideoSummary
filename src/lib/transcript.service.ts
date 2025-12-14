@@ -6,11 +6,205 @@ import {
   YoutubeTranscriptVideoUnavailableError,
   YoutubeTranscriptTooManyRequestError,
 } from 'youtube-transcript';
+import { Client } from '@gradio/client';
 
 export interface TranscriptSegment {
   text: string;
   offset: number;
   duration: number;
+}
+
+const preferredLanguages = ['pl', 'en', 'en-us', 'en-gb'];
+
+function timeToMs(value: string): number {
+  const normalized = value.replace(',', '.');
+  const parts = normalized.split(':').map(Number);
+  while (parts.length < 3) parts.unshift(0);
+  const [hours, minutes, seconds] = parts;
+  return Math.round(((hours * 60 + minutes) * 60 + seconds) * 1000);
+}
+
+function parseVttToSegments(vtt: string): TranscriptSegment[] {
+  const segments: TranscriptSegment[] = [];
+  const blocks = vtt.split(/\r?\n\r?\n/);
+
+  for (const rawBlock of blocks) {
+    const lines = rawBlock.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) continue;
+
+    let timingLine = lines[0];
+    if (!timingLine.includes('-->') && lines[1]?.includes('-->')) {
+      timingLine = lines[1];
+      lines.splice(0, 2);
+    } else {
+      lines.shift();
+    }
+
+    if (!timingLine.includes('-->')) continue;
+    const [start, end] = timingLine.split('-->').map((s) => s.trim());
+    const offset = timeToMs(start);
+    const duration = Math.max(0, timeToMs(end) - offset);
+    const text = lines.join(' ').trim();
+
+    if (text) {
+      segments.push({ text, offset, duration });
+    }
+  }
+
+  return segments;
+}
+
+async function fetchWithYouTubeApiCaptions(videoId: string): Promise<TranscriptSegment[]> {
+  console.log('[transcript] Trying YouTube Data API captions...');
+  const apiKey = import.meta.env.YOUTUBE_API_KEY;
+  if (!apiKey) throw new Error('YOUTUBE_API_KEY missing');
+
+  const listUrl = new URL('https://www.googleapis.com/youtube/v3/captions');
+  listUrl.searchParams.set('videoId', videoId);
+  listUrl.searchParams.set('part', 'snippet');
+  listUrl.searchParams.set('key', apiKey);
+
+  const listRes = await fetch(listUrl.toString());
+  if (!listRes.ok) {
+    if (listRes.status === 401 || listRes.status === 403) {
+      throw new Error('YT_CAPTION_LIST_AUTH_REQUIRED');
+    }
+    throw new Error(`YT_CAPTION_LIST_FAILED:${listRes.status}`);
+  }
+  const listJson = await listRes.json();
+  const items: Array<{ id?: string; snippet?: { language?: string; trackKind?: string } }> = listJson?.items ?? [];
+  if (!items.length) throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+
+  const scored = items
+    .filter((i) => i?.id)
+    .map((i) => {
+      const lang = (i.snippet?.language ?? '').toLowerCase();
+      const langScore = preferredLanguages.findIndex((l) => lang.startsWith(l));
+      return { id: i.id!, langScore: langScore === -1 ? preferredLanguages.length : langScore, trackKind: i.snippet?.trackKind };
+    })
+    .sort((a, b) => a.langScore - b.langScore);
+
+  const chosen = scored[0];
+  if (!chosen) throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+
+  // Download VTT if possible
+  const downloadUrl = new URL(`https://www.googleapis.com/youtube/v3/captions/${chosen.id}`);
+  downloadUrl.searchParams.set('tfmt', 'vtt');
+  downloadUrl.searchParams.set('key', apiKey);
+  const capRes = await fetch(downloadUrl.toString(), { headers: { Accept: 'text/vtt' } });
+  if (!capRes.ok) {
+    if (capRes.status === 401 || capRes.status === 403) {
+      throw new Error('YT_CAPTION_DOWNLOAD_AUTH_REQUIRED');
+    }
+    throw new Error(`YT_CAPTION_DOWNLOAD_FAILED:${capRes.status}`);
+  }
+  const body = await capRes.text();
+
+  const segments = parseVttToSegments(body);
+  if (!segments.length) throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+  console.log('[transcript] YouTube Data API success, segments:', segments.length);
+  return segments;
+}
+
+async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment[]> {
+  console.log('[gradio-client] START fetchWithGradioClient for:', videoId);
+  appLogger.debug('Fetching transcript using Gradio Client fallback', { videoId });
+
+  try {
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    console.log('[gradio-client] Connecting to HuggingFace Space...');
+    
+    const client = await Client.connect("chrisduynguyen/BKE-youtubeVideoToText");
+    console.log('[gradio-client] Connected successfully, starting transcription...');
+    console.log('[gradio-client] Target YouTube URL:', url);
+
+    const result = await client.predict("/get_transcript", {
+      param_0: url,
+      param_1: "auto"
+    });
+
+    console.log('[gradio-client] Transcription received');
+    console.log('[gradio-client] Raw output type:', typeof result);
+    console.log('[gradio-client] Raw output:', JSON.stringify(result).substring(0, 500));
+
+    let fullText = '';
+    if (result && result.data) {
+      if (typeof result.data === 'string') {
+        fullText = result.data;
+      } else if (Array.isArray(result.data) && result.data.length > 0) {
+        fullText = result.data[0];
+      }
+    }
+
+    console.log('[gradio-client] Extracted text type:', typeof fullText);
+    console.log('[gradio-client] Transcription length:', fullText.length, 'characters');
+    console.log('[gradio-client] First 200 chars:', fullText.substring(0, 200));
+
+    // Check for specific "garbage" response pattern (hallucination)
+    const lowText = fullText.toLowerCase();
+    const foreignCount = (lowText.match(/foreign/g) || []).length;
+    const thankYouCount = (lowText.match(/thank you/g) || []).length;
+    const wordCount = lowText.split(/\s+/).length;
+    // If a significant portion of the text is just "foreign" or "thank you", it's a hallucination
+    const hallucinationRatio = wordCount > 0 ? (foreignCount + thankYouCount) / wordCount : 0;
+
+    if (hallucinationRatio > 0.4) {
+      console.error('[gradio-client] Garbage transcription detected', {
+        hallucinationRatio,
+        foreignCount,
+        thankYouCount,
+        preview: fullText.substring(0, 100)
+      });
+      throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+    }
+
+    if (!fullText || fullText.trim().length === 0) {
+      console.error('[gradio-client] Empty transcription');
+      throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+    }
+
+    // Convert plain text to segments (since Gradio returns full text without timestamps)
+    // We'll create artificial segments by splitting on sentences or paragraphs
+    const sentences = fullText.split(/[.!?]\s+/).filter(s => s.trim().length > 0);
+    const segments: TranscriptSegment[] = sentences.map((text, index) => ({
+      text: text.trim() + (text.match(/[.!?]$/) ? '' : '.'),
+      offset: index * 5000, // Artificial 5-second intervals
+      duration: 5000,
+    }));
+
+    appLogger.debug('Gradio Client transcript fetched successfully', {
+      videoId,
+      segments: segments.length,
+      totalLength: fullText.length,
+    });
+
+    const preview = fullText.substring(0, 500);
+    appLogger.debug('Gradio Client transcript preview', {
+      videoId,
+      previewLength: preview.length,
+      preview,
+    });
+
+    return segments;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('[gradio-client] ERROR:', errorMessage);
+    console.log('[gradio-client] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
+    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
+      service: 'transcript_service',
+      operation: 'gradio_client_fetch_transcript',
+      video_id: videoId,
+      error_message: errorMessage,
+      error_stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    if (errorMessage === 'TRANSCRIPT_NOT_AVAILABLE') {
+      throw error;
+    }
+
+    throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+  }
 }
 
 /**
@@ -20,12 +214,74 @@ export interface TranscriptSegment {
  * @throws Error if transcript is not available or fetch fails
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
+  console.log('[transcript] START fetchTranscript for videoId:', videoId);
+  // Minimal ścieżka: YoutubeTranscript z preferencją PL -> EN, z auto-captions.
+  const preferredLangs = ['pl', 'en'];
+  for (const lang of preferredLangs) {
+    try {
+      console.log('[transcript] Trying YoutubeTranscript with lang:', lang);
+      const res = await YoutubeTranscript.fetchTranscript(videoId, {
+        lang,
+      });
+      if (res?.length) {
+        const segments: TranscriptSegment[] = res.map((item) => ({
+          text: item.text,
+          offset: Math.round(item.offset),
+          duration: Math.round(item.duration),
+        }));
+        console.log('[transcript] SUCCESS via YoutubeTranscript, segments:', segments.length);
+        return segments;
+      }
+    } catch (err) {
+      console.log('[transcript] YoutubeTranscript failed for', lang, err instanceof Error ? err.message : err);
+    }
+  }
+
+  try {
+    const ytApiCaptions = await fetchWithYouTubeApiCaptions(videoId);
+    return ytApiCaptions;
+  } catch (ytApiErr) {
+    console.log('[transcript] YouTube Data API captions failed:', ytApiErr instanceof Error ? ytApiErr.message : ytApiErr);
+  }
+
+  try {
+    console.log('[transcript] Trying fallback provider (youtube-transcript-api)...');
+    const result = await fetchWithYoutubeTranscriptApi(videoId);
+    console.log('[transcript] FALLBACK SUCCESS! Got', result.length, 'segments');
+    return result;
+  } catch (fallbackError) {
+    const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+    console.log('[transcript] Fallback provider FAILED:', fallbackMsg);
+  }
+
+  try {
+    console.log('[transcript] Trying Gradio Client fallback...');
+    const gradioResult = await fetchWithGradioClient(videoId);
+    console.log('[transcript] GRADIO CLIENT SUCCESS! Got', gradioResult.length, 'segments');
+    return gradioResult;
+  } catch (gradioError) {
+    const gradioMsg = gradioError instanceof Error ? gradioError.message : String(gradioError);
+    console.log('[transcript] Gradio Client fallback FAILED:', gradioMsg);
+  }
+  throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+
+}
+
+async function fetchWithYoutubeTranscript(videoId: string): Promise<TranscriptSegment[]> {
+  console.log('[youtube-transcript] START fetchWithYoutubeTranscript for:', videoId);
   appLogger.debug('Fetching transcript from YouTube using youtube-transcript', { videoId });
 
   try {
+    console.log('[youtube-transcript] Calling YoutubeTranscript.fetchTranscript...');
     appLogger.debug('Calling YoutubeTranscript.fetchTranscript', { videoId });
     const transcriptResponse = await YoutubeTranscript.fetchTranscript(videoId);
 
+    console.log('[youtube-transcript] Response received:', {
+      type: typeof transcriptResponse,
+      isArray: Array.isArray(transcriptResponse),
+      length: transcriptResponse?.length ?? 'null',
+    });
+    
     appLogger.debug('YoutubeTranscript response received', {
       videoId,
       responseType: typeof transcriptResponse,
@@ -35,9 +291,12 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
     });
 
     if (!transcriptResponse || transcriptResponse.length === 0) {
+      console.log('[youtube-transcript] EMPTY response - no segments!');
       appLogger.warn('No transcript segments found', { videoId });
       throw new Error('TRANSCRIPT_NOT_AVAILABLE');
     }
+    
+    console.log('[youtube-transcript] Got', transcriptResponse.length, 'segments');
 
     // Convert to our segment format (offset and duration are already in ms)
     const segments: TranscriptSegment[] = transcriptResponse.map((item) => ({
@@ -62,6 +321,8 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
     return segments;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('[youtube-transcript] CAUGHT ERROR:', errorMessage);
+    console.log('[youtube-transcript] Error constructor:', error?.constructor?.name);
 
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       service: 'transcript_service',
@@ -73,6 +334,7 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
 
     // Handle specific youtube-transcript errors
     if (error instanceof YoutubeTranscriptVideoUnavailableError) {
+      console.log('[youtube-transcript] -> VIDEO_NOT_FOUND');
       throw new Error('VIDEO_NOT_FOUND');
     }
 
@@ -80,23 +342,216 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
       error instanceof YoutubeTranscriptDisabledError ||
       error instanceof YoutubeTranscriptNotAvailableError
     ) {
+      console.log('[youtube-transcript] -> TRANSCRIPT_NOT_AVAILABLE (disabled/not available)');
       throw new Error('TRANSCRIPT_NOT_AVAILABLE');
     }
 
     if (error instanceof YoutubeTranscriptTooManyRequestError) {
+      console.log('[youtube-transcript] -> RATE_LIMIT_EXCEEDED');
       appLogger.error('YouTube rate limit hit', { videoId });
       throw new Error('RATE_LIMIT_EXCEEDED');
     }
 
     // Re-throw known errors
     if (errorMessage === 'TRANSCRIPT_NOT_AVAILABLE' || errorMessage === 'VIDEO_NOT_FOUND') {
+      console.log('[youtube-transcript] Rethrowing known error:', errorMessage);
       throw error;
     }
 
+    console.log('[youtube-transcript] Rethrowing unknown error');
     throw error;
+  }
+}
+
+async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<TranscriptSegment[]> {
+  console.log('[transcript-api] START fetchWithYoutubeTranscriptApi for:', videoId);
+  appLogger.debug('Fetching transcript using youtube-transcript-api fallback', { videoId });
+
+  console.log('[transcript-api] Importing youtube-transcript-api module...');
+  const module = await import('youtube-transcript-api');
+  console.log('[transcript-api] Module imported successfully');
+
+  type TranscriptApiFn = (
+    videoId: string,
+    langCode?: string,
+  ) => Promise<
+    Array<{
+      text?: string;
+      start?: number;
+      duration?: number;
+    }>
+  >;
+
+  type TranscriptApiClient = {
+    getTranscript?: TranscriptApiFn;
+  };
+
+  type TranscriptApiModule = {
+    TranscriptClient?: new () => TranscriptApiClient;
+    default?: unknown;
+    getTranscript?: TranscriptApiFn;
+  };
+
+  const transcriptModule = module as TranscriptApiModule;
+  const defaultExport = transcriptModule.default;
+  const defaultFunction = typeof defaultExport === 'function' ? (defaultExport as TranscriptApiFn) : undefined;
+
+  const CandidateClient =
+    transcriptModule.TranscriptClient ??
+    (typeof defaultExport === 'function'
+      ? (defaultExport as TranscriptApiModule['TranscriptClient'])
+      : undefined);
+
+  let client: TranscriptApiClient | null = null;
+
+  if (CandidateClient) {
+    try {
+      client = new CandidateClient();
+    } catch (err) {
+      console.log('[transcript-api] Failed to instantiate TranscriptClient, falling back to static method', {
+        errorMessage: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  const getTranscript: TranscriptApiFn | undefined =
+    client?.getTranscript?.bind(client) ?? transcriptModule.getTranscript ?? defaultFunction;
+
+  console.log('[transcript-api] getTranscript type:', typeof getTranscript);
+
+  if (typeof getTranscript !== 'function') {
+    console.log('[transcript-api] ERROR: getTranscript is not a function!');
+    appLogger.error('FALLBACK_TRANSCRIPT_PROVIDER_UNAVAILABLE', {
+      defaultType: typeof getTranscript,
+    });
+    throw new Error('FALLBACK_TRANSCRIPT_PROVIDER_UNAVAILABLE');
+  }
+
+  console.log('[transcript-api] getTranscript function ready, trying languages: pl, en, undefined');
+
+  try {
+    const languageCandidates: Array<string | undefined> = ['pl', 'en', undefined];
+
+    for (const lang of languageCandidates) {
+      try {
+        console.log('[transcript-api] calling getTranscript:', { videoId, lang });
+        appLogger.debug('youtube-transcript-api attempt', { videoId, lang });
+        const response = await getTranscript(videoId, lang);
+        console.log('[transcript-api] response:', response?.length, 'segments');
+
+        appLogger.debug('youtube-transcript-api response received', {
+          videoId,
+          lang,
+          isArray: Array.isArray(response),
+          length: response?.length ?? 'null',
+          firstItem: response?.[0] ?? 'empty',
+        });
+
+        if (!response || response.length === 0) {
+          throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+        }
+
+        const segments: TranscriptSegment[] = (response as Array<Record<string, unknown>>).map(
+          (item) => ({
+            text: String(item.text ?? ''),
+            offset: Math.round(Number(item.start ?? 0) * 1000),
+            duration: Math.round(Number(item.duration ?? 0) * 1000),
+          }),
+        );
+
+        const preview = transcriptToString(segments).slice(0, 500);
+        appLogger.debug('youtube-transcript-api transcript preview', {
+          videoId,
+          lang,
+          previewLength: preview.length,
+          preview,
+        });
+
+        return segments;
+      } catch (innerError) {
+        const innerMessage = innerError instanceof Error ? innerError.message : String(innerError);
+        const status = (innerError as { response?: { status?: number } })?.response?.status;
+
+        console.log('[transcript-api] attempt failed:', {
+          lang,
+          innerMessage,
+          status,
+          errorName: (innerError as { name?: string })?.name,
+        });
+
+        appLogger.warn('youtube-transcript-api language attempt failed', {
+          videoId,
+          lang,
+          innerMessage,
+          status,
+          name: (innerError as { name?: string })?.name,
+        });
+
+        // Try next language on "not available" or auth/country issues
+        if (
+          innerMessage === 'TRANSCRIPT_NOT_AVAILABLE' ||
+          status === 404 ||
+          status === 403
+        ) {
+          continue;
+        }
+
+        if (status === 429) {
+          throw new Error('RATE_LIMIT_EXCEEDED');
+        }
+
+        // Unknown error: propagate to outer catch
+        throw innerError;
+      }
+    }
+
+    // If all language attempts failed with "not available"
+    console.log('[transcript-api] All language attempts failed - no transcript available');
+    throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log('[transcript-api] OUTER CATCH - error:', errorMessage);
+
+    // Extract axios-like status if present (youtube-transcript-api uses axios)
+    const status = (error as { response?: { status?: number; data?: unknown } })?.response?.status;
+    console.log('[transcript-api] HTTP status (if any):', status);
+
+    appLogger.error('youtube-transcript-api fallback failed', {
+      videoId,
+      errorMessage,
+      status,
+      name: (error as { name?: string })?.name,
+    });
+
+    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
+      service: 'transcript_service',
+      operation: 'fallback_fetch_transcript',
+      video_id: videoId,
+      error_message: errorMessage,
+      error_stack: error instanceof Error ? error.stack : undefined,
+      status,
+    });
+
+    if (
+      errorMessage === 'TRANSCRIPT_NOT_AVAILABLE' ||
+      status === 404 ||
+      status === 403
+    ) {
+      console.log('[transcript-api] Rethrowing as-is (not available/404/403)');
+      throw error;
+    }
+
+    if (status === 429) {
+      console.log('[transcript-api] Rate limited!');
+      throw new Error('RATE_LIMIT_EXCEEDED');
+    }
+
+    console.log('[transcript-api] Unknown error, throwing TRANSCRIPT_NOT_AVAILABLE');
+    throw new Error('TRANSCRIPT_NOT_AVAILABLE');
   }
 }
 
 export function transcriptToString(transcript: TranscriptSegment[]): string {
   return transcript.map((segment) => segment.text).join(' ');
 }
+

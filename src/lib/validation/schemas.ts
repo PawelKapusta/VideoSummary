@@ -113,5 +113,7 @@ export const SummaryListFiltersSchema = z.object({
  */
 export const VideoListFiltersSchema = PaginationSchema.extend({
   channel_id: UUIDSchema.optional(),
+  status: z.enum(['all', 'with', 'without']).optional(),
+  search: z.string().optional(),
   sort: z.enum(['published_at_desc', 'published_at_asc']).default('published_at_desc'),
 });

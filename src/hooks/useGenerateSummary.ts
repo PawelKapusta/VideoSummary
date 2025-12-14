@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useDebounce } from './useDebounce';
 import type { ValidationStatusViewModel, VideoMetaResponse, GenerationStatusResponse, VideoPreviewViewModel, GenerateSummaryRequest, ApiError } from '../types';
@@ -46,6 +47,9 @@ export function useGenerateSummary() {
     mutationFn: generateSummary,
     onSuccess: () => {
       window.location.href = '/dashboard';
+    },
+    onError: (error) => {
+      toast.error(error.error?.message || 'Failed to generate summary');
     },
   });
 

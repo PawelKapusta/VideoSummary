@@ -8,10 +8,10 @@ import type { UserProfile } from '@/types';
 import SubscriptionSection from './SubscriptionSection';
 import QueryProvider from '../providers/QueryProvider';
 import { useProfile } from '@/hooks/useProfile';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ApiClientError } from '@/lib/api';
 import { useRemoveChannel } from '@/hooks/useRemoveChannel';
 import AddChannelForm from './AddChannelForm';
+import AppLoader from '@/components/ui/AppLoader';
 
 interface UserHeaderProps {
   profile: Partial<UserProfile>;
@@ -72,16 +72,7 @@ function ProfileContent() {
   if (isLoading) {
     return (
       <div className="container max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center space-x-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[250px]" />
-              <Skeleton className="h-4 w-[200px]" />
-            </div>
-          </CardHeader>
-        </Card>
-        <Skeleton className="h-[200px] w-full rounded-xl" />
+        <AppLoader loadingText="Loading profile..." />
       </div>
     );
   }
@@ -110,25 +101,25 @@ function ProfileContent() {
 
   if (!profile) {
     return (
-        <div className="container max-w-4xl mx-auto p-4 md:p-6 text-center">
-            <p>No profile data found.</p>
-        </div>
+      <div className="container max-w-4xl mx-auto p-4 md:p-6 text-center">
+        <p>No profile data found.</p>
+      </div>
     );
   }
 
   return (
     <div className="container max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-      <UserHeader 
-        profile={profile} 
+      <UserHeader
+        profile={profile}
       />
-      
+
       <SubscriptionSection
         profile={profile}
         onRemoveChannel={handleRemoveChannel}
         onAddClick={() => setAddModalOpen(true)}
       />
-      
-      <AddChannelForm 
+
+      <AddChannelForm
         isOpen={isAddModalOpen}
         onClose={() => setAddModalOpen(false)}
       />

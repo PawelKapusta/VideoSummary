@@ -72,12 +72,16 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     const rawLimit = urlParams.get('limit');
     const rawOffset = urlParams.get('offset');
     const rawChannelId = urlParams.get('channel_id');
+    const rawStatus = urlParams.get('status');
+    const rawSearch = urlParams.get('search');
     const rawSort = urlParams.get('sort');
 
     const validationResult = VideoListFiltersSchema.safeParse({
       limit: rawLimit,
       offset: rawOffset,
       channel_id: rawChannelId || undefined,
+      status: rawStatus || undefined,
+      search: rawSearch || undefined,
       sort: rawSort || undefined,
     });
 
@@ -157,6 +161,8 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
         limit: filters.limit,
         offset: filters.offset,
         channel_id: filters.channel_id,
+        status: filters.status,
+        search: filters.search,
         sort: filters.sort,
       },
     });

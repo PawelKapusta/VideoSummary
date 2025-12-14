@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { SummaryWithVideo, SummaryStatus, SummaryErrorCode } from '../../types';
 import { apiClient as api } from '../../lib/api';
- 
+
 interface Props {
   summary: SummaryWithVideo;
   onHide: (id: string) => void;
@@ -55,69 +55,92 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
   };
 
   const isCompleted = summary.status === 'completed';
-  const displayText = summary.status === 'failed' 
-    ? (summary.error_code === 'NO_SUBTITLES' ? 'No subtitles available' : 
-       summary.error_code === 'VIDEO_TOO_LONG' ? 'Video too long for summarization' : 
-       `Error: ${summary.error_code || 'Unknown error'}`) 
-    : summary.tldr || 'No summary available';
+
   // Assume error_code is available in summary if failed; adjust type if needed
 
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onClick(summary.id)}>
-      <CardHeader className="pb-2">
-        <div className="relative aspect-video mb-2">
-          <img
-            src={summary.video.thumbnail_url || '/placeholder.svg'}
-            alt={summary.video.title}
-            className="w-full h-32 object-cover rounded-md"
-            loading="lazy"
-          />
-          <Badge className="absolute top-2 right-2">{summary.status}</Badge>
-        </div>
-        <CardTitle className="text-lg line-clamp-1" onClick={(e) => e.stopPropagation()}>
+    <Card className="group flex flex-col cursor-pointer overflow-hidden border-muted-foreground/20 hover:border-primary/50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" onClick={() => onClick(summary.id)}>
+      <div className="relative aspect-video w-full overflow-hidden">
+        <img
+          src={summary.video.thumbnail_url || '/placeholder.svg'}
+          alt={summary.video.title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Badge
+          variant={summary.status === 'completed' ? "default" : "secondary"}
+          className="absolute top-2 right-2 text-xs font-semibold shadow-md z-10 backdrop-blur-md bg-opacity-90"
+        >
+          {summary.status.toUpperCase()}
+        </Badge>
+      </div>
+
+      <CardHeader className="flex-grow pb-2 p-4 space-y-2">
+        <CardTitle className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2" onClick={(e) => e.stopPropagation()}>
           {summary.video.title}
         </CardTitle>
-        <CardDescription className="flex items-center gap-2 text-sm">
-          <span>{summary.channel.name}</span>
+        <CardDescription className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="font-medium">{summary.channel.name}</span>
         </CardDescription>
-        <div className="flex items-center space-x-4 text-sm text-gray-400 pt-2">
-            <div className="flex items-center">
-              <Clock className="mr-1 h-4 w-4" />
-              <span>{summary.video.published_at ? format(new Date(summary.video.published_at), 'MMM dd, yyyy') : 'Unknown date'}</span>
-            </div>
+
+        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+          <div className="flex items-center">
+            <Clock className="mr-1 h-3 w-3" />
+            <span>{summary.video.published_at ? format(new Date(summary.video.published_at), 'MMM dd, yyyy') : 'Unknown date'}</span>
+          </div>
           {summary.summary_data && (
             <div className="flex items-center">
-              <Languages className="mr-1 h-4 w-4" />
+              <Languages className="mr-1 h-3 w-3" />
               <span>{summary.summary_data.language}</span>
             </div>
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-4">
-        <p className="text-sm text-gray-600 line-clamp-3 mb-4">{displayText}</p>
+
+      <CardContent className="p-4 pt-0">
+        {summary.status === 'failed' ? (
+          <div className="flex flex-col items-center justify-center text-center py-6 text-muted-foreground bg-destructive/5 rounded-md border border-dashed border-destructive/20 h-full">
+            <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+            <p className="text-sm font-semibold text-foreground">
+              Generation Failed
+            </p>
+            <p className="text-xs text-muted-foreground px-4 mt-1">
+              {summary.error_code === 'NO_SUBTITLES' ? 'Unable to generate summary: No subtitles available.' :
+                summary.error_code === 'VIDEO_TOO_LONG' ? 'Video is too long to process.' :
+                  `Error: ${summary.error_code || 'Unknown error'}`}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-foreground/80 line-clamp-3 mb-4 leading-relaxed">{summary.tldr || 'No summary available'}</p>
+        )}
+
         {isCompleted && (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
             <div className="flex gap-2">
               <Button
-                variant={userRating === true ? 'default' : 'outline'}
-                size="sm"
+                variant={userRating === true ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8 hover:text-green-600 hover:bg-green-50"
                 onClick={(e) => { e.stopPropagation(); handleRate(true); }}
                 disabled={isRating}
               >
-                <ThumbsUp className="w-4 h-4" />
+                <ThumbsUp className={`w-4 h-4 ${userRating === true ? 'fill-current text-green-600' : ''}`} />
               </Button>
               <Button
-                variant={userRating === false ? 'default' : 'outline'}
-                size="sm"
+                variant={userRating === false ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8 hover:text-red-600 hover:bg-red-50"
                 onClick={(e) => { e.stopPropagation(); handleRate(false); }}
                 disabled={isRating}
               >
-                <ThumbsDown className="w-4 h-4" />
+                <ThumbsDown className={`w-4 h-4 ${userRating === false ? 'fill-current text-red-600' : ''}`} />
               </Button>
             </div>
+
             <Dialog open={showDialog} onOpenChange={setShowDialog}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()}>
                   <EyeOff className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
@@ -140,7 +163,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
             </Dialog>
           </div>
         )}
-        {summary.status === 'failed' && <AlertCircle className="w-4 h-4 text-red-500 ml-auto" />}
+
       </CardContent>
     </Card>
   );

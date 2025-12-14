@@ -1,9 +1,9 @@
 import React from 'react';
 import { useSummaryDetails } from '@/hooks/useSummaryDetails';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight } from 'lucide-react';
+import AppLoader from '@/components/ui/AppLoader';
+import { ArrowUpRight, AlertCircle } from 'lucide-react';
 import QueryProvider from '@/components/providers/QueryProvider';
 
 interface SummaryDetailsContentProps {
@@ -14,19 +14,14 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
   const { data: summary, isLoading, isError, error } = useSummaryDetails(summaryId);
 
   if (isLoading) {
-    return <SummaryDetailsSkeleton />;
+    return <AppLoader loadingText="Loading summary details..." />;
   }
 
   if (isError) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Error</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">{error?.message || 'Failed to load summary details.'}</p>
-        </CardContent>
-      </Card>
+      <div className="mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded text-center">
+        <p className="text-red-700 font-medium">{error?.message || 'Failed to load summary details.'}</p>
+      </div>
     );
   }
 
@@ -69,14 +64,34 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
           )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>TL;DR</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{summary.tldr}</p>
-          </CardContent>
-        </Card>
+        {summary.status === 'failed' ? (
+          <Card className="border-red-500/50 bg-red-500/5">
+            <CardHeader>
+              <CardTitle className="text-red-500 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Generation Failed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg">
+                {summary.error_code === 'NO_SUBTITLES'
+                  ? 'Unable to generate summary: No subtitles available for this video.'
+                  : summary.error_code === 'VIDEO_TOO_LONG'
+                    ? 'Video is too long to process.'
+                    : `Error: ${summary.error_code || 'Unknown error'}`}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>TL;DR</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{summary.tldr}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {summary.full_summary && (
           <>
@@ -158,39 +173,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
   );
 };
 
-const SummaryDetailsSkeleton: React.FC = () => {
-  return (
-    <div className="space-y-6">
-      <Skeleton className="h-8 w-3/4" />
-      <Skeleton className="h-4 w-1/4" />
-      <Skeleton className="h-4 w-1/4" />
 
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-1/5" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full mt-2" />
-          <Skeleton className="h-4 w-2/3 mt-2" />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-1/5" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full mt-2" />
-          <Skeleton className="h-4 w-full mt-2" />
-          <Skeleton className="h-4 w-full mt-2" />
-          <Skeleton className="h-4 w-2/3 mt-2" />
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
 
 interface SummaryDetailsViewProps {
   summaryId: string;

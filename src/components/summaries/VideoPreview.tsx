@@ -1,7 +1,7 @@
 import React from 'react';
 import type { VideoPreviewViewModel } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Skeleton } from '../ui/skeleton';
+import AppLoader from '../ui/AppLoader';
 
 interface VideoPreviewProps {
   video: VideoPreviewViewModel | null;
@@ -12,11 +12,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ video, isLoading }) => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="space-y-4">
-          <Skeleton className="w-full h-40 rounded-md" />
-          <Skeleton className="w-3/4 h-6" />
-          <Skeleton className="w-1/2 h-4" />
-        </div>
+        <AppLoader loadingText="Loading preview..." className="min-h-[200px]" />
       );
     }
 
