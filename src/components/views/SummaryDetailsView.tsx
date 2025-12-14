@@ -3,12 +3,70 @@ import { useSummaryDetails } from '@/hooks/useSummaryDetails';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import AppLoader from '@/components/ui/AppLoader';
-import { ArrowUpRight, AlertCircle } from 'lucide-react';
+import { ArrowUpRight, AlertCircle, Clock, Loader2, CheckCircle } from 'lucide-react';
 import QueryProvider from '@/components/providers/QueryProvider';
 
 interface SummaryDetailsContentProps {
   summaryId: string;
 }
+
+const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
+  switch (status) {
+    case 'pending':
+      return (
+        <Card className="border-yellow-500/50 bg-yellow-500/5">
+          <CardHeader>
+            <CardTitle className="text-yellow-700 flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Summary Generation Pending
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-yellow-700">
+              Your summary generation request has been queued and will be processed shortly.
+              Estimated wait time: 1-5 minutes depending on current queue length.
+            </p>
+            <div className="mt-3 text-sm text-yellow-600">
+              <p>• The page will automatically update when processing begins</p>
+              <p>• You can leave this page and return later</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+
+    case 'in_progress':
+      return (
+        <Card className="border-blue-500/50 bg-blue-500/5">
+          <CardHeader>
+            <CardTitle className="text-blue-700 flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Generating Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-blue-700">
+              We're currently analyzing the video content and generating your summary using AI.
+              This process includes transcribing audio, extracting key points, and creating a comprehensive summary.
+            </p>
+            <div className="mt-4 flex items-center gap-2">
+              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              </div>
+              <span className="text-sm text-blue-700 font-medium">Processing...</span>
+            </div>
+            <div className="mt-3 text-sm text-blue-600">
+              <p>Estimated completion: 2-8 minutes depending on video length and complexity</p>
+              <p>• The page will automatically update when complete</p>
+              <p>• You can safely navigate away and return to check progress</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+
+    default:
+      return null;
+  }
+};
 
 const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId }) => {
   const { data: summary, isLoading, isError, error } = useSummaryDetails(summaryId);
@@ -64,7 +122,23 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
           )}
         </div>
 
-        {summary.status === 'failed' ? (
+        {/* Status indicator for all states */}
+        <StatusIndicator status={summary.status} />
+
+        {/* Show summary content only when completed and has content */}
+        {summary.status === 'completed' && summary.tldr && (
+          <Card>
+            <CardHeader>
+              <CardTitle>TL;DR</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{summary.tldr}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error state for failed summaries */}
+        {summary.status === 'failed' && (
           <Card className="border-red-500/50 bg-red-500/5">
             <CardHeader>
               <CardTitle className="text-red-500 flex items-center gap-2">
@@ -82,18 +156,9 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
               </p>
             </CardContent>
           </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>TL;DR</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{summary.tldr}</p>
-            </CardContent>
-          </Card>
         )}
 
-        {summary.full_summary && (
+        {summary.status === 'completed' && summary.full_summary && (
           <>
             <Card>
               <CardHeader>

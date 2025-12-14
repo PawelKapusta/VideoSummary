@@ -140,22 +140,39 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     console.log('[gradio-client] Transcription length:', fullText.length, 'characters');
     console.log('[gradio-client] First 200 chars:', fullText.substring(0, 200));
 
-    // Check for specific "garbage" response pattern (hallucination)
-    const lowText = fullText.toLowerCase();
-    const foreignCount = (lowText.match(/foreign/g) || []).length;
-    const thankYouCount = (lowText.match(/thank you/g) || []).length;
-    const wordCount = lowText.split(/\s+/).length;
-    // If a significant portion of the text is just "foreign" or "thank you", it's a hallucination
-    const hallucinationRatio = wordCount > 0 ? (foreignCount + thankYouCount) / wordCount : 0;
+    // Check for known garbage response patterns (hallucinations)
+    const normalizedText = fullText.toLowerCase().trim();
 
-    if (hallucinationRatio > 0.4) {
-      console.error('[gradio-client] Garbage transcription detected', {
-        hallucinationRatio,
-        foreignCount,
-        thankYouCount,
+    // Known bad patterns that indicate model hallucinations
+    const garbagePatterns = [
+      /^you are smash\. yeah\. heat\. yeah\. heat\. heat\. heat\. heat up here\./i,
+      /^heat\. heat\. heat\. heat/i,
+      /^yeah\. heat\. yeah\. heat/i,
+      /^smash\. yeah\. heat/i,
+      // Add more patterns as they are discovered
+    ];
+
+    const isGarbage = garbagePatterns.some(pattern => pattern.test(normalizedText));
+
+    if (isGarbage) {
+      console.error('[gradio-client] Known garbage transcription pattern detected', {
+        pattern: 'repetitive nonsense',
         preview: fullText.substring(0, 100)
       });
       throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+    }
+
+    // Fallback: check for excessive repetition of short words (simple heuristic)
+    const words = normalizedText.split(/\s+/).filter(word => word.length > 0);
+    if (words.length > 5) {
+      const shortWords = words.filter(word => word.length <= 4);
+      if (shortWords.length / words.length > 0.8) { // >80% short words
+        console.error('[gradio-client] Excessive short word repetition detected', {
+          shortWordRatio: shortWords.length / words.length,
+          preview: fullText.substring(0, 100)
+        });
+        throw new Error('TRANSCRIPT_NOT_AVAILABLE');
+      }
     }
 
     if (!fullText || fullText.trim().length === 0) {
