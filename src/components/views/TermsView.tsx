@@ -1,154 +1,359 @@
 import { LegalHeader } from '../shared/LegalHeader';
 import { LegalFooter } from '../shared/LegalFooter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Separator } from '../ui/separator';
+import { Badge } from '../ui/badge';
 
 export function TermsView() {
   return (
     <>
       <LegalHeader activePage="terms" />
 
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 sm:py-12 pt-6 sm:pt-8 max-w-4xl">
         {/* Hero Section */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight mb-3">Terms of Service</h1>
-          <p className="text-muted-foreground text-base">Please read these terms carefully before using our service</p>
-          <p className="text-sm text-muted-foreground mt-2">Last Updated: December 13, 2025</p>
+        <div className="mb-8 sm:mb-12 text-center space-y-3">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-600 to-slate-800 bg-clip-text text-transparent">
+            Terms of Service
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+            Understanding our service agreement helps ensure a great experience for everyone using VideoSummary.
+          </p>
+          <p className="text-sm text-muted-foreground">Last Updated: December 13, 2025</p>
         </div>
 
         {/* Content */}
-        <div className="prose prose-slate dark:prose-invert max-w-none prose-headings:scroll-mt-20 prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-4 prose-h2:pt-8 prose-h2:border-t prose-h2:border-border prose-h2:first:mt-0 prose-h2:first:pt-0 prose-h2:first:border-t-0 prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-3 prose-h3:ml-4 prose-p:text-base prose-p:leading-7 prose-li:text-base prose-strong:text-foreground prose-ul:ml-8 prose-ol:ml-8">
+        <div className="space-y-6 sm:space-y-8 px-4 sm:px-0">
+          {/* Quick Overview */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                📋 Quick Overview
+              </CardTitle>
+              <CardDescription>
+                VideoSummary is an AI-powered service that creates summaries of YouTube videos using their public captions and transcripts.
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-          <h2>1. Acceptance of Terms</h2>
-          <p>By accessing and using VideoSummary ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement.</p>
+          {/* Service Description */}
+          <section>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">What We Offer</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-green-700">✅ What We Provide</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <ul className="space-y-3 text-base">
+                    <li className="flex items-start gap-3">
+                      <span className="text-green-600 font-bold mt-1">•</span>
+                      <div>
+                        <span className="font-semibold">AI Summaries:</span> YouTube video summaries (currently in Polish)
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-green-600 font-bold mt-1">•</span>
+                      <div>
+                        <span className="font-semibold">Transcripts:</span> Access to video transcripts (AI-generated when official unavailable)
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-green-600 font-bold mt-1">•</span>
+                      <div>
+                        <span className="font-semibold">Organization:</span> Summary management tools
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-green-600 font-bold mt-1">•</span>
+                      <div>
+                        <span className="font-semibold">Subscriptions:</span> Auto-summaries for channels
+                      </div>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
 
-          <h2>2. Description of Service</h2>
-          <p>VideoSummary provides AI-powered summarization services for YouTube videos. We generate summaries based on publicly available captions and transcripts from YouTube videos.</p>
-
-          <div className="ml-4">
-            <p><strong>What We Provide:</strong></p>
-            <ul>
-              <li>AI-generated summaries of YouTube videos (provided in Polish)</li>
-              <li>Access to video transcripts (when publicly available)</li>
-              <li>Organization and management of your summaries</li>
-              <li>Subscription to YouTube channels for automatic summaries</li>
-            </ul>
-
-            <p><strong>What We Don't Provide:</strong></p>
-            <ul>
-              <li>Original video content (all rights belong to content creators)</li>
-              <li>Downloaded video files</li>
-              <li>Copyrighted material</li>
-            </ul>
-          </div>
-
-          <h2>3. User Accounts and Service Limits</h2>
-
-          <div className="ml-4">
-            <p><strong>Current Service Limits:</strong></p>
-            <ul>
-              <li>Maximum <strong>10 subscribed channels</strong> per user</li>
-              <li>One summary generation per channel per day (shared globally)</li>
-              <li>Automatic daily summaries at 7:00 PM</li>
-              <li>Manual summary generation available for subscribed channels</li>
-            </ul>
-
-            <p><strong>Video Limitations:</strong></p>
-            <ul>
-              <li>Video length: <strong>Maximum 45 minutes</strong></li>
-              <li>Videos <strong>must</strong> have publicly available captions/transcripts</li>
-              <li>Rate limits apply to prevent abuse</li>
-            </ul>
-
-            <p><strong>Future Plans:</strong> <em>(After MVP)</em></p>
-            <ul>
-              <li><em>Paid subscription tiers with increased limits</em></li>
-              <li><em>Priority processing for premium users</em></li>
-              <li><em>Advanced features and customization options</em></li>
-            </ul>
-          </div>
-
-          <h2>4. Intellectual Property</h2>
-
-          <div className="ml-4">
-            <p><strong>Your Rights:</strong></p>
-            <ul>
-              <li>You retain <strong>all rights</strong> to your account data and preferences</li>
-              <li>You may export your summaries at any time</li>
-            </ul>
-
-            <p><strong>Our Rights:</strong></p>
-            <ul>
-              <li>VideoSummary owns the AI-generated summaries</li>
-              <li>You have a license to use summaries for <strong>personal use only</strong></li>
-              <li>Commercial use of summaries is <strong>NOT</strong> permitted without written permission</li>
-            </ul>
-
-            <p><strong>Third-Party Rights:</strong></p>
-            <ul>
-              <li><strong>All rights to original YouTube videos belong to their creators</strong></li>
-              <li>We do <strong>NOT</strong> claim ownership of any YouTube content</li>
-              <li>Summaries are transformative works based on public captions</li>
-              <li>We <strong>always</strong> provide attribution and links to original videos</li>
-            </ul>
-          </div>
-
-          <h2>5. Acceptable Use</h2>
-          <p>You agree <strong>NOT</strong> to:</p>
-          <ul className="ml-4">
-            <li>Use the Service to violate any laws or regulations</li>
-            <li>Use summaries for <strong>commercial purposes</strong> without written permission</li>
-            <li>Attempt to circumvent rate limits or usage restrictions</li>
-            <li>Scrape or automate access to the Service without permission</li>
-            <li>Use summaries to replace watching original videos (support creators!)</li>
-            <li>Remove attribution or links to original content</li>
-            <li>Resell or redistribute summaries without permission</li>
-          </ul>
-
-          <h2>6. Content and Copyright</h2>
-
-          <div className="ml-4">
-            <p><strong>Respect for Creators:</strong></p>
-            <ul>
-              <li>We respect the intellectual property rights of YouTube content creators</li>
-              <li>Summaries are generated for <strong>personal educational and productivity purposes only</strong></li>
-              <li>Summaries are <strong>NOT</strong> intended for commercial use or redistribution</li>
-              <li>We provide links to original videos to drive traffic to creators</li>
-              <li>Content creators can request removal of their content from our service</li>
-            </ul>
-
-            <p><strong>DMCA Compliance:</strong></p>
-            <p>If you believe your copyrighted work has been used inappropriately, please contact us at <a href="mailto:support@ytinsights.com">support@ytinsights.com</a> with the following information:</p>
-            <ul>
-              <li>Description of the copyrighted work</li>
-              <li>URL of the summary in question</li>
-              <li>Your contact information</li>
-              <li>A statement of good faith belief</li>
-            </ul>
-            <p>We will respond to valid DMCA notices within <strong>48 hours</strong>.</p>
-          </div>
-
-          <h2>7. Disclaimer of Warranties</h2>
-          <p><strong>THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED.</strong></p>
-
-          <h2>8. Contact</h2>
-          <p>For questions about these Terms, contact us at: <a href="mailto:support@ytinsights.com">support@ytinsights.com</a></p>
-
-          <div className="mt-12 pt-8 border-t border-border">
-            <div className="bg-muted/50 border border-border rounded-lg p-6">
-              <p className="text-sm font-semibold mb-3">
-                By using VideoSummary, you acknowledge that:
-              </p>
-              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>You are using a service that generates summaries, not providing original content</li>
-                <li>All rights to original YouTube videos belong to their creators</li>
-                <li>You will respect copyright and intellectual property rights</li>
-                <li>You support content creators by visiting original videos</li>
-              </ol>
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-red-700">❌ What We Don't Provide</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 flex-1">
+                  <div className="space-y-2">
+                    <div className="font-semibold text-base">Original video content</div>
+                    <div className="text-sm text-muted-foreground">We only provide AI-generated summaries, not the actual video files or streaming capabilities</div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="font-semibold text-base">Video downloads</div>
+                    <div className="text-sm text-muted-foreground">No downloading or offline access to video content - summaries are available online only</div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="font-semibold text-base">Copyrighted materials</div>
+                    <div className="text-sm text-muted-foreground">We respect content creators' rights and do not distribute or host copyrighted video content</div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <LegalFooter />
+          <Separator />
+
+          {/* Service Limits */}
+          <section>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">Service Limits & Requirements</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>⚙️ Current Limits</CardTitle>
+                  <CardDescription>These limits help us maintain service quality</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span>Max channels per user:</span>
+                    <Badge variant="outline">10</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Summaries per channel:</span>
+                    <Badge variant="outline">1 per day</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Auto-generation time:</span>
+                    <Badge variant="outline">7:00 PM daily</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Max video length:</span>
+                    <Badge variant="outline">45 minutes</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>📋 Requirements</CardTitle>
+                  <CardDescription>What you need for summaries</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Publicly available captions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>YouTube video URL</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Active channel subscription</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-600">✗</span>
+                    <span>Private/unlisted videos</span>
+                  </div>
+                </CardContent>
+              </Card>
+          </div>
+          </section>
+
+          <Separator />
+
+          {/* Rights & Responsibilities */}
+          <section>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">Rights & Responsibilities</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-blue-700">👤 Your Rights</CardTitle>
+                </CardHeader>
+              <CardContent className="flex-1">
+                <ul className="space-y-2 text-sm">
+                  <li>• Full rights to your account data</li>
+                  <li>• Delete your account anytime</li>
+                  <li>• Personal use of summaries</li>
+                  <li>• Account privacy & security</li>
+            </ul>
+              </CardContent>
+              </Card>
+
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-purple-700">🏢 Our Rights</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <ul className="space-y-2 text-sm">
+                    <li>• Ownership of AI-generated summaries</li>
+                    <li>• Service operation & improvement</li>
+                    <li>• Platform security measures</li>
+                    <li>• Business continuity rights</li>
+            </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-orange-700">🎥 Creator Rights</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <ul className="space-y-2 text-sm">
+                    <li>• All rights to original videos</li>
+                    <li>• Copyright protection</li>
+                    <li>• Content removal requests</li>
+                    <li>• Attribution requirements</li>
+                    <li>• AI transcripts only when official unavailable</li>
+            </ul>
+                </CardContent>
+              </Card>
+          </div>
+          </section>
+
+          <Separator />
+
+          {/* Acceptable Use */}
+          <section>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">Acceptable Use Policy</h2>
+            <Card className="border-red-200 bg-red-50">
+              <CardHeader>
+                <CardTitle className="text-red-700 flex items-center gap-2">
+                  🚫 Prohibited Activities
+                </CardTitle>
+                <CardDescription>
+                  You agree NOT to engage in these activities:
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ul className="space-y-2 text-sm">
+                    <li>• Violate laws or regulations</li>
+                    <li>• Use for commercial purposes</li>
+                    <li>• Circumvent rate limits</li>
+                    <li>• Scrape or automate access</li>
+            </ul>
+                  <ul className="space-y-2 text-sm">
+                    <li>• Replace watching original videos</li>
+                    <li>• Remove attribution/links</li>
+                    <li>• Resell or redistribute summaries</li>
+                    <li>• Misuse the service</li>
+            </ul>
+          </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <Separator />
+
+          {/* Copyright & DMCA */}
+          <section>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">Copyright & Content Policy</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>🎨 Respect for Creators</CardTitle>
+                <CardDescription>
+                  We respect intellectual property and support content creators
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-green-800 mb-2">✅ Our Commitment</h4>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>• Personal/educational use only</li>
+                    <li>• Drive traffic to original creators</li>
+                    <li>• Transformative works based on public captions</li>
+                    <li>• AI transcripts only when official unavailable</li>
+                    <li>• Always provide attribution and links</li>
+            </ul>
+                  <p className="text-sm text-green-700 mt-2">
+                    <strong>Note:</strong> Content creators can request removal of their content via DMCA takedown notices.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-800 mb-2">📞 DMCA Compliance</h4>
+                  <p className="text-sm text-blue-700 mb-2">
+                    For copyright concerns, contact us at{' '}
+                    <a href="mailto:support@videosummary.com" className="underline">
+                      support@videosummary.com
+                    </a>
+                    {' '}with:
+                  </p>
+                  <ul className="text-sm text-blue-700 space-y-1 ml-4">
+                    <li>• Description of copyrighted work</li>
+                    <li>• URL of summary in question</li>
+                    <li>• Your contact information</li>
+                    <li>• Statement of good faith belief</li>
+            </ul>
+                  <p className="text-sm text-blue-700 mt-2">
+                    <strong>Response time:</strong> Within 48 hours
+                  </p>
+          </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <Separator />
+
+          {/* Disclaimer */}
+          <section>
+            <Card className="border-yellow-200 bg-yellow-50 mx-4 sm:mx-0">
+              <CardHeader>
+                <CardTitle className="text-yellow-800">⚠️ Service Disclaimer</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-yellow-800 font-medium">
+                  THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED.
+                </p>
+                <p className="text-yellow-700 text-sm mt-2">
+                  We strive for accuracy but cannot guarantee the completeness or correctness of AI-generated summaries.
+                </p>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Contact */}
+          <section>
+            <Card>
+              <CardHeader>
+                <CardTitle>📧 Contact Information</CardTitle>
+                <CardDescription>
+                  Questions about these terms? Get in touch:
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-lg">
+                  Email: <a href="mailto:support@videosummary.com" className="text-blue-600 hover:underline">
+                    support@videosummary.com
+                  </a>
+                </p>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Acknowledgment */}
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <CardHeader>
+              <CardTitle className="text-green-800">📝 By using VideoSummary, you acknowledge that:</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-3 text-green-700">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">1.</span>
+                  <span>You are using a service that generates summaries, not providing original content</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">2.</span>
+                  <span>All rights to original YouTube videos belong to their creators</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">3.</span>
+                  <span>You will respect copyright and intellectual property rights</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">4.</span>
+                  <span>You support content creators by visiting original videos</span>
+                </li>
+              </ol>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+      <LegalFooter activePage="terms" />
     </>
   );
 }

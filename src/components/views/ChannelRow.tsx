@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trash2, MoreHorizontal } from 'lucide-react';
+import { Trash2, MoreHorizontal, Youtube } from 'lucide-react';
 import {
   TableCell,
   TableRow,
@@ -37,16 +37,23 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
   };
 
   return (
-    <TableRow>
-      <TableCell className="font-medium">{channel.channel.name}</TableCell>
-      <TableCell className="hidden md:table-cell">{subscribedDate}</TableCell>
-      <TableCell className="text-right">
+    <TableRow className="hover:bg-slate-50 transition-colors">
+      <TableCell className="font-medium text-slate-900 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+            <Youtube className="h-4 w-4 text-red-500" />
+          </div>
+          <span className="truncate">{channel.channel.name}</span>
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell text-slate-600 py-3">{subscribedDate}</TableCell>
+      <TableCell className="text-right py-3">
         <div className="hidden md:block">
           <Button
             variant="ghost"
             size="icon"
             onClick={handleRemove}
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
             aria-label={`Remove subscription for ${channel.channel.name}`}
           >
             <Trash2 className="h-4 w-4" />
@@ -56,9 +63,13 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
         <div className="md:hidden">
           <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open details</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 w-9 p-0 border-slate-300 hover:bg-slate-100 hover:border-slate-400 shadow-sm"
+                aria-label="Open channel options"
+              >
+                <MoreHorizontal className="h-4 w-4 text-slate-700" />
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -78,11 +89,18 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
                   </div>
                 )}
               </div>
-              <DialogFooter>
-                <Button 
-                  variant="destructive" 
+              <DialogFooter className="flex-col gap-2 sm:flex-row">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDetailsOpen(false)}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
                   onClick={handleRemoveFromDialog}
-                  className="w-full"
+                  className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Unsubscribe

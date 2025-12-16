@@ -47,6 +47,7 @@ const ValidationStatus: React.FC<ValidationStatusProps> = ({ status }) => {
           <ValidationItem step={status.isSubscribed} />
           <ValidationItem step={status.isDurationValid} />
           <ValidationItem step={status.isWithinLimit} />
+          <ValidationItem step={status.isNotAlreadyGenerating} />
         </ul>
       </CardContent>
     </Card>

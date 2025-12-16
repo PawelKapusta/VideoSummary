@@ -42,12 +42,25 @@ const DashboardContent = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+    <div className="container mx-auto p-4 pt-8">
+      {!isListEmpty && (
+        <div className="text-center mb-8 space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Track your video insights, manage subscriptions, and access your AI-generated summaries all in one place.
+          </p>
+        </div>
+      )}
 
       {isInitialLoading && <AppLoader loadingText="Loading summaries..." />}
 
-      {isListEmpty && <EmptyState />}
+      {isListEmpty && (
+        <EmptyState
+          message="Welcome to your dashboard"
+        />
+      )}
 
       {!isInitialLoading && !isListEmpty && (
         <SummaryList

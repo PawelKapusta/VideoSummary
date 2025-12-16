@@ -32,6 +32,7 @@ export async function listVideos(
       thumbnail_url,
       published_at,
       summary_id,
+      summary_status,
       channels (
         id,
         youtube_channel_id,
@@ -100,6 +101,7 @@ export async function listVideos(
         created_at: channel.created_at,
       },
       summary_id: video.summary_id,
+      summary_status: video.summary_status,
     };
   });
 

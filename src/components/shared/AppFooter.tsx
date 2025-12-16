@@ -2,17 +2,17 @@ export function AppFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative border-t bg-gradient-to-b from-background/95 via-background/90 to-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 mt-auto overflow-hidden">
+    <footer className="relative bg-gradient-to-b from-background/95 via-background/90 to-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 mt-8 overflow-hidden rounded-t-xl shadow-2xl shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.15),0_-4px_16px_-4px_rgba(0,0,0,0.1)]">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px] [mask-image:radial-gradient(white,transparent_85%)]" />
 
-      <div className="relative container mx-auto px-4 py-4 max-w-7xl">
+      <div className="relative container mx-auto px-4 pt-8 pb-4 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Brand Section - Left Column */}
           <div className="lg:col-span-1">
             <a
               href="/"
-              className="group text-2xl font-bold bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent hover:from-primary/90 hover:via-primary hover:to-primary/70 transition-all duration-300 inline-block mb-2 transform hover:scale-[1.02]"
+              className="group text-2xl font-bold text-black hover:text-primary transition-all duration-300 inline-block mb-2 transform hover:scale-[1.02]"
             >
               VideoSummary
             </a>
@@ -20,10 +20,10 @@ export function AppFooter() {
               AI-powered YouTube video summarization. Save time and get the key insights from any video in seconds.
             </p>
             <a
-              href="mailto:hello@ytinsights.com"
+              href="mailto:hello@videosummary.com"
               className="text-muted-foreground hover:text-primary transition-colors duration-200 text-sm font-medium"
             >
-              hello@ytinsights.com
+              hello@videosummary.com
             </a>
           </div>
 
@@ -65,8 +65,8 @@ export function AppFooter() {
                   {[
                     { href: "/terms", label: "Terms of Service" },
                     { href: "/privacy", label: "Privacy Policy" },
-                    { href: "mailto:support@ytinsights.com", label: "Contact Support" },
-                    { href: "mailto:privacy@ytinsights.com", label: "Privacy Requests" }
+                    { href: "mailto:support@videosummary.com", label: "Contact Support" },
+                    { href: "mailto:privacy@videosummary.com", label: "Privacy Requests" }
                   ].map((link) => (
                     <li key={link.href}>
                       <a
@@ -84,7 +84,7 @@ export function AppFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-6 border-t border-border/50">
+        <div className="pt-6 relative before:absolute before:top-0 before:left-1/2 before:transform before:-translate-x-1/2 before:w-16 before:h-px before:bg-gradient-to-r before:from-transparent before:via-primary/30 before:to-transparent">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <p className="text-sm text-muted-foreground/70 font-medium">
               © {currentYear} VideoSummary. All rights reserved.

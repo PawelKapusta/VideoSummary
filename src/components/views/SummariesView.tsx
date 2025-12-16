@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast, Toaster } from 'sonner';
+import { Search } from 'lucide-react';
 import FilterPanel from '../summaries/FilterPanel';
 import SummaryList from '../summaries/SummaryList';
 import EmptyState from '../summaries/EmptyState';
@@ -8,6 +9,7 @@ import { useSummaries } from '../../hooks/useSummaries';
 import { useUserChannels } from '../../hooks/useUserChannels';
 import type { FilterOptions, SummaryWithVideo } from '../../types';
 import AppLoader from '../ui/AppLoader';
+import { Button } from '../ui/button';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
   constructor(props: any) {
@@ -114,9 +116,16 @@ const SummariesContent: React.FC = () => {
     setFilters({});
   }, []);
 
-  const emptyMessage = flattenedData.length === 0 && Object.keys(filters).length > 0
+  // Check if any filters are active
+  const hasActiveFilters = filters.channelId !== 'all' || filters.summaryStatus !== 'all' || (filters.searchQuery && filters.searchQuery.trim() !== '');
+
+  const emptyMessage = flattenedData.length === 0 && hasActiveFilters
     ? `No summaries match your current filters.`
-    : 'No summaries available. Subscribe to channels to get started.';
+    : 'Ready to start your learning journey?';
+
+  const emptyDescription = flattenedData.length === 0 && hasActiveFilters
+    ? 'Try adjusting your search criteria or clearing some filters to see more summaries.'
+    : 'Start building your knowledge base by subscribing to channels and generating AI-powered summaries of their videos.';
 
   // ... imports
 
@@ -131,25 +140,54 @@ const SummariesContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto p-4 max-w-7xl">
+      <div className="container mx-auto p-4 pt-8 max-w-7xl">
         <Toaster position="top-right" richColors />
-        <header className="mb-6">
-          <h1 className="text-3xl font-bold">Your Summaries</h1>
-          <p className="text-gray-600 mt-1">
-            {totalCount > 0 ? `${totalCount} summaries found` : 'No summaries yet'}
+        {/* Header - always visible */}
+        <header className="text-center mb-8 space-y-3">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+            Your Summaries
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            {totalCount > 0
+              ? `Browse and manage all ${totalCount} of your video summaries. Filter by channel, date, or search for specific content.`
+              : 'Start building your knowledge base by subscribing to channels and generating AI-powered summaries of their videos.'
+            }
           </p>
         </header>
+
+        {/* Filters - always visible */}
         <FilterPanel
           filters={filters}
           onFiltersChange={handleFiltersChange}
           channels={channelsData || []}
           disabled={isLoading || isFetching}
         />
+
         {flattenedData.length === 0 && !isLoading ? (
-          <EmptyState
-            message={emptyMessage}
-            onClearFilters={handleClearFilters}
-          />
+          hasActiveFilters ? (
+            <div className="flex flex-col items-center justify-center py-16 px-8 max-w-2xl mx-auto">
+              <div className="relative mb-8">
+                <div className="w-24 h-24 bg-gradient-to-br from-orange-50 to-amber-100 rounded-full flex items-center justify-center shadow-sm">
+                  <Search className="w-12 h-12 text-amber-600" />
+                </div>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">
+                No summaries match your filters
+              </h2>
+              <p className="text-lg text-gray-600 mb-8 text-center leading-relaxed max-w-lg">
+                Try adjusting your search criteria or clearing some filters to see more summaries.
+              </p>
+              <Button onClick={handleClearFilters} variant="outline" size="lg" className="px-8">
+                <Search className="w-4 h-4 mr-2" />
+                Show All Summaries
+              </Button>
+            </div>
+          ) : (
+            <EmptyState
+              message={emptyMessage}
+              description={emptyDescription}
+            />
+          )
         ) : (
           <SummaryList
             data={data}

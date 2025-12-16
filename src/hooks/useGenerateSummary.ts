@@ -10,6 +10,7 @@ const createInitialValidationStatus = (): ValidationStatusViewModel => ({
   isSubscribed: { text: 'You are subscribed to the channel', status: 'pending' },
   isDurationValid: { text: 'Video is 45 minutes or less', status: 'pending' },
   isWithinLimit: { text: 'Within daily generation limit', status: 'pending' },
+  isNotAlreadyGenerating: { text: 'Checking summary status', status: 'pending' },
 });
 
 export function useGenerateSummary() {
@@ -101,6 +102,23 @@ export function useGenerateSummary() {
           if (!generationStatus.can_generate) {
             status.isWithinLimit.error_message = 'Daily generation limit reached for this channel.';
           }
+        }
+      }
+
+      // Summary existence check - only runs if subscribed
+      if (isSubscribed) {
+        const summaryStatus = videoMeta.summary_status;
+        if (summaryStatus === 'completed') {
+          status.isNotAlreadyGenerating.status = 'error';
+          status.isNotAlreadyGenerating.error_message = 'This video already has a completed summary.';
+        } else if (summaryStatus === 'pending' || summaryStatus === 'in_progress') {
+          status.isNotAlreadyGenerating.status = 'error';
+          status.isNotAlreadyGenerating.error_message = 'This video already has a summary in progress.';
+        } else if (summaryStatus === 'failed') {
+          status.isNotAlreadyGenerating.status = 'success';
+          status.isNotAlreadyGenerating.text = 'Previous generation failed - ready to retry';
+        } else {
+          status.isNotAlreadyGenerating.status = 'success';
         }
       }
     } else {

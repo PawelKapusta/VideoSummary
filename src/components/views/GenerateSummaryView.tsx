@@ -18,11 +18,13 @@ const GenerateSummaryContent = () => {
   } = useGenerateSummary();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Generate New Summary</h1>
-        <p className="text-muted-foreground mt-2">
-          Enter a YouTube video URL to generate a summary.
+    <div className="container mx-auto p-4 max-w-2xl space-y-8 pt-8">
+      <div className="text-center space-y-3">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">
+          Generate New Summary
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          Enter a YouTube video URL below and we'll create a comprehensive summary with key insights, quotes, and analysis.
         </p>
       </div>
       <VideoUrlForm

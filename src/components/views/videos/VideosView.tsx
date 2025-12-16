@@ -23,15 +23,29 @@ const VideosContent = () => {
     isGenerating,
   } = useVideos();
 
+  // Check if any filters are active
+  const hasActiveFilters = filters.channelId !== 'all' || filters.summaryStatus !== 'all' || !!(filters.searchQuery && filters.searchQuery.trim());
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      
+    <div className="container mx-auto px-4 py-8 pt-8 max-w-7xl">
+      {/* Page Header - always visible */}
+      <div className="text-center mb-8 space-y-3">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+          Available Videos
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Discover videos from your subscribed channels and generate AI-powered summaries to enhance your learning.
+        </p>
+      </div>
+
+      {/* Filters - always visible */}
       <VideosFilterBar
         channels={channels}
         activeFilters={filters}
         onFiltersChange={setFilters}
         disabled={isLoading}
       />
+
       <VideosGrid
         videos={videos}
         isLoading={isLoading}
@@ -39,6 +53,7 @@ const VideosContent = () => {
         hasNextPage={!!hasNextPage}
         fetchNextPage={fetchNextPage}
         onSelectVideo={selectVideo}
+        hasActiveFilters={hasActiveFilters}
       />
       <GenerateSummaryDialog
         video={selectedVideo}

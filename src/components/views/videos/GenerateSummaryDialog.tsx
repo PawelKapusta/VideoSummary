@@ -147,6 +147,7 @@ const GenerateSummaryDialog: React.FC<GenerateSummaryDialogProps> = ({
               <ValidationStepItem step={validationState.isSubscribed} />
               <ValidationStepItem step={validationState.isWithinLimit} />
               <ValidationStepItem step={validationState.isDurationValid} />
+              <ValidationStepItem step={validationState.isNotAlreadyGenerating} />
             </CardContent>
           </Card>
         </div>

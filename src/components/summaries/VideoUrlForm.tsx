@@ -18,7 +18,7 @@ const VideoUrlForm: React.FC<VideoUrlFormProps> = ({ url, onUrlChange, onSubmit,
   };
   
   return (
-    <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+    <form onSubmit={handleSubmit} className="flex flex-col space-y-3 md:flex-row md:items-center md:space-x-2 md:space-y-0">
       <Input
         type="url"
         placeholder="https://www.youtube.com/watch?v=..."
@@ -30,7 +30,7 @@ const VideoUrlForm: React.FC<VideoUrlFormProps> = ({ url, onUrlChange, onSubmit,
       <Button
         type="submit"
         disabled={!canSubmit || isSubmitting}
-        className="bg-blue-600 hover:bg-blue-700 text-white"
+        className="bg-blue-600 hover:bg-blue-700 text-white md:w-auto"
       >
         {isSubmitting ? (
           <>

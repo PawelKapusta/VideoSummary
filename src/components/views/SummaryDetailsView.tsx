@@ -97,30 +97,51 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{summary.video.title}</h1>
-            <p>Channel: {summary.channel.name}</p>
-            {summary.video.published_at && (
-              <p>Published: {new Date(summary.video.published_at).toLocaleDateString()}</p>
-            )}
-          </div>
-          {summary.video.youtube_url && (
-            <Button
-              asChild
-              size="lg"
-              variant="destructive"
-              className="self-start gap-2 rounded-full shadow-md hover:shadow-lg transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-red-600 hover:bg-red-700 text-white font-semibold"
-            >
-              <a href={summary.video.youtube_url} target="_blank" rel="noreferrer noopener" className="flex items-center gap-2">
-                Open video on YouTube
-                <ArrowUpRight className="size-4" aria-hidden="true" />
-              </a>
-            </Button>
-          )}
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-8">
+      <div className="space-y-8">
+        {/* Page Header */}
+        <div className="text-center space-y-3 mb-8">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            Summary Details
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Detailed analysis and comprehensive summary of your selected video content.
+          </p>
         </div>
+
+        {/* Video Information */}
+        <Card className="border-0 shadow-sm bg-gradient-to-r from-slate-50 to-gray-50">
+          <CardContent className="p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-3 flex-1">
+                <h2 className="text-2xl font-bold text-gray-900 leading-tight">{summary.video.title}</h2>
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span className="font-medium text-gray-700">Channel:</span> {summary.channel.name}
+                  </span>
+                  {summary.video.published_at && (
+                    <span className="flex items-center gap-1">
+                      <span className="font-medium text-gray-700">Published:</span> {new Date(summary.video.published_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {summary.video.youtube_url && (
+                <Button
+                  asChild
+                  size="lg"
+                  variant="destructive"
+                  className="self-start gap-2 rounded-full shadow-md hover:shadow-lg transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-red-600 hover:bg-red-700 text-white font-semibold"
+                >
+                  <a href={summary.video.youtube_url} target="_blank" rel="noreferrer noopener" className="flex items-center gap-2">
+                    Open video on YouTube
+                    <ArrowUpRight className="size-4" aria-hidden="true" />
+                  </a>
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Status indicator for all states */}
         <StatusIndicator status={summary.status} />

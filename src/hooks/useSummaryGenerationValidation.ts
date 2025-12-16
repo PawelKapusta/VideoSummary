@@ -8,6 +8,7 @@ const INITIAL_VALIDATION_STATE: ValidationStatusViewModel = {
   isSubscribed: { text: 'Checking channel subscription', status: 'pending' },
   isWithinLimit: { text: 'Checking generation limits', status: 'pending' },
   isDurationValid: { text: 'Checking video duration', status: 'pending' },
+  isNotAlreadyGenerating: { text: 'Checking summary status', status: 'pending' },
 };
 
 export const useSummaryGenerationValidation = (video: VideoSummary | null) => {
@@ -33,6 +34,8 @@ export const useSummaryGenerationValidation = (video: VideoSummary | null) => {
     queryFn: () => fetchGenerationStatus(video!.channel.id),
     enabled: !!video,
   });
+
+  // Summary status is now available directly from the video object
 
   useEffect(() => {
     if (!video) {
@@ -77,6 +80,17 @@ export const useSummaryGenerationValidation = (video: VideoSummary | null) => {
       } else {
         newState.isWithinLimit = { text: 'Generation limit reached', status: 'error', error_message: generationStatus.note };
       }
+    }
+
+    // Step 5: Summary status check (using data from video object)
+    if (video.summary_status === 'pending' || video.summary_status === 'in_progress') {
+      newState.isNotAlreadyGenerating = { text: 'Summary is already being generated', status: 'error', error_message: 'This video already has a summary in progress.' };
+    } else if (video.summary_status === 'completed') {
+      newState.isNotAlreadyGenerating = { text: 'Summary already exists', status: 'error', error_message: 'This video already has a completed summary.' };
+    } else if (video.summary_status === 'failed') {
+      newState.isNotAlreadyGenerating = { text: 'Previous generation failed - ready to retry', status: 'success' };
+    } else {
+      newState.isNotAlreadyGenerating = { text: 'No existing summary found', status: 'success' };
     }
 
     setValidationState(newState);

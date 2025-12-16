@@ -15,8 +15,9 @@ export function useAddChannel() {
     mutationFn: addChannel,
     onSuccess: (data) => {
       toast.success(`Successfully subscribed to ${data.channel.name}!`);
-      // Invalidate the profile query to refetch and show the new channel
+      // Invalidate queries to refetch and update the stats
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['userChannels'] });
     },
     onError: (error) => {
       if (error instanceof ApiClientError) {

@@ -127,6 +127,7 @@ export interface VideoSummary {
   published_at: string | null;
   channel: Channel;
   summary_id: string | null;
+  summary_status: SummaryStatus | null;
 }
 
 /** Summary with video information for list views */
@@ -441,6 +442,7 @@ export interface VideoMetaResponse {
     name: string;
   };
   is_subscribed: boolean;
+  summary_status: string | null;
 }
 
 export interface VideoPreviewViewModel {
@@ -461,6 +463,7 @@ export interface ValidationStatusViewModel {
   isSubscribed: ValidationStep;
   isWithinLimit: ValidationStep;
   isDurationValid: ValidationStep;
+  isNotAlreadyGenerating: ValidationStep;
 }
 
 // ============================================================================

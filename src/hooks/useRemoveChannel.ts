@@ -14,8 +14,9 @@ export function useRemoveChannel() {
     mutationFn: removeChannel,
     onSuccess: () => {
       toast.success('Successfully unsubscribed from the channel.');
-      // Invalidate the profile query to refetch and update the list
+      // Invalidate queries to refetch and update the stats
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['userChannels'] });
     },
     onError: (error) => {
       if (error instanceof ApiClientError) {

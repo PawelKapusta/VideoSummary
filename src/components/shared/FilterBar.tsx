@@ -155,7 +155,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                     onClick={onClear}
                     className="whitespace-nowrap"
                 >
-                    Clear Filters
+                    Show All
                 </Button>
             </div>
         </div>

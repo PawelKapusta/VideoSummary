@@ -65,6 +65,13 @@ export const GET: APIRoute = async ({ request, locals }) => {
       .eq('channel_id', channelId)
       .single();
 
+    // Check if video already exists and has summary status
+    const { data: existingVideo } = await supabase
+      .from('videos_with_summaries')
+      .select('summary_status')
+      .eq('youtube_video_id', videoMetadata.id)
+      .single();
+
     const response: VideoMetaResponse = {
       youtube_video_id: videoMetadata.id,
       title: videoMetadata.title,
@@ -76,6 +83,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         name: channelName,
       },
       is_subscribed: !!subscription,
+      summary_status: existingVideo?.summary_status || null,
     };
 
     return new Response(JSON.stringify(response), {
