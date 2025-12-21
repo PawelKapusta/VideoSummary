@@ -23,15 +23,15 @@
 
 # Diagram Autentykacji
 
-<mermaid_diagram>
 ```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#0070f3', 'textColor': '#ffffff' }}}%%
 sequenceDiagram
     autonumber
-    participant Browser as Przeglądarka (React/Astro)
-    participant Middleware as Middleware (SSR Guard)
-    participant Supabase as Supabase Auth & DB
+    participant Browser as "Przeglądarka (React/Astro)"
+    participant Middleware as "Middleware (SSR Guard)"
+    participant Supabase as "Supabase Auth & DB"
 
-    Note over Browser, Supabase: Scenariusz 1: Rejestracja i Automatyczne Logowanie (US-001)
+    Note over Browser, Supabase: Scenariusz 1: Rejestracja i Automatyczne Logowanie
 
     activate Browser
     Browser->>Supabase: signUp(email, password)
@@ -40,52 +40,55 @@ sequenceDiagram
     deactivate Supabase
     
     Browser->>Browser: Zapisz tokeny w Cookies (sb-*)
-    Browser->>Browser: Przekierowanie na /dashboard (window.location)
+    Browser->>Browser: Przekierowanie na /dashboard
     deactivate Browser
 
-    Note over Browser, Supabase: Scenariusz 2: Dostęp do Chronionej Trasy (US-002 / Weryfikacja)
+    Note over Browser, Supabase: Scenariusz 2: Dostęp do Chronionej Trasy
 
     Browser->>Middleware: GET /dashboard (Cookies: sb-token)
     activate Middleware
     Middleware->>Middleware: createServerClient()
     Middleware->>Supabase: getUser(access_token)
     activate Supabase
+    Supabase-->>Middleware: User Object / Error
+    deactivate Supabase
     
     alt Token Ważny
-        Supabase-->>Middleware: User Object (200 OK)
         Middleware-->>Browser: Renderuj Dashboard (HTML)
     else Token Nieważny / Brak
-        Supabase-->>Middleware: Error / Null
-        deactivate Supabase
         Middleware-->>Browser: 302 Redirect -> /login
     end
     deactivate Middleware
 
-    Note over Browser, Supabase: Scenariusz 3: Wylogowanie (US-003)
+    Note over Browser, Supabase: Scenariusz 3: Wylogowanie
 
     activate Browser
     Browser->>Supabase: signOut()
-    Browser->>Browser: Usuń Cookies sesyjne
-    Browser->>Browser: Przekierowanie na /login
+    activate Supabase
+    Supabase-->>Browser: Success
+    deactivate Supabase
+    Browser->>Browser: Usuń Cookies i przekieruj
     deactivate Browser
 
-    Note over Browser, Supabase: Scenariusz 4: Reset Hasła (US-004)
+    Note over Browser, Supabase: Scenariusz 4: Reset Hasła
 
     activate Browser
     Browser->>Supabase: resetPasswordForEmail(email)
+    activate Supabase
     Supabase-->>Browser: Potwierdzenie wysłania
+    deactivate Supabase
     deactivate Browser
-    
-    Supabase->>Browser: Email z magic linkiem (poza systemem)
     
     Note right of Browser: Użytkownik klika w link z emaila
     
-    Browser->>Supabase: Auth Callback (wymiana kodu na sesję)
+    Browser->>Supabase: Auth Callback (wymiana kodu)
+    activate Supabase
     Supabase-->>Browser: Session (Zalogowany)
+    deactivate Supabase
     Browser->>Browser: Przekierowanie na /update-password
     
     activate Browser
-    Browser->>Supabase: updateUser({ password: newWithConfirm })
+    Browser->>Supabase: updateUser({ password })
     activate Supabase
     Supabase->>Supabase: Zapisz hasło (Hash)
     Supabase-->>Browser: Success
@@ -93,4 +96,3 @@ sequenceDiagram
     Browser->>Browser: Przekierowanie na /dashboard
     deactivate Browser
 ```
-</mermaid_diagram>
