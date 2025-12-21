@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import QueryProvider from '@/components/providers/QueryProvider';
 import { motion, useScroll, useTransform, useSpring, useInView, useMotionValueEvent } from 'framer-motion';
 import { ArrowUpRight, AlertCircle, Clock, Loader2, CheckCircle, ThumbsUp, ThumbsDown, Calendar, User, Play, Star, TrendingUp, BarChart3, Share2, Copy, MessageSquare, FileText, Link, Film, Timer, Globe, Award, Sparkles, Maximize2, EyeOff, RefreshCw } from 'lucide-react';
+import NotFound from '@/components/shared/NotFound';
 
 interface SummaryDetailsContentProps {
   summaryId: string;
@@ -769,23 +770,36 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
   }
 
   if (isError) {
+    const is404 = error?.message?.includes('404') || error?.message?.includes('not found');
+    if (is404) {
+      return (
+        <NotFound
+          title="Summary Not Found"
+          message="We couldn't find the summary you're looking for. It might have been deleted or the link is incorrect."
+        />
+      );
+    }
     return (
-      <div className="mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded text-center">
-        <p className="text-red-700 font-medium">{error?.message || 'Failed to load summary details.'}</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-6">
+          <AlertCircle className="w-10 h-10 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to load summary</h2>
+        <p className="text-gray-600 mb-8 max-w-md">{error?.message || 'An unexpected error occurred while fetching summary details.'}</p>
+        <Button onClick={() => window.location.reload()} size="lg" className="rounded-xl px-8">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry Loading
+        </Button>
       </div>
     );
   }
 
   if (!summary) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Not Found</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>The requested summary could not be found.</p>
-        </CardContent>
-      </Card>
+      <NotFound
+        title="Summary Not Found"
+        message="The requested summary could not be located in our database."
+      />
     );
   }
 

@@ -206,7 +206,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
                 size="icon"
                 className={`h-10 w-10 rounded-xl transition-all duration-300 group/dislike ${userRating === false
                   ? 'bg-red-50 text-red-600 shadow-sm'
-                  : 'text-muted-foreground hover:bg-red-600 hover:text-red-600'
+                  : 'text-muted-foreground hover:bg-red-50/80 hover:text-red-600'
                   }`}
                 onClick={(e) => { e.stopPropagation(); handleRate(false); }}
                 disabled={isRating}
