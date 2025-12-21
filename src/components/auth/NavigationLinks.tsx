@@ -4,7 +4,7 @@ export function NavigationLinks() {
       <div className="text-slate-500">
         Don't have an account?{' '}
         <a
-          href="/register"
+          href="/signup"
           className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
         >
           Create one now

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import React from 'react';
 import type { AuthResponse, ApiError } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -7,28 +7,26 @@ import { EmailInput } from './EmailInput';
 import { PasswordInput } from './PasswordInput';
 import { ConfirmPasswordInput } from './ConfirmPasswordInput';
 import { FormErrorMessage } from './FormErrorMessage';
-import { useRegisterForm } from '@/hooks/useRegisterForm';
+import { useSignupForm } from '@/hooks/useSignupForm';
 import { motion } from 'framer-motion';
 
-interface RegisterFormProps {
+export interface SignupFormProps {
   onSuccess?: (response: AuthResponse) => void;
   onError?: (error: ApiError) => void;
 }
 
-export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
+export function SignupForm({ onSuccess, onError }: SignupFormProps) {
   const {
-    state: { data, errors, isSubmitting, isValid },
+    state: { data, errors, isSubmitting },
     handleInputChange,
     handleBlur,
     handleSubmit,
     hasSubmitted,
     clearFormError,
-    rateLimitCooldown,
     isDisabled
-  } = useRegisterForm({ onSuccess, onError });
+  } = useSignupForm({ onSuccess, onError });
 
   const formRef = useRef<HTMLFormElement>(null);
-  const errorRef = useRef<HTMLDivElement>(null);
   const focusedOnceRef = useRef(false);
 
   useEffect(() => {

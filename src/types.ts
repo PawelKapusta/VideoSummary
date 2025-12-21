@@ -95,7 +95,7 @@ export interface AuthResponse {
     email: string;
     created_at: string;
   };
-  session: {
+  session?: {
     access_token: string;
     refresh_token: string;
     expires_at: number;

@@ -223,27 +223,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Check if session was created (depends on email confirmation settings)
     if (!data.session) {
       const duration = performance.now() - startTime;
-      securityLogger.authFailure('User registration succeeded but no session created', {
+      securityLogger.auth('User registration successful (confirmation required)', {
         user_id: data.user.id,
-        reason: 'email_confirmation_required',
       });
-      securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/auth/register',
-        statusCode: 500,
-      });
-      performanceLogger.apiResponseTime('POST', '/api/auth/register', duration, 500);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Account created but authentication failed. Please check your email for confirmation instructions.',
+      
+      const authResponse: AuthResponse = {
+        user: {
+          id: data.user.id,
+          email: data.user.email!,
+          created_at: data.user.created_at!,
         },
       };
 
-      return new Response(JSON.stringify(errorResponse), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: '/api/auth/register',
+        statusCode: 201,
+      });
+      performanceLogger.apiResponseTime('POST', '/api/auth/register', duration, 201);
+
+      return new Response(JSON.stringify(authResponse), {
+        status: 201,
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Registration-Status': 'confirmation_required'
+        },
       });
     }
 

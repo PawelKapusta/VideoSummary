@@ -10,7 +10,7 @@ let loggingInitialized = false;
 const PUBLIC_PAGES = [
   '/',
   '/login',
-  '/register',
+  '/signup',
   '/reset-password',
   '/reset-password/confirm',
   '/privacy',
@@ -28,7 +28,7 @@ const PUBLIC_API_ROUTES = [
 ];
 
 // Routes that should redirect to dashboard if user is already logged in
-const AUTH_PAGES = ['/', '/login', '/register', '/reset-password', '/reset-password/confirm'];
+const AUTH_PAGES = ['/', '/login', '/signup', '/reset-password', '/reset-password/confirm'];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { url, request, locals, redirect } = context;

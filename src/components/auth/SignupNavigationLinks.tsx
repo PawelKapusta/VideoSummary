@@ -1,4 +1,4 @@
-export function RegisterNavigationLinks() {
+export function SignupNavigationLinks() {
   return (
     <div className="flex w-full flex-col gap-4 text-center text-sm">
       <div className="text-slate-500">

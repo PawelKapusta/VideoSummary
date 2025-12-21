@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
 import { z } from 'zod';
 import type { RegisterFormData, RegisterFormErrors, RegisterFormState, AuthResponse, ApiError } from '@/types';
-import { RegisterRequestSchema, PasswordSchema } from '@/lib/validation/schemas';
+import { RegisterRequestSchema } from '@/lib/validation/schemas';
 import { toast } from 'sonner';
 
-const RegisterFormSchema = RegisterRequestSchema.extend({
+const SignupFormSchema = RegisterRequestSchema.extend({
   confirmPassword: z.string().min(1, { message: 'Confirm password is required' }),
 });
 
-export function useRegisterForm({
+export function useSignupForm({
   onSuccess,
   onError,
 }: {
@@ -22,12 +22,8 @@ export function useRegisterForm({
     isValid: false,
   });
 
-  const updateData = useCallback((updates: Partial<RegisterFormData>) => {
-    setState(prev => ({ 
-      ...prev, 
-      data: { ...prev.data, ...updates }
-    }));
-  }, []);
+  const [rateLimitCooldown, setRateLimitCooldown] = useState(0);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const setFieldError = useCallback((field: keyof RegisterFormErrors, error?: string) => {
     setState(prev => ({ 
@@ -49,11 +45,11 @@ export function useRegisterForm({
   const validateField = useCallback((field: keyof RegisterFormData, value: string): string | undefined => {
     try {
       if (field === 'email') {
-        RegisterFormSchema.pick({ email: true }).parse({ email: value });
+        SignupFormSchema.pick({ email: true }).parse({ email: value });
       } else if (field === 'password') {
-        RegisterFormSchema.pick({ password: true }).parse({ password: value });
+        SignupFormSchema.pick({ password: true }).parse({ password: value });
       } else if (field === 'confirmPassword') {
-        RegisterFormSchema.pick({ confirmPassword: true }).parse({ confirmPassword: value });
+        SignupFormSchema.pick({ confirmPassword: true }).parse({ confirmPassword: value });
         if (value !== state.data.password) {
           return 'Passwords do not match';
         }
@@ -101,34 +97,16 @@ export function useRegisterForm({
   const handleInputChange = useCallback((field: keyof RegisterFormData, value: string) => {
     setState(prev => {
       const newData = { ...prev.data, [field]: value };
-      
-      // Validate the field in real-time
       const newErrors = { ...prev.errors };
       
-      // Clear field error on change
       if (newErrors[field as keyof RegisterFormErrors]) {
         delete newErrors[field as keyof RegisterFormErrors];
       }
       
-      // Clear form error on change
       if (newErrors.form) {
         delete newErrors.form;
       }
       
-      // Validate the changed field for isValid calculation only
-      try {
-        if (field === 'email') {
-          RegisterFormSchema.pick({ email: true }).parse({ email: value });
-        } else if (field === 'password') {
-          RegisterFormSchema.pick({ password: true }).parse({ password: value });
-        } else if (field === 'confirmPassword') {
-          RegisterFormSchema.pick({ confirmPassword: true }).parse({ confirmPassword: value });
-        }
-      } catch (error) {
-        // Don't set error on change, only on blur
-      }
-      
-      // Calculate isValid
       const isValid = Object.values(newErrors).every(e => !e) && 
                      newData.email.trim() !== '' && 
                      newData.password.trim() !== '' && 
@@ -153,11 +131,8 @@ export function useRegisterForm({
     }
   }, [validateField, state.data, setFieldError]);
 
-  const [rateLimitCooldown, setRateLimitCooldown] = useState(0);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-
   const handleSubmit = useCallback(async () => {
-    setHasSubmitted(true); // Mark as submitted
+    setHasSubmitted(true);
     if (!validateForm()) {
       return;
     }
@@ -175,10 +150,18 @@ export function useRegisterForm({
         password: state.data.password 
       });
 
-      toast.success('Account created successfully!', {
-        description: 'Redirecting to dashboard...',
-        duration: 2000,
-      });
+      if (!response.session) {
+        toast.info('Verification Required', {
+          description: 'Please check your email to confirm your account before logging in.',
+          duration: 10000,
+        });
+      } else {
+        toast.success('Account created successfully!', {
+          description: 'Redirecting to dashboard...',
+          duration: 2000,
+        });
+      }
+      
       onSuccess?.(response);
     } catch (error) {
       const apiErr = error as ApiError;
@@ -187,7 +170,6 @@ export function useRegisterForm({
       if (code === 'EMAIL_ALREADY_EXISTS') {
         setFieldError('form' as any, 'An account with this email already exists. Please login.');
       } else if (code === 'INVALID_INPUT' || code === 'VALIDATION_ERROR') {
-        // Map to field errors if details available
         if (apiErr.error.details) {
           const details = apiErr.error.details;
           if (details.email) {
@@ -203,7 +185,7 @@ export function useRegisterForm({
         toast.error('Too many attempts. Please wait before trying again.', {
           duration: 5000,
         });
-        setRateLimitCooldown(60); // 60 seconds cooldown
+        setRateLimitCooldown(60);
         const timer = setInterval(() => {
           setRateLimitCooldown(prev => {
             if (prev <= 1) {
@@ -227,16 +209,6 @@ export function useRegisterForm({
       setState(prev => ({ ...prev, isSubmitting: false }));
     }
   }, [validateForm, state.data, onSuccess, onError, setFieldError, rateLimitCooldown]);
-
-  const calculateIsValid = useCallback((errors: RegisterFormErrors, data: RegisterFormData) => {
-    return Object.values(errors).every(e => !e) && 
-           data.email.trim() !== '' && 
-           data.password.trim() !== '' && 
-           data.confirmPassword.trim() !== '';
-  }, []);
-
-  // Update isValid when data or errors change
-  // But since setState, it's sync, but for now, call in places
 
   return {
     state,
