@@ -13,6 +13,7 @@ const PROTECTED_ROUTES = [
   '/generate',
   '/videos',
   '/settings',
+  '/hidden',
 ];
 
 const AUTH_ROUTES = ['/login', '/register', '/reset-password'];

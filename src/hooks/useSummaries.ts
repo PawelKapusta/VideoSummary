@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient as api } from '../lib/api'; // Named import with alias
-import type { PaginatedResponse, SummaryWithVideo, FilterOptions, SummaryStatus } from '../../types';
+import type { PaginatedResponse, SummaryWithVideo, FilterOptions, SummaryStatus } from '../types';
 
 interface PageParam {
   offset: number;
@@ -10,15 +10,19 @@ interface PageParam {
 export function useSummaries(filters: FilterOptions) {
   return useInfiniteQuery<
     PaginatedResponse<SummaryWithVideo>,
-    Error
+    Error,
+    InfiniteData<PaginatedResponse<SummaryWithVideo>, PageParam>,
+    (string | FilterOptions)[],
+    PageParam
   >({
     queryKey: ['summaries', filters],
-    queryFn: async ({ pageParam = { offset: 0 } }) => {
+    queryFn: async ({ pageParam }: { pageParam: PageParam }) => {
       const params = {
         ...filters,
-        limit: 20,
+        limit: filters.limit ?? 20,
         offset: pageParam.offset,
         include_hidden: filters.include_hidden ?? false,
+        hidden_only: filters.hidden_only ?? false,
         sort: filters.sort ?? 'published_at_desc',
       };
       const response = await api.get<PaginatedResponse<SummaryWithVideo>>('/api/summaries', { params });

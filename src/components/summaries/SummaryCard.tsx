@@ -3,38 +3,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { ThumbsUp, ThumbsDown, EyeOff, Clock, AlertCircle, Languages } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, EyeOff, Clock, AlertCircle, Languages, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { SummaryWithVideo, SummaryStatus, SummaryErrorCode } from '../../types';
+import { useRating } from '../../hooks/useRating';
 import { apiClient as api } from '../../lib/api';
 
 interface Props {
   summary: SummaryWithVideo;
   onHide: (id: string) => void;
-  onRate: (id: string, rating: boolean) => void;
+  onRate: (id: string, rating: boolean | null) => void;
   onClick: (id: string) => void;
+  onRegenerate?: (summary: SummaryWithVideo) => void;
 }
 
-const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onClick }) => {
+const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onClick, onRegenerate }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
   const [userRating, setUserRating] = useState(summary.user_rating);
-  const [isRating, setIsRating] = useState(false);
+  const { rateSummary, removeRating, isRating } = useRating(summary.id);
 
-  const handleRate = async (rating: boolean) => {
+  const handleRate = (rating: boolean) => {
     if (isRating || summary.status !== 'completed') return;
-    setIsRating(true);
-    try {
-      await api.post(`/api/summaries/${summary.id}/rate`, { rating });
-      onRate(summary.id, rating);
+
+    if (userRating === rating) {
+      // Remove rating if clicking the same button
+      removeRating();
+      setUserRating(null);
+      onRate(summary.id, null);
+    } else {
+      // Set new rating
+      rateSummary(rating);
       setUserRating(rating);
-      toast.success(rating ? 'Upvoted!' : 'Downvoted!');
-    } catch (error) {
-      toast.error('Failed to submit rating');
-      console.error('Rating failed:', error);
-    } finally {
-      setIsRating(false);
+      onRate(summary.id, rating);
     }
   };
 
@@ -42,7 +44,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
     if (isHiding) return;
     setIsHiding(true);
     try {
-      await api.post('/api/summaries/hide', { summary_id: summary.id });
+      await api.post(`/api/summaries/${summary.id}/hide`);
       onHide(summary.id);
       setShowDialog(false);
       toast.success('Summary hidden');
@@ -123,7 +125,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
         })()}
       </div>
 
-      <CardHeader className="flex-grow pb-2 p-4 space-y-2">
+      <CardHeader className="pb-2 p-4 space-y-2">
         <CardTitle className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2" onClick={(e) => e.stopPropagation()}>
           {summary.video.title}
         </CardTitle>
@@ -145,71 +147,156 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 pt-0">
+      <CardContent className="px-4 pt-0 pb-0 flex flex-col flex-1">
         {summary.status === 'failed' ? (
-          <div className="flex flex-col items-center justify-center text-center py-6 text-muted-foreground bg-destructive/5 rounded-md border border-dashed border-destructive/20 h-full">
+          <div className="flex flex-col items-center justify-center text-center py-6 text-muted-foreground bg-destructive/5 rounded-md border border-dashed border-destructive/20 flex-1 mb-4">
             <AlertCircle className="h-8 w-8 text-destructive mb-2" />
             <p className="text-sm font-semibold text-foreground">
               Generation Failed
             </p>
-            <p className="text-xs text-muted-foreground px-4 mt-1">
+            <p className="text-xs text-muted-foreground px-4 mt-1 mb-4">
               {summary.error_code === 'NO_SUBTITLES' ? 'Unable to generate summary: No subtitles available.' :
                 summary.error_code === 'VIDEO_TOO_LONG' ? 'Video is too long to process.' :
                   `Error: ${summary.error_code || 'Unknown error'}`}
             </p>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-white border-red-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition-all duration-300 font-bold"
+                onClick={(e) => { e.stopPropagation(); onRegenerate?.(summary); }}
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Try Again
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-orange-600 hover:bg-orange-50 transition-all duration-300"
+                onClick={(e) => { e.stopPropagation(); setShowDialog(true); }}
+              >
+                <EyeOff className="w-3.5 h-3.5 mr-1.5" />
+                Hide
+              </Button>
+            </div>
           </div>
         ) : (
-          <p className="text-sm text-foreground/80 line-clamp-3 mb-4 leading-relaxed">{summary.tldr || 'No summary available'}</p>
+          <div className="flex-1">
+            <p className="text-base text-foreground/80 line-clamp-4 mb-3 leading-relaxed">{summary.tldr || 'No summary available'}</p>
+          </div>
         )}
 
         {isCompleted && (
-          <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/40">
+            <div className="flex items-center gap-1.5">
               <Button
-                variant={userRating === true ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="icon"
-                className="h-8 w-8 hover:text-green-600 hover:bg-green-50"
+                className={`h-10 w-10 rounded-xl transition-all duration-300 group/like ${userRating === true
+                  ? 'bg-green-50 text-green-600 shadow-sm'
+                  : 'text-muted-foreground hover:bg-green-50/80 hover:text-green-600'
+                  }`}
                 onClick={(e) => { e.stopPropagation(); handleRate(true); }}
                 disabled={isRating}
               >
-                <ThumbsUp className={`w-4 h-4 ${userRating === true ? 'fill-current text-green-600' : ''}`} />
+                <ThumbsUp className={`w-5 h-5 transition-transform duration-300 group-hover/like:scale-110 ${userRating === true ? 'fill-current' : ''}`} />
               </Button>
               <Button
-                variant={userRating === false ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="icon"
-                className="h-8 w-8 hover:text-red-600 hover:bg-red-50"
+                className={`h-10 w-10 rounded-xl transition-all duration-300 group/dislike ${userRating === false
+                  ? 'bg-red-50 text-red-600 shadow-sm'
+                  : 'text-muted-foreground hover:bg-red-600 hover:text-red-600'
+                  }`}
                 onClick={(e) => { e.stopPropagation(); handleRate(false); }}
                 disabled={isRating}
               >
-                <ThumbsDown className={`w-4 h-4 ${userRating === false ? 'fill-current text-red-600' : ''}`} />
+                <ThumbsDown className={`w-5 h-5 transition-transform duration-300 group-hover/dislike:scale-110 ${userRating === false ? 'fill-current' : ''}`} />
               </Button>
             </div>
 
-            <Dialog open={showDialog} onOpenChange={setShowDialog}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()}>
-                  <EyeOff className="w-4 h-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Hide Summary</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to hide this summary? It will no longer appear in your list unless you unhide it.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleHide} disabled={isHiding}>
-                    {isHiding ? 'Hiding...' : 'Hide'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-xl text-muted-foreground hover:text-orange-600 hover:bg-orange-50/80 transition-all duration-300 group/hide"
+              onClick={(e) => { e.stopPropagation(); setShowDialog(true); }}
+            >
+              <EyeOff className="w-5 h-5 transition-all duration-300 group-hover/hide:scale-110 group-hover/hide:rotate-6" />
+            </Button>
           </div>
         )}
+
+        {/* Hide Confirmation Dialog - always rendered to support both completed and failed states */}
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="sm:max-w-[500px]" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl">
+                  <EyeOff className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-semibold">Hide This Summary</DialogTitle>
+                  <p className="text-sm text-muted-foreground mt-1">Remove from your dashboard</p>
+                </div>
+              </div>
+              <DialogDescription className="text-base leading-relaxed">
+                This summary will be completely hidden from your main dashboard view. The summary data remains safe and can be restored anytime from your settings.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-1 bg-orange-100 rounded-md flex-shrink-0">
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium text-orange-900 mb-2">What happens next?</p>
+                    <ul className="space-y-1.5 text-orange-800">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full flex-shrink-0"></div>
+                        Summary disappears from your dashboard
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full flex-shrink-0"></div>
+                        Won't appear in regular search results
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full flex-shrink-0"></div>
+                        Data is preserved and can be restored in Settings
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={(e) => { e.stopPropagation(); setShowDialog(false); }}
+                className="flex-1 h-11"
+              >
+                Keep Visible
+              </Button>
+              <Button
+                onClick={(e) => { e.stopPropagation(); handleHide(); }}
+                disabled={isHiding}
+                className="flex-1 h-11 bg-orange-600 hover:bg-orange-700 text-white font-medium"
+              >
+                {isHiding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Hiding...
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    Hide Summary
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       </CardContent>
     </Card>

@@ -15,7 +15,8 @@ interface Props {
   refetch: () => void;
   filters: FilterOptions;
   onHide: (id: string) => void;
-  onRate: (id: string, boolean: boolean) => void;
+  onRate: (id: string, rating: boolean | null) => void;
+  onRegenerate?: (summary: SummaryWithVideo) => void;
 }
 
 const SummaryList: React.FC<Props> = memo(({
@@ -30,6 +31,7 @@ const SummaryList: React.FC<Props> = memo(({
   filters,
   onHide,
   onRate,
+  onRegenerate,
 }) => {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
@@ -101,6 +103,7 @@ const SummaryList: React.FC<Props> = memo(({
               summary={summary}
               onHide={onHide}
               onRate={onRate}
+              onRegenerate={onRegenerate}
               onClick={(id) => window.location.href = `/summaries/${id}`}
             />
           );

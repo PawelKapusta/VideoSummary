@@ -92,3 +92,28 @@ export async function unhideSummary(
   };
 }
 
+/**
+ * Unhide all summaries for a user (restore all to user's dashboard)
+ * @param supabase - Supabase client instance
+ * @param userId - User ID
+ * @returns Success message
+ */
+export async function unhideAllSummaries(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{ message: string; count: number }> {
+  // Delete all hidden_summaries records for this user
+  const { count, error } = await supabase
+    .from('hidden_summaries')
+    .delete({ count: 'exact' })
+    .eq('user_id', userId);
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    message: 'All summaries restored to your dashboard',
+    count: count || 0,
+  };
+}

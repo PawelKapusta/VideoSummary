@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, Video, Home, FileText, User, Sparkles, Film, Settings } from 'lucide-react';
+import { Menu, Video, Home, FileText, User, Sparkles, Film, Settings, EyeOff } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import QueryProvider from '@/components/providers/QueryProvider';
@@ -22,7 +22,7 @@ const NavLink = ({ href, children, currentPath, onClick, icon: Icon }: NavLinkPr
       className={cn(
         "relative text-sm font-medium transition-all duration-200 px-3 py-2 rounded-lg group flex items-center gap-2",
         isActive
-          ? "text-foreground bg-gradient-to-r from-accent to-accent/80 shadow-sm"
+          ? "text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/30",
         "hover:scale-105 hover:shadow-md hover:outline-1 hover:outline-primary/20 hover:outline"
       )}
@@ -122,7 +122,7 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <nav className="hidden md:flex items-center space-x-1 text-sm font-medium mr-4">
+          <nav className="hidden md:flex items-center space-x-2 text-sm font-medium mr-4">
             {links.map((link) => (
               <NavLink key={link.href} href={link.href} currentPath={currentPath} icon={link.icon}>
                 {link.name}

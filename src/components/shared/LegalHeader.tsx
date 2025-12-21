@@ -48,7 +48,7 @@ export function LegalHeader({ activePage }: LegalHeaderProps) {
                         className={cn(
                           "relative block px-4 py-3 text-base font-medium rounded-lg transition-all duration-200 group flex items-center gap-3",
                           link.active
-                            ? "bg-gradient-to-r from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm"
                             : "text-zinc-600 dark:text-zinc-400 hover:bg-gradient-to-r hover:from-zinc-50 hover:to-zinc-100 dark:hover:from-zinc-900 dark:hover:to-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 hover:scale-[1.02]"
                         )}
                         onClick={() => setIsOpen(false)}
@@ -84,7 +84,7 @@ export function LegalHeader({ activePage }: LegalHeaderProps) {
                 href={link.href}
                 className={`relative text-sm font-medium transition-all duration-200 px-3 py-2 rounded-lg group ${
                   link.active
-                    ? 'text-foreground bg-gradient-to-r from-accent to-accent/80 shadow-sm'
+                    ? 'text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
                 } hover:scale-105 hover:shadow-md hover:outline-1 hover:outline-primary/20 hover:outline`}
               >

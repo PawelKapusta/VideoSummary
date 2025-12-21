@@ -1,0 +1,9 @@
+---
+import Layout from '../layouts/Layout.astro';
+import HiddenSummariesView from '../components/views/HiddenSummariesView';
+
+---
+
+<Layout title="Hidden Summaries - VideoSummary" showNavigation={true} showFooter={true}>
+	<HiddenSummariesView client:load />
+</Layout>

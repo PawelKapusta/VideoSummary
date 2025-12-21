@@ -104,7 +104,17 @@ export const SummaryListFiltersSchema = z.object({
   channel_id: z.string().uuid().optional(),
   status: z.enum(['pending', 'in_progress', 'completed', 'failed']).optional(),
   sort: z.enum(['published_at_desc', 'published_at_asc', 'generated_at_desc']).default('published_at_desc'),
-  include_hidden: z.coerce.boolean().default(false),
+  // Fix: z.coerce.boolean() treats "false" string as true! Use custom transform
+  include_hidden: z.preprocess((val) => {
+    if (val === 'false' || val === '0' || val === '' || val === null || val === undefined) return false;
+    if (val === 'true' || val === '1') return true;
+    return Boolean(val);
+  }, z.boolean().default(false)),
+  hidden_only: z.preprocess((val) => {
+    if (val === 'false' || val === '0' || val === '' || val === null || val === undefined) return false;
+    if (val === 'true' || val === '1') return true;
+    return Boolean(val);
+  }, z.boolean().default(false)),
   search: z.string().min(3).optional(), // New: for title/channel search
 });
 

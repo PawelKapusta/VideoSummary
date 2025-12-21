@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Moon, Sun, Bell, Shield, UserX, LogOut } from 'lucide-react';
+import { Trash2, Moon, Sun, Bell, Shield, UserX, LogOut, EyeOff } from 'lucide-react';
 import QueryProvider from '../providers/QueryProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useLogout } from '@/hooks/useLogout';
@@ -193,6 +193,32 @@ const SettingsContent = () => {
               onCheckedChange={setSummaryNotifications}
               disabled
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Content Preferences */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <EyeOff className="h-5 w-5" />
+            Hidden Content
+          </CardTitle>
+          <CardDescription>
+            Manage content you have hidden from your dashboard.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+            <div className="space-y-1">
+              <p className="font-medium">Hidden Summaries</p>
+              <p className="text-sm text-muted-foreground">
+                View and restore summaries you have hidden
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => window.location.href = '/hidden'}>
+              Manage Hidden
+            </Button>
           </div>
         </CardContent>
       </Card>

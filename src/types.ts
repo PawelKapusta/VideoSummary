@@ -155,6 +155,7 @@ export interface DetailedSummary {
   generated_at: string | null;
   rating_stats: RatingStats;
   user_rating: boolean | null;
+  is_hidden: boolean;
 }
 
 /** Detailed video information with optional summary */
@@ -394,6 +395,8 @@ export interface FilterOptions {
   status?: SummaryStatus;
   sort?: string;
   include_hidden?: boolean;
+  hidden_only?: boolean;
+  limit?: number;
 }
 
 export interface SummaryData {

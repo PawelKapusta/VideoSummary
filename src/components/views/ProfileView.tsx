@@ -30,7 +30,7 @@ function UserHeader({ profile }: UserHeaderProps) {
             <AvatarFallback className="text-xl bg-slate-200 dark:bg-slate-300 text-slate-800 dark:text-slate-900 font-bold">{profile.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-900">Welcome back!</CardTitle>
+            <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-900">Your Insights</CardTitle>
             <CardDescription className="text-lg font-semibold text-slate-700 dark:text-slate-800">{profile.email || 'Loading...'}</CardDescription>
             <p className="text-base font-medium text-slate-600 dark:text-slate-700 mt-1">Member since {joinDate}</p>
           </div>
@@ -80,11 +80,11 @@ function StatsSection({ totalSummaries, totalChannels, thisMonthSummaries }: { t
 function ProfileContent() {
   const { profile, isLoading, error, refetch } = useProfile();
   const { data: channels } = useUserChannels();
-  const { data: summariesData } = useSummaries({});
+  const { data: summariesData } = useSummaries({ include_hidden: true, limit: 100 });
   const { mutate: removeChannel } = useRemoveChannel();
   const [isAddModalOpen, setAddModalOpen] = useState(false);
 
-  const totalSummaries = summariesData?.pages?.reduce((acc, page) => acc + page.data.length, 0) || 0;
+  const totalSummaries = summariesData?.pages?.[0]?.pagination?.total || 0;
   const totalChannels = channels?.length || 0;
 
   // Calculate summaries from this month

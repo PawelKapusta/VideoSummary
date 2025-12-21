@@ -21,6 +21,14 @@ export async function listVideos(
     sort: 'published_at_desc' | 'published_at_asc';
   }
 ): Promise<PaginatedResponse<VideoSummary>> {
+  // First, get the list of hidden summary IDs for this user
+  const { data: hiddenSummaries } = await supabase
+    .from('hidden_summaries')
+    .select('summary_id')
+    .eq('user_id', userId);
+
+  const hiddenSummaryIds = hiddenSummaries?.map(h => h.summary_id) || [];
+
   // Use the videos_with_summaries view which includes the computed summary_id column
   // This view automatically applies RLS policies and is more efficient than separate queries
   let query = supabase
@@ -44,6 +52,15 @@ export async function listVideos(
   // Filter by channel if specified
   if (filters.channel_id) {
     query = query.eq('channel_id', filters.channel_id);
+  }
+
+  // Exclude videos with hidden summaries (only if they have a completed summary)
+  // This ensures that videos with hidden summaries don't appear in the list
+  if (hiddenSummaryIds.length > 0) {
+    // Use multiple .neq() calls for each hidden ID - more reliable than .not('in')
+    for (const hiddenId of hiddenSummaryIds) {
+      query = query.neq('summary_id', hiddenId);
+    }
   }
 
   // Filter by summary status

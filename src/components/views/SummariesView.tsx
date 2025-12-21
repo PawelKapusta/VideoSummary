@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { Search } from 'lucide-react';
 import FilterPanel from '../summaries/FilterPanel';
 import SummaryList from '../summaries/SummaryList';
@@ -10,6 +10,10 @@ import { useUserChannels } from '../../hooks/useUserChannels';
 import type { FilterOptions, SummaryWithVideo } from '../../types';
 import AppLoader from '../ui/AppLoader';
 import { Button } from '../ui/button';
+import { useMutation } from '@tanstack/react-query';
+import { generateSummary } from '../../lib/api';
+import GenerateSummaryDialog from './videos/GenerateSummaryDialog';
+import type { VideoSummary } from '../../types';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
   constructor(props: any) {
@@ -51,7 +55,37 @@ const SummariesContent: React.FC = () => {
   const [filters, setFilters] = useState<FilterOptions>({});
   const [isRefetchDisabled, setIsRefetchDisabled] = useState(false);
   const [disableUntil, setDisableUntil] = useState<number | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<VideoSummary | null>(null);
   const queryClient = useQueryClient();
+
+  const { mutate: generateSummaryMutation, isPending: isGenerating } = useMutation({
+    mutationFn: (video: VideoSummary) => {
+      const videoUrl = `https://www.youtube.com/watch?v=${video.youtube_video_id}`;
+      return generateSummary({ video_url: videoUrl });
+    },
+    onSuccess: () => {
+      toast.success('Summary generation started!');
+      queryClient.invalidateQueries({ queryKey: ['summaries'] });
+      setSelectedVideo(null);
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.error?.message || 'An unknown error occurred.';
+      toast.error(`Failed to generate summary: ${errorMessage}`);
+    },
+  });
+
+  const handleRegenerate = useCallback((summary: SummaryWithVideo) => {
+    setSelectedVideo({
+      id: summary.video.id,
+      youtube_video_id: summary.video.youtube_video_id,
+      title: summary.video.title,
+      thumbnail_url: summary.video.thumbnail_url,
+      published_at: summary.video.published_at,
+      channel: summary.channel,
+      summary_id: summary.id,
+      summary_status: summary.status,
+    });
+  }, []);
   const { data, isLoading, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, error, refetch } = useSummaries(filters);
   const { data: channelsData, isLoading: channelsLoading } = useUserChannels();
 
@@ -102,13 +136,26 @@ const SummariesContent: React.FC = () => {
     }
   }, [queryClient, filters]);
 
-  const handleRate = useCallback(async (id: string, rating: boolean) => {
+  const handleRate = useCallback(async (id: string, rating: boolean | null) => {
     try {
-      // Optimistic update can be added here
-      await queryClient.invalidateQueries({ queryKey: ['summaries', filters] });
-      toast.success(rating ? 'Upvoted!' : 'Downvoted!');
+      // Update the specific summary in the cache instead of invalidating everything
+      queryClient.setQueryData(['summaries', filters], (oldData: any) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            data: page.data.map((summary: any) =>
+              summary.id === id ? { ...summary, user_rating: rating } : summary
+            )
+          }))
+        };
+      });
+
+      // Don't invalidate here - useRating hook will handle success/error states
     } catch (err) {
-      toast.error('Failed to submit rating');
+      toast.error('Failed to update rating');
     }
   }, [queryClient, filters]);
 
@@ -131,8 +178,7 @@ const SummariesContent: React.FC = () => {
 
   if (channelsLoading) {
     return (
-      <div className="container mx-auto p-4 max-w-7xl">
-        <Toaster position="top-right" richColors />
+      <div className="container mx-auto p-4 pt-12">
         <AppLoader loadingText="Loading your summaries..." />
       </div>
     );
@@ -140,8 +186,7 @@ const SummariesContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto p-4 pt-8 max-w-7xl">
-        <Toaster position="top-right" richColors />
+      <div className="container mx-auto p-4 pt-12 pb-12">
         {/* Header - always visible */}
         <header className="text-center mb-8 space-y-3">
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
@@ -201,8 +246,17 @@ const SummariesContent: React.FC = () => {
             filters={filters}
             onHide={handleHide}
             onRate={handleRate}
+            onRegenerate={handleRegenerate}
           />
         )}
+
+        <GenerateSummaryDialog
+          video={selectedVideo}
+          isOpen={!!selectedVideo}
+          isGenerating={isGenerating}
+          onClose={() => setSelectedVideo(null)}
+          onConfirm={generateSummaryMutation}
+        />
       </div>
     </ErrorBoundary>
   );

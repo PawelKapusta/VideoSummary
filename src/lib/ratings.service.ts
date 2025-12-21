@@ -65,6 +65,10 @@ export async function rateSummary(
     throw new Error('Failed to create or update rating');
   }
 
+  if (!ratingData.summary_id) {
+    throw new Error('Rating must have a valid summary_id');
+  }
+
   return {
     id: ratingData.id,
     summary_id: ratingData.summary_id,

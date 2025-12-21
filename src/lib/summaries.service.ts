@@ -480,6 +480,7 @@ export async function listSummaries(
     status?: SummaryStatus;
     sort?: 'newest' | 'oldest';
     include_hidden?: boolean;
+    hidden_only?: boolean;
     search?: string;
   }
 ): Promise<PaginatedResponse<SummaryWithVideo>> {
@@ -493,34 +494,64 @@ export async function listSummaries(
     return { data: [], pagination: { total: 0, limit: filters.limit, offset: filters.offset } };
   }
 
+  let selectQuery = `
+    id,
+    tldr,
+    status,
+    generated_at,
+    error_code,
+    videos!inner (
+      id,
+      youtube_video_id,
+      title,
+      thumbnail_url,
+      published_at,
+      channel_id,
+      channels!inner (
+        id,
+        name,
+        youtube_channel_id,
+        created_at
+      )
+    )
+  `;
+
   let q = supabase
     .from('summaries')
-    .select(
-      `
-      id,
-      tldr,
-      status,
-      generated_at,
-      error_code,
-      videos!inner (
-        id,
-        youtube_video_id,
-        title,
-        thumbnail_url,
-        published_at,
-        channel_id,
-        channels!inner (
-          id,
-          name,
-          youtube_channel_id,
-          created_at
-        )
-      )
-    `,
-      { count: 'exact' }
-    )
+    .select(selectQuery, { count: 'exact' })
     .in('videos.channel_id', channelIds)
     .order('published_at', { ascending: filters.sort === 'oldest', referencedTable: 'videos' });
+
+  // Handle hidden summaries filtering with subqueries
+  if (filters.hidden_only) {
+    // Show only hidden summaries - check if summary exists in hidden_summaries for this user
+    const { data: hiddenSummaryIds } = await supabase
+      .from('hidden_summaries')
+      .select('summary_id')
+      .eq('user_id', userId);
+
+    if (hiddenSummaryIds && hiddenSummaryIds.length > 0) {
+      q = q.in('id', hiddenSummaryIds.map(h => h.summary_id));
+    } else {
+      // No hidden summaries, return empty result
+      q = q.eq('id', '00000000-0000-0000-0000-000000000000'); // Impossible ID
+    }
+  } else if (!filters.include_hidden) {
+    // Exclude hidden summaries (default behavior) - ensure summary is NOT in hidden_summaries for this user
+    const { data: hiddenSummaryIds } = await supabase
+      .from('hidden_summaries')
+      .select('summary_id')
+      .eq('user_id', userId);
+    
+    if (hiddenSummaryIds && hiddenSummaryIds.length > 0) {
+      const hiddenIds = hiddenSummaryIds.map(h => h.summary_id);
+      // Use multiple .neq() calls for each hidden ID - more reliable than .not('in')
+      for (const hiddenId of hiddenIds) {
+        q = q.neq('id', hiddenId);
+      }
+    }
+    // If no hidden summaries, no filtering needed (default behavior)
+  }
 
   if (filters.channel_id) q = q.eq('videos.channel_id', filters.channel_id);
   if (filters.status) q = q.eq('status', filters.status);
@@ -528,6 +559,22 @@ export async function listSummaries(
 
   const { data, count, error } = await q.range(filters.offset, filters.offset + filters.limit - 1);
   if (error) throw error;
+
+  // Get user ratings for all summaries in this batch
+  const summaryIds = (data ?? []).map((row: any) => row.id).filter((id): id is string => id !== null);
+  const { data: userRatings } = await supabase
+    .from('summary_ratings')
+    .select('summary_id, rating')
+    .eq('user_id', userId)
+    .in('summary_id', summaryIds);
+
+  // Create a map for quick lookup
+  const userRatingMap = new Map<string, boolean>();
+  userRatings?.forEach((rating) => {
+    if (rating.summary_id) {
+      userRatingMap.set(rating.summary_id, rating.rating);
+    }
+  });
 
   const result: SummaryWithVideo[] = (data ?? []).map((row: any) => ({
     id: row.id,
@@ -547,7 +594,7 @@ export async function listSummaries(
     tldr: row.tldr,
     status: row.status,
     generated_at: row.generated_at,
-    user_rating: null,
+    user_rating: userRatingMap.get(row.id) ?? null,
     error_code: row.error_code,
   }));
 
@@ -608,6 +655,14 @@ export async function getSummaryDetails(
     .eq('user_id', userId)
     .maybeSingle();
 
+  // Check if summary is hidden for the user
+  const { data: hiddenData } = await supabase
+    .from('hidden_summaries')
+    .select('id')
+    .eq('summary_id', summaryId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
   return {
     id: summary.id,
     video: {
@@ -631,5 +686,6 @@ export async function getSummaryDetails(
     generated_at: summary.generated_at,
     rating_stats: { upvotes, downvotes },
     user_rating: userRating?.rating ?? null,
+    is_hidden: !!hiddenData,
   };
 }

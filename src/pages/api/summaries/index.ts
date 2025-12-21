@@ -295,6 +295,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     const rawStatus = urlParams.get('status');
     const rawSort = urlParams.get('sort');
     const rawIncludeHidden = urlParams.get('include_hidden');
+    const rawHiddenOnly = urlParams.get('hidden_only');
     const rawSearch = urlParams.get('search');
 
     const validationResult = SummaryListFiltersSchema.safeParse({
@@ -304,6 +305,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
       status: rawStatus || undefined,
       sort: rawSort || undefined,
       include_hidden: rawIncludeHidden || undefined,
+      hidden_only: rawHiddenOnly || undefined,
       search: rawSearch || undefined,
     });
 

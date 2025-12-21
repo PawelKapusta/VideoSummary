@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { generateSummary, getVideos } from '@/lib/api';
 import type { VideosFilterState, VideoSummary, UserProfile } from '@/types';
@@ -34,6 +34,7 @@ export const useVideos = () => {
       return nextOffset < pagination.total ? nextOffset : undefined;
     },
     initialPageParam: 0,
+    placeholderData: keepPreviousData,
   });
 
   const { mutate: generateSummaryMutation, isPending: isGenerating } = useMutation({
