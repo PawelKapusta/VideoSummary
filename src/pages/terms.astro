@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { TermsView } from '../components/views/TermsView';
+const { user } = Astro.locals;
 ---
 
 <Layout title="Terms of Service - VideoSummary" showFooter={false}>
-  <TermsView client:load />
+  <TermsView client:load isAuthenticated={!!user} />
 </Layout>

@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { PrivacyView } from '../components/views/PrivacyView';
+const { user } = Astro.locals;
 ---
 
 <Layout title="Privacy Policy - VideoSummary" showFooter={false}>
-  <PrivacyView client:load />
+  <PrivacyView client:load isAuthenticated={!!user} />
 </Layout>

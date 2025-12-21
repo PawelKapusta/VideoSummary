@@ -4,10 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Separator } from '../ui/separator';
 import { Badge } from '../ui/badge';
 
-export function TermsView() {
+interface TermsViewProps {
+  isAuthenticated?: boolean;
+}
+
+export function TermsView({ isAuthenticated = false }: TermsViewProps) {
   return (
     <>
-      <LegalHeader activePage="terms" />
+      <LegalHeader activePage="terms" isAuthenticated={isAuthenticated} />
 
       <div className="container mx-auto px-4 py-8 sm:py-12 pt-6 sm:pt-8 max-w-4xl">
         {/* Hero Section */}
@@ -150,7 +154,7 @@ export function TermsView() {
                   </div>
                 </CardContent>
               </Card>
-          </div>
+            </div>
           </section>
 
           <Separator />
@@ -163,14 +167,14 @@ export function TermsView() {
                 <CardHeader>
                   <CardTitle className="text-blue-700">👤 Your Rights</CardTitle>
                 </CardHeader>
-              <CardContent className="flex-1">
-                <ul className="space-y-2 text-sm">
-                  <li>• Full rights to your account data</li>
-                  <li>• Delete your account anytime</li>
-                  <li>• Personal use of summaries</li>
-                  <li>• Account privacy & security</li>
-            </ul>
-              </CardContent>
+                <CardContent className="flex-1">
+                  <ul className="space-y-2 text-sm">
+                    <li>• Full rights to your account data</li>
+                    <li>• Delete your account anytime</li>
+                    <li>• Personal use of summaries</li>
+                    <li>• Account privacy & security</li>
+                  </ul>
+                </CardContent>
               </Card>
 
               <Card className="h-full">
@@ -183,7 +187,7 @@ export function TermsView() {
                     <li>• Service operation & improvement</li>
                     <li>• Platform security measures</li>
                     <li>• Business continuity rights</li>
-            </ul>
+                  </ul>
                 </CardContent>
               </Card>
 
@@ -198,10 +202,10 @@ export function TermsView() {
                     <li>• Content removal requests</li>
                     <li>• Attribution requirements</li>
                     <li>• AI transcripts only when official unavailable</li>
-            </ul>
+                  </ul>
                 </CardContent>
               </Card>
-          </div>
+            </div>
           </section>
 
           <Separator />
@@ -225,14 +229,14 @@ export function TermsView() {
                     <li>• Use for commercial purposes</li>
                     <li>• Circumvent rate limits</li>
                     <li>• Scrape or automate access</li>
-            </ul>
+                  </ul>
                   <ul className="space-y-2 text-sm">
                     <li>• Replace watching original videos</li>
                     <li>• Remove attribution/links</li>
                     <li>• Resell or redistribute summaries</li>
                     <li>• Misuse the service</li>
-            </ul>
-          </div>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
           </section>
@@ -258,7 +262,7 @@ export function TermsView() {
                     <li>• Transformative works based on public captions</li>
                     <li>• AI transcripts only when official unavailable</li>
                     <li>• Always provide attribution and links</li>
-            </ul>
+                  </ul>
                   <p className="text-sm text-green-700 mt-2">
                     <strong>Note:</strong> Content creators can request removal of their content via DMCA takedown notices.
                   </p>
@@ -278,11 +282,11 @@ export function TermsView() {
                     <li>• URL of summary in question</li>
                     <li>• Your contact information</li>
                     <li>• Statement of good faith belief</li>
-            </ul>
+                  </ul>
                   <p className="text-sm text-blue-700 mt-2">
                     <strong>Response time:</strong> Within 48 hours
                   </p>
-          </div>
+                </div>
               </CardContent>
             </Card>
           </section>

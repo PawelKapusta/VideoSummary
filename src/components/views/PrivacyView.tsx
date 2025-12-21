@@ -4,10 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Separator } from '../ui/separator';
 import { Badge } from '../ui/badge';
 
-export function PrivacyView() {
+interface PrivacyViewProps {
+  isAuthenticated?: boolean;
+}
+
+export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
   return (
     <>
-      <LegalHeader activePage="privacy" />
+      <LegalHeader activePage="privacy" isAuthenticated={isAuthenticated} />
 
       <div className="container mx-auto px-4 py-8 sm:py-12 pt-6 sm:pt-8 max-w-4xl">
         {/* Hero Section */}
@@ -192,7 +196,7 @@ export function PrivacyView() {
                     <Badge variant="outline" className="text-red-600 border-red-200">
                       🚫 We do NOT sell your data
                     </Badge>
-          </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -248,8 +252,8 @@ export function PrivacyView() {
                       <li>• Public captions/transcripts</li>
                       <li>• Channel information</li>
                       <li>• Video thumbnails</li>
-            </ul>
-          </div>
+                    </ul>
+                  </div>
 
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <h4 className="font-semibold text-red-800 mb-2">🚫 What We Don't Access</h4>
@@ -258,9 +262,9 @@ export function PrivacyView() {
                       <li>• Your watch history</li>
                       <li>• Private account data</li>
                       <li>• Video files themselves</li>
-            </ul>
+                    </ul>
                   </div>
-          </div>
+                </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h4 className="font-semibold text-blue-800 mb-2">📋 YouTube API Compliance</h4>
@@ -325,7 +329,7 @@ export function PrivacyView() {
                       <span className="text-sm">Object to personal data processing (including automated decisions)</span>
                     </div>
                   </div>
-          </div>
+                </div>
 
                 <div className="mt-6 p-4 bg-white border border-purple-200 rounded-lg">
                   <p className="text-sm font-semibold text-purple-800 mb-2">
@@ -380,7 +384,7 @@ export function PrivacyView() {
               </p>
             </CardContent>
           </Card>
-        </div> 
+        </div>
       </div>
       <LegalFooter activePage="privacy" />
     </>
