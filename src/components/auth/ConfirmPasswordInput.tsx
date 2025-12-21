@@ -33,7 +33,10 @@ export const ConfirmPasswordInput: React.FC<ConfirmPasswordInputProps> = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="confirm-password" className={error ? 'text-red-500' : ''}>
+      <Label
+        htmlFor="confirm-password"
+        className={`text-sm font-semibold ${error ? 'text-red-500' : 'text-slate-700'}`}
+      >
         {label} <span className="text-red-500">*</span>
       </Label>
       <div className="relative">
@@ -44,7 +47,7 @@ export const ConfirmPasswordInput: React.FC<ConfirmPasswordInputProps> = ({
           onChange={handleChange}
           onBlur={onBlur}
           disabled={disabled}
-          className={`${error ? 'border-red-500' : ''} ${showToggle ? 'pr-10' : ''}`}
+          className={`bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-blue-500/30 focus-visible:border-blue-500 transition-all duration-200 rounded-xl h-11 ${error ? 'border-red-500 focus-visible:ring-red-500/20' : ''} ${showToggle ? 'pr-10' : ''}`}
           aria-invalid={!!error}
           aria-describedby={error ? 'confirm-password-error' : undefined}
         />
@@ -67,7 +70,7 @@ export const ConfirmPasswordInput: React.FC<ConfirmPasswordInputProps> = ({
         )}
       </div>
       {error && (
-        <p id="confirm-password-error" className="text-sm text-red-500" role="alert">
+        <p id="confirm-password-error" className="text-sm text-red-500 font-medium" role="alert">
           {error}
         </p>
       )}

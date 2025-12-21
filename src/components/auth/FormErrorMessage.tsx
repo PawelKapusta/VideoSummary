@@ -19,10 +19,12 @@ export function FormErrorMessage({ error, onDismiss }: FormErrorMessageProps) {
     return error.error.message;
   };
 
-  const hasDetails = typeof error !== 'string' && error.error.details;
+  const hasDetails = typeof error !== 'string' &&
+    error.error.details &&
+    Object.keys(error.error.details).length > 0;
 
   return (
-    <div 
+    <div
       className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 transition-all duration-300 animate-in fade-in slide-in-from-top-1"
       role="alert"
       aria-live="assertive"

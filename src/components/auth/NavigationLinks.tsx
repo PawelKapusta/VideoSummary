@@ -1,38 +1,37 @@
 export function NavigationLinks() {
   return (
-    <div className="flex w-full flex-col gap-2 text-center text-sm">
-      <div className="text-muted-foreground">
+    <div className="flex w-full flex-col gap-3 text-center text-sm">
+      <div className="text-slate-500">
         Don't have an account?{' '}
         <a
           href="/register"
-          className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm cursor-pointer"
+          className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
         >
-          Sign up
+          Create one now
         </a>
       </div>
       <div>
         <a
           href="/reset-password"
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm cursor-pointer"
+          className="font-semibold text-slate-600 hover:text-blue-600 transition-colors underline-offset-4 hover:underline"
         >
-          Forgot password?
+          Forgot your password?
         </a>
       </div>
-      <div className="grid grid-cols-2 gap-4 pt-4 mt-6 border-t border-border/50 max-w-[240px] mx-auto">
+      <div className="flex justify-center gap-4 pt-5 mt-1 border-t border-slate-100">
         <a
           href="/terms"
-          className="inline-block text-xs text-muted-foreground/60 hover:text-primary hover:font-medium hover:-translate-y-0.5 transition-all duration-200"
+          className="text-[12px] text-slate-400 hover:text-slate-600 transition-colors"
         >
-          Terms of Service
+          Terms
         </a>
         <a
           href="/privacy"
-          className="inline-block text-xs text-muted-foreground/60 hover:text-primary hover:font-medium hover:-translate-y-0.5 transition-all duration-200"
+          className="text-[12px] text-slate-400 hover:text-slate-600 transition-colors"
         >
-          Privacy Policy
+          Privacy
         </a>
       </div>
     </div>
   );
 }
-

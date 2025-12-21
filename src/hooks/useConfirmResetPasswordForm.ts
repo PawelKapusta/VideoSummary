@@ -49,12 +49,31 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
   const handleInputChange = useCallback((field: keyof ConfirmResetFormData, value: string) => {
     setFormState((prev) => {
       const newData: ConfirmResetFormData = { ...prev.data, [field]: value };
-      const { errors, isValid } = validateForm(newData);
+      const { isValid } = validateForm(newData);
+      
+      const newErrors = { ...prev.errors };
+      if (newErrors[field as keyof ConfirmResetFormErrors]) {
+        delete newErrors[field as keyof ConfirmResetFormErrors];
+      }
+
       return {
         ...prev,
         data: newData,
-        errors,
+        errors: newErrors,
         isValid,
+      };
+    });
+  }, []);
+
+  const handleBlur = useCallback((field: keyof ConfirmResetFormData) => {
+    setFormState((prev) => {
+      const { errors } = validateForm(prev.data);
+      return {
+        ...prev,
+        errors: {
+          ...prev.errors,
+          [field]: errors[field],
+        },
       };
     });
   }, []);
@@ -138,6 +157,7 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
   return {
     formState,
     handleInputChange,
+    handleBlur,
     handleSubmit,
   };
 };

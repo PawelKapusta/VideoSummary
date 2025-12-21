@@ -115,23 +115,14 @@ export function useRegisterForm({
         delete newErrors.form;
       }
       
-      // Validate the changed field
+      // Validate the changed field for isValid calculation only
       try {
         if (field === 'email') {
           RegisterFormSchema.pick({ email: true }).parse({ email: value });
         } else if (field === 'password') {
           RegisterFormSchema.pick({ password: true }).parse({ password: value });
-          // Also revalidate confirmPassword if it has a value
-          if (newData.confirmPassword && newData.confirmPassword !== value) {
-            newErrors.confirmPassword = 'Passwords do not match';
-          } else if (newData.confirmPassword && newData.confirmPassword === value) {
-            delete newErrors.confirmPassword;
-          }
         } else if (field === 'confirmPassword') {
           RegisterFormSchema.pick({ confirmPassword: true }).parse({ confirmPassword: value });
-          if (value !== newData.password) {
-            newErrors.confirmPassword = 'Passwords do not match';
-          }
         }
       } catch (error) {
         // Don't set error on change, only on blur
