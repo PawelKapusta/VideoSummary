@@ -22,9 +22,9 @@ The view will be composed of several hierarchical components.
         - ToggleGroup (Shadcn - for summary status)
       - VideosGrid.tsx
         - SkeletonLoader.tsx (for initial load)
-        - VideoCard.tsx (repeated for each video)
+        - VideoCard.tsx (repeated for each video - clickable container)
           - Card (Shadcn)
-          - Button (Shadcn - "Generate Summary")
+          - Text labels ("See Summary" / "Generate Summary")
         - InfiniteScrollTrigger.tsx (to load more videos)
         - EmptyState.tsx (if no videos are found)
       - GenerateSummaryDialog.tsx (conditionally rendered)
@@ -88,14 +88,14 @@ The view will be composed of several hierarchical components.
 ### `VideoCard.tsx`
 - **Component description**: A card that displays the thumbnail, title, and channel name for a single video. It includes a button to initiate summary generation if a summary is not available.
 - **Main elements**:
-  - `Card` (Shadcn) as the main container.
+  - `Card` (Shadcn) as the main container, fully clickable.
   - An `img` for the video thumbnail.
   - Text elements for title and channel name.
   - A `Badge` (Shadcn) to indicate if a summary `is available`.
-  - A `Button` (Shadcn) labeled "Generate Summary" which is shown if `has_summary` is false.
+  - A text indicator ("See Summary" or "Generate Summary") instead of a button.
 - **Handled interactions**:
-  - `onClick` on the "Generate Summary" button.
-- **Handled validation**: The "Generate Summary" button should be disabled if `has_summary` is true.
+  - `onClick`: Navigates to `/summaries/:id` if a summary exists, or opens the `GenerateSummaryDialog` if not.
+- **Handled validation**: Visual status indicates if generation is possible.
 - **Types**: `VideoSummary`.
 - **Props**:
   ```typescript

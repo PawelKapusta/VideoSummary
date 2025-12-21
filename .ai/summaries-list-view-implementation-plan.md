@@ -103,13 +103,15 @@ The hierarchy focuses on a clean separation: SummariesView orchestrates data fet
 - **Main elements**: 
   - Card from shadcn/ui with image (thumbnail), body (title, channel, date, TL;DR).
   - Badge for status (e.g., "completed", "failed").
-  - Thumbs up/down icons for rating (clickable).
+  - Thumbs up/down icons for completed summaries.
   - Hide button (icon or text) with confirmation dialog.
-  - Link wrapper for navigation to /dashboard/[id].
+  - For **failed** summaries: "Try Again" and "Hide" buttons directly in the error box.
+  - Link wrapper for navigation to /summaries/[id] (full card clickable).
 - **Handled interactions**: 
   - Click card to navigate to detailed view.
   - Click rating icons to submit rating (optimistic update).
-  - Click hide to confirm and call hide API (not specified, assume POST /api/summaries/hide).
+  - Click "Try Again" on failed cards to re-open generation dialog.
+  - Click "Hide" to confirm and call hide API.
   - Hover effects for interactivity.
 - **Handled validation**: 
   - If status="failed", show error_code message instead of TL;DR.

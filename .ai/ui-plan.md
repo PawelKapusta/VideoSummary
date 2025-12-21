@@ -10,6 +10,13 @@ Architektura interfejsu użytkownika VideoSummary opiera się na hybrydowym pode
 
 ## 2. Lista widoków
 
+- **Nazwa widoku**: Strona błędu 404  
+  **Ścieżka widoku**: /404  
+  **Główny cel**: Poinformowanie o nieistniejącej stronie w tematyce wideo.  
+  **Kluczowe informacje do wyświetlenia**: Kod 404, komunikat "Signal Interrupted", przyciski powrotu.  
+  **Kluczowe komponenty widoku**: Animowane piksele i ikony play, szklany panel z gradientem, linki do dashboardu i generowania.  
+  **UX, dostępność i względy bezpieczeństwa**: Kreatywny design budujący markę; szybka nawigacja do kluczowych sekcji.
+
 - **Nazwa widoku**: Strona logowania  
   **Ścieżka widoku**: /login  
   **Główny cel**: Umożliwienie zalogowanym użytkownikom dostępu do aplikacji poprzez podanie e-maila i hasła.  
@@ -75,10 +82,17 @@ Architektura interfejsu użytkownika VideoSummary opiera się na hybrydowym pode
 
 - **Nazwa widoku**: Lista filmów  
   **Ścieżka widoku**: /videos  
-  **Główny cel**: Przegląd filmów z subskrybowanych kanałów bez podsumowań.  
-  **Kluczowe informacje do wyświetlenia**: Karty filmów z miniaturami, filtrami kanału; overlay do generowania.  
-  **Kluczowe komponenty widoku**: Siatka kart, filtry.  
-  **UX, dostępność i względy bezpieczeństwa**: Infinite scroll; alt dla miniaturek; RLS na filmy.
+  **Główny cel**: Przegląd filmów z subskrybowanych kanałów z możliwością szybkiego generowania podsumowań.  
+  **Kluczowe informacje do wyświetlenia**: Dynamiczny licznik dostępnych filmów, siatka kart z miniaturami, filtry kanału.  
+  **Kluczowe komponenty widoku**: Klikalne karty (prowadzą do podsumowania lub modalu generowania), stany ładowania skeleton.  
+  **UX, dostępność i względy bezpieczeństwa**: Infinite scroll; wizualne wskaźniki dostępności podsumowania; intuicyjne przejście do akcji.
+
+- **Nazwa widoku**: Ukryte podsumowania  
+  **Ścieżka widoku**: /hidden  
+  **Główny cel**: Zarządzanie i przywracanie podsumowań ukrytych przez użytkownika.  
+  **Kluczowe informacje do wyświetlenia**: Lista ukrytych podsumowań, licznik ukrytych treści.  
+  **Kluczowe komponenty widoku**: Przycisk "Unhide All", indywidualne modale potwierdzenia przywrócenia, filtry.  
+  **UX, dostępność i względy bezpieczeństwa**: Jasne statusy (Completed/Failed); modal potwierdzenia dla bezpiecznych akcji; synchronizacja z widokiem głównym.
 
 ## 3. Mapa podróży użytkownika
 

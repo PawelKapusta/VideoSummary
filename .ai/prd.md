@@ -171,7 +171,7 @@ Następujące funkcjonalności są świadomie wyłączone z zakresu MVP i zostan
 - Kryteria akceptacji:
   - Na karcie podsumowania lub na jego stronie szczegółowej znajduje się opcja "Ukryj".
   - Po potwierdzeniu, podsumowanie znika z dashboardu użytkownika, ale pozostaje w bazie danych (jest współdzielone z innymi użytkownikami).
-  - Podsumowanie może być przywrócone do widoku (odkryte) w przyszłości.
+  - Podsumowanie może być przywrócone do widoku poprzez dedykowaną stronę "Ukryte" (`/hidden`).
   - Inne użytkowniki subskrybujący ten sam kanał nadal widzą to podsumowanie na swoich dashboardach.
 
 ### Scenariusze brzegowe i obsługa błędów
