@@ -2,4 +2,5 @@ name = "video-summary"
 compatibility_date = "2024-12-24"
 
 [pages]
-build_output_dir = "./dist"
+pages_build_output_dir = "./dist"
+project_name = "video-summary"
