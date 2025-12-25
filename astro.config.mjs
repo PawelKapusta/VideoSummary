@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, envField } from "astro/config";
 
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
@@ -13,6 +13,44 @@ export default defineConfig({
   server: { port: 3000 },
   vite: {
     plugins: [tailwindcss()],
+  },
+  env: {
+    schema: {
+      // Supabase
+      SUPABASE_URL: envField.string({ context: "server", access: "secret" }),
+      SUPABASE_KEY: envField.string({ context: "server", access: "secret" }),
+      SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: "server", access: "secret" }),
+      
+      // OpenRouter AI
+      OPENROUTER_API_KEY: envField.string({ context: "server", access: "secret" }),
+      OPENROUTER_MODEL: envField.string({ 
+        context: "server", 
+        access: "secret",
+        optional: true,
+      }),
+      
+      // YouTube API
+      YOUTUBE_API_KEY: envField.string({ context: "server", access: "secret" }),
+      
+      // Gradio (optional)
+      GRADIO_TRANSCRIPT_MODEL: envField.string({ 
+        context: "server", 
+        access: "secret",
+        optional: true
+      }),
+      
+      // LogTape (optional)
+      LOGTAPE_API_KEY: envField.string({ 
+        context: "server", 
+        access: "secret",
+        optional: true
+      }),
+      LOGTAPE_PROJECT_ID: envField.string({ 
+        context: "server", 
+        access: "secret",
+        optional: true
+      }),
+    },
   },
   adapter: cloudflare(),
 });

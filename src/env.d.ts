@@ -20,9 +20,11 @@ interface ImportMetaEnv {
 	readonly SUPABASE_KEY: string;
 	readonly SUPABASE_SERVICE_ROLE_KEY: string;
 	readonly OPENROUTER_API_KEY: string;
+	readonly OPENROUTER_MODEL?: string;
 	readonly YOUTUBE_API_KEY: string;
-	readonly LOGTAPE_API_KEY: string;
-	readonly LOGTAPE_PROJECT_ID: string;
+	readonly GRADIO_TRANSCRIPT_MODEL?: string;
+	readonly LOGTAPE_API_KEY?: string;
+	readonly LOGTAPE_PROJECT_ID?: string;
 }
 
 interface ImportMeta {
