@@ -159,18 +159,27 @@ export async function initializeLogging(): Promise<void> {
 
   const isDevelopment = process.env.NODE_ENV !== "production";
   const isTest = process.env.NODE_ENV === "test";
+  // Detect Cloudflare Workers/Pages environment (no filesystem access)
+  const isCloudflare = typeof process !== 'undefined' && 
+    (process.env as any).CLOUDFLARE_ACCOUNT_ID !== undefined;
 
-  // Skip file logging in test environment
+  // Skip file logging in test environment and Cloudflare
   const sinks: Record<string, any> = {
     console: redactByField(getConsoleSink(), SENSITIVE_FIELDS_MUTABLE),
   };
 
-  if (!isTest) {
+  // Only use file sink if NOT in test and NOT in Cloudflare
+  if (!isTest && !isCloudflare) {
     sinks.file = redactByField(
       getFileSink(isDevelopment ? "logs/dev.log" : "logs/prod.log"),
       SENSITIVE_FIELDS_MUTABLE
     );
   }
+
+  // Determine available sinks based on environment
+  const availableSinks = isCloudflare 
+    ? ["console"]  // Only console in Cloudflare (no filesystem)
+    : (isTest ? ["console"] : ["console", "file"]);
 
   try {
     await configure({
@@ -183,32 +192,32 @@ export async function initializeLogging(): Promise<void> {
         {
           category: ["VideoSummary"],
           lowestLevel: isDevelopment ? "debug" : "info",
-          sinks: isDevelopment ? ["console", "file"] : ["file"],
+          sinks: availableSinks,
           filters: isTest ? [] : ["excludeDebugInProduction"],
         },
         // Authentication logger (more security-focused)
         {
           category: ["VideoSummary", "auth"],
           lowestLevel: "info", // Always log auth events at info level or higher
-          sinks: ["console", "file"], // Always log auth to both console and file
+          sinks: availableSinks,
         },
         // API logger
         {
           category: ["VideoSummary", "api"],
           lowestLevel: isDevelopment ? "debug" : "info",
-          sinks: isDevelopment ? ["console", "file"] : ["file"],
+          sinks: availableSinks,
         },
         // Database logger
         {
           category: ["VideoSummary", "db"],
           lowestLevel: isDevelopment ? "debug" : "warning",
-          sinks: ["console", "file"],
+          sinks: availableSinks,
         },
         // External API logger (YouTube, OpenRouter)
         {
           category: ["VideoSummary", "external"],
           lowestLevel: isDevelopment ? "debug" : "info",
-          sinks: isDevelopment ? ["console", "file"] : ["file"],
+          sinks: availableSinks,
         },
       ],
       reset: isDevelopment, // Safe reset in dev
