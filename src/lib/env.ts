@@ -23,7 +23,13 @@ export function getEnv(key: string): string | undefined {
 export function requireEnv(key: string): string {
   const value = getEnv(key);
   if (!value) {
-    throw new Error(`Environment variable ${key} is required but not defined`);
+    // In build time, environment variables might not be available
+    // They will be available at runtime through Cloudflare Pages secrets
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+      throw new Error(`Environment variable ${key} is required but not defined`);
+    }
+    // For development/build time, return a placeholder that will be overridden at runtime
+    return `__PLACEHOLDER_${key}__`;
   }
   return value;
 }
