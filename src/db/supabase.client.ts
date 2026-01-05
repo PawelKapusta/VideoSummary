@@ -5,9 +5,10 @@ import { createTraceHeaders } from '../lib/trace.ts';
 import type { APIContext } from 'astro';
 import { requireEnv } from '../lib/env.ts';
 
-const supabaseUrl = requireEnv('SUPABASE_URL');
-const supabaseAnonKey = requireEnv('SUPABASE_KEY');
-const supabaseServiceRoleKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+// Helper functions to get environment variables at runtime (not build time)
+const getSupabaseUrl = () => requireEnv('SUPABASE_URL');
+const getSupabaseAnonKey = () => requireEnv('SUPABASE_KEY');
+const getSupabaseServiceRoleKey = () => requireEnv('SUPABASE_SERVICE_ROLE_KEY');
 
 
 
@@ -30,12 +31,12 @@ const createTracedFetch = (traceId?: string) => {
 
 // Client-side Supabase client (uses cookies automatically)
 export const createSupabaseBrowserClient = () => {
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient<Database>(getSupabaseUrl(), getSupabaseAnonKey());
 };
 
 // Server-side Supabase client (for Astro Middleware/API)
 export const createSupabaseServerClient = (context: APIContext, traceId?: string) => {
-  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
       getAll() {
         return parseCookieHeader(context.request.headers.get('Cookie') ?? '') as { name: string; value: string }[];
@@ -70,11 +71,12 @@ export const createSupabaseServerClient = (context: APIContext, traceId?: string
  * @returns Supabase client with service role privileges
  */
 export const createSupabaseServiceClient = (traceId?: string) => {
-  if (!supabaseServiceRoleKey) {
+  const serviceRoleKey = getSupabaseServiceRoleKey();
+  if (!serviceRoleKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
   }
-  
-  return createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
+
+  return createClient<Database>(getSupabaseUrl(), serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
