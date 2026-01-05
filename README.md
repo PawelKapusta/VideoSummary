@@ -1,189 +1,227 @@
-# VideoSummary
+# Video Summary
 
-[![Project Status: In Progress](https://img.shields.io/badge/status-in%20progress-yellow.svg)](https://github.com/your-username/VideoSummary)
+[![Project Status: In Progress](https://img.shields.io/badge/status-in%20progress-yellow.svg)]
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Astro](https://img.shields.io/badge/Astro-000000?logo=astro&logoColor=white)](https://astro.build/)
 
-VideoSummary is a web application designed for users who subscribe to multiple valuable YouTube channels but lack the time to regularly watch all published content. The app solves this problem by automatically generating concise, structured summaries of new videos, enabling users to efficiently absorb key information in a fraction of the time and eliminate the "fear of missing out" (FOMO).
+An AI-powered web application that automatically generates concise summaries of YouTube videos from your favorite channels. Stay informed without spending hours watching - get the key insights delivered to your dashboard.
 
 ## Table of Contents
 
-- [Project Description](#project-description)
-- [Tech Stack](#tech-stack)
-- [Getting Started Locally](#getting-started-locally)
+- [✨ Features](#-features)
+- [🏗️ Architecture](#️-architecture)
+- [🚀 Quick Start](#-quick-start)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-  - [Running the Application](#running-the-application)
-- [Available Scripts](#available-scripts)
-- [Project Scope](#project-scope)
-  - [Key Features](#key-features)
-  - [Future Development](#future-development)
-- [Project Status](#project-status)
-- [License](#license)
+  - [Configuration](#configuration)
+  - [Development](#development)
+- [📋 Available Scripts](#-available-scripts)
+- [🔧 Tech Stack](#-tech-stack)
+- [📚 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-## Project Description
+## ✨ Features
 
-In an age of information overload, staying up-to-date with educational, financial, or news-related YouTube channels is a challenge. VideoSummary addresses this by providing users with AI-powered summaries of the latest videos from their favorite creators. This allows users to stay informed and capture the core value of long-form video content without spending hours watching.
+- **🤖 AI-Powered Summaries**: Automatically generate concise TL;DR and detailed summaries using advanced AI models
+- **📺 YouTube Integration**: Connect up to 10 YouTube channels and get notified about new videos
+- **⏰ Daily Automation**: Automatic daily summary generation for the latest videos from subscribed channels
+- **📱 Responsive Dashboard**: Clean, modern interface to browse and manage all your video summaries
+- **🔒 Secure Authentication**: Email/password authentication with password reset functionality
+- **⭐ Content Rating**: Rate summaries to help improve future recommendations
+- **🎯 Smart Filtering**: Filter and search through your summary collection
+- **🔄 On-Demand Generation**: Manually trigger summary generation for immediate needs
+- **📊 Progress Tracking**: Visual indicators for summary generation status and errors
 
-## Tech Stack
+## 🏗️ Architecture
 
-| Category              | Technology                                                                                                  |
-| --------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Frameworks**        | [Astro](https://astro.build/), [React](https://react.dev/)                                                   |
-| **Language**          | [TypeScript](https://www.typescriptlang.org/)                                                               |
-| **Styling**           | [Tailwind CSS](https://tailwindcss.com/), [Shadcn/ui](https://ui.shadcn.com/)                                |
-| **Backend**           | Serverless Functions ([Vercel](https://vercel.com/))                                                         |
-| **Database & Auth**   | [Supabase](https://supabase.com/) (PostgreSQL with RLS)                                                       |
-| **AI Services**       | [OpenRouter](https://openrouter.ai/)                                                                        |
-| **Tooling**           | [Vite](https://vitejs.dev/), [ESLint](https://eslint.org/), [Prettier](https://prettier.io/)                  |
-| **Testing**           | [Vitest](https://vitest.dev/) (Unit), [Playwright](https://playwright.dev/) (E2E)                               |
-| **Automation**        | [GitHub Actions](https://github.com/features/actions) (CI/CD)                                               |
+Video Summary follows a modern serverless architecture built with:
 
-## Getting Started Locally
+- **Frontend**: Astro + React for optimal performance and SEO
+- **Backend**: Cloudflare Functions for serverless API endpoints
+- **Database**: Supabase (PostgreSQL) with Row Level Security
+- **Authentication**: Supabase Auth with secure session management
+- **AI Integration**: OpenRouter API for flexible AI model selection
+- **External APIs**: YouTube Data API for channel and video information
 
-Follow these instructions to set up the project on your local machine.
+### System Flow
+
+1. **User Management**: Secure authentication and profile management
+2. **Channel Subscription**: Users add YouTube channels via URL
+3. **Video Discovery**: Automated checking for new videos from subscribed channels
+4. **Content Processing**: Transcript extraction and AI-powered summarization
+5. **Dashboard Delivery**: Real-time updates and organized summary presentation
+
+## 🔧 Tech Stack
+
+### Frontend
+- **[Astro](https://astro.build/)** - Modern web framework for content-driven websites
+- **[React 19](https://react.dev/)** - UI library for interactive components
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Shadcn/ui](https://ui.shadcn.com/)** - Modern component library built on Radix UI
+
+### Backend & Infrastructure
+- **[Cloudflare Functions](https://workers.cloudflare.com/)** - Serverless API endpoints
+- **[Supabase](https://supabase.com/)** - PostgreSQL database with real-time subscriptions and RLS
+- **[OpenRouter](https://openrouter.ai/)** - Unified API for multiple AI models
+- **[YouTube Data API](https://developers.google.com/youtube/v3)** - Channel and video information
+
+### Development & Quality
+- **[Vite](https://vitejs.dev/)** - Fast build tool and development server
+- **[ESLint](https://eslint.org/)** + **[Prettier](https://prettier.io/)** - Code linting and formatting
+- **[Vitest](https://vitest.dev/)** - Fast unit testing framework
+- **[Playwright](https://playwright.dev/)** - End-to-end testing
+- **[GitHub Actions](https://github.com/features/actions)** - CI/CD pipelines
+
+## 🚀 Quick Start
+
+Get Video Summary running locally in minutes.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (LTS version recommended)
-- [npm](https://www.npmjs.com/) (comes with Node.js)
+- **[Node.js](https://nodejs.org/)** (LTS version 18+ recommended)
+- **[npm](https://www.npmjs.com/)** (comes with Node.js)
+- **Supabase Account** - For database and authentication
+- **YouTube Data API Key** - For YouTube integration
+- **OpenRouter API Key** - For AI summarization
 
 ### Installation
 
-1.  **Clone the repository:**
-    ```sh
-    git clone https://github.com/your-username/VideoSummary.git
-    cd VideoSummary
-    ```
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd videosummary
+   ```
 
-2.  **Install dependencies:**
-    ```sh
-    npm install
-    ```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-3.  **Set up environment variables:**
-    Create a `.env` file in the root of the project and add the necessary environment variables. You can copy the example below:
+### Configuration
 
-    ```env
-    # .env.example
+3. **Set up environment variables**
 
-    # Supabase credentials (found in your Supabase project settings)
-    PUBLIC_SUPABASE_URL="your_supabase_project_url"
-    PUBLIC_SUPABASE_ANON_KEY="your_supabase_anon_key"
+   Create a `.env` file in the root directory:
 
-    # YouTube Data API v3 Key (get from Google Cloud Console)
-    YOUTUBE_API_KEY="your_youtube_api_key"
+   ```env
+   # Supabase Configuration
+   SUPABASE_URL=your_supabase_project_url
+   SUPABASE_KEY=your_supabase_service_role_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-    # OpenRouter API Key
-    OPENROUTER_API_KEY="your_openrouter_api_key"
-    ```
+   # AI Services
+   OPENROUTER_API_KEY=your_openrouter_api_key
+   OPENROUTER_MODEL=gpt-4o-mini  # Optional: defaults to gpt-4o-mini
 
-### Running the Application
+   # YouTube API
+   YOUTUBE_API_KEY=your_youtube_data_api_key
 
-Start the development server:
+   # Optional: Logging
+   LOGTAPE_API_KEY=your_logtape_api_key
+   LOGTAPE_PROJECT_ID=your_logtape_project_id
+   ```
 
-```sh
-npm run dev
-```
+4. **Configure Supabase**
 
-The application will be available at `http://localhost:4321`.
+   - Create a new Supabase project
+   - Run the migrations in `supabase/migrations/`
+   - Update your environment variables with the Supabase credentials
 
-## Available Scripts
+### Development
 
-| Script       | Description                                            |
-| ------------ | ------------------------------------------------------ |
-| `npm run dev`    | Starts the development server with hot-reloading.      |
-| `npm run build`  | Builds the application for production.                 |
-| `npm run preview`| Serves the production build locally for preview.       |
-| `npm run lint`   | Lints the codebase for errors and style issues.        |
-| `npm run lint:fix`| Automatically fixes linting issues.                    |
-| `npm run format` | Formats the code using Prettier.                       |
-| `npm run astro`  | Provides access to the Astro CLI for various commands. |
+5. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-## Project Scope
+   The application will be available at `http://localhost:3000`.
 
-This project is currently focused on delivering a core set of features for the Minimum Viable Product (MVP).
+## 📋 Available Scripts
 
-### Key Features
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with hot reloading |
+| `npm run build` | Build application for production |
+| `npm run preview` | Preview production build locally |
+| `npm run astro` | Access Astro CLI commands |
+| `npm run typecheck` | Run TypeScript type checking |
+| `npm run lint` | Lint code for errors and style issues |
+| `npm run lint:fix` | Automatically fix linting issues |
+| `npm run format` | Format code with Prettier |
 
--   **Authentication:** Secure user registration and login via email and password, including a password reset mechanism.
--   **Channel Management:** Users can add up to 10 YouTube channels by URL and manage them in their profile.
--   **AI Summaries:**
-    -   Automatic daily generation of a summary for the latest video from each subscribed channel.
-    -   Manual trigger to generate a summary on-demand.
-    -   Generates both a quick TL;DR (~100 tokens) and a detailed, structured summary (~500 tokens).
--   **Dashboard:** A clean, responsive interface to view all summaries, sorted chronologically.
--   **Detailed View:** A dedicated page for each summary with full content, a link to the original video, and rating options.
--   **Error Handling:** Clear notifications for summary generation issues (e.g., private videos, no captions, videos over 45 minutes).
+## 📚 Documentation
 
-### Future Development
+### API Reference
 
-The following features are planned for future releases and are not included in the current MVP scope:
+The application provides RESTful API endpoints for:
 
--   Summarizing any YouTube video URL without requiring a channel subscription.
--   Advanced summary categorization and filtering.
--   Social logins (Google, GitHub, etc.).
--   Support for videos longer than 45 minutes.
--   Translation of summaries into other languages.
--   Paid subscription plans for increased limits and premium features.
+- **Authentication** - User registration, login, and session management
+- **Channels** - YouTube channel subscription and management
+- **Summaries** - AI-generated video summaries and ratings
+- **Videos** - Video discovery and metadata retrieval
 
-## Project Status
+### Database Schema
 
-This project is currently **in progress**. The focus is on developing the MVP features outlined above. Contributions, issues, and feature requests are welcome.
+Video Summary uses Supabase with the following main tables:
+- `profiles` - User profiles and preferences
+- `user_channels` - Subscribed YouTube channels
+- `videos` - Video metadata and processing status
+- `summaries` - Generated AI summaries with ratings
 
-## Logging System
+### Development Guidelines
 
-VideoSummary uses **LogTape** for production-ready logging with the following features:
+- Follow TypeScript strict mode for type safety
+- Use ESLint and Prettier for code quality
+- Write unit tests for business logic with Vitest
+- Follow conventional commit messages
+- Use the established project structure for consistency
 
-- **Structured logging** with automatic data redaction for security and privacy
-- **Zero PII logging**: Emails and personal data are never logged
-- **AWS X-Ray distributed tracing**: `x-amzn-trace-id` header propagation to downstream services
-- **Trace ID correlation**: Request-level tracking across all services and logs
-- **Optional support tickets**: For exceptional cases requiring user-specific correlation
-- **Hierarchical categories**: `VideoSummary`, `VideoSummary.auth`, `VideoSummary.api`, `VideoSummary.db`, `VideoSummary.external`
-- **Environment-aware configuration**: Development (console + file) vs Production (file only)
-- **Type-safe logging functions** with compile-time validation
-- **Performance monitoring** and error tracking
+## 🤝 Contributing
 
-### Installation
-```bash
-npm install @logtape/logtape @logtape/file @logtape/redaction
-```
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Usage
-```typescript
-import { securityLogger, errorLogger, createAwsTraceId, getAwsTraceId, createSupportTicketId } from './lib/logger';
+### Development Workflow
 
-// Successful authentication (logs user_id - safe internal identifier)
-securityLogger.auth('User login successful', {
-  trace_id: createAwsTraceId(), // AWS X-Ray style: 1-58406520-a006649127e371903a2de979
-  user_id: userId // Safe - internal UUID
-});
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and add tests
+4. Run the test suite: `npm run lint && npm run typecheck`
+5. Commit your changes: `git commit -m 'Add amazing feature'`
+6. Push to the branch: `git push origin feature/amazing-feature`
+7. Open a Pull Request
 
-// Failed registration (uses trace ID for correlation)
-const traceId = createAwsTraceId();
-securityLogger.authFailure('User registration failed', {
-  trace_id: traceId,
-  error_type: 'validation_error'
-});
+### Code Style
 
-// Extract trace ID from x-amzn-trace-id header (distributed tracing)
-const traceId = getAwsTraceId(request.headers);
+- Use TypeScript for all new code
+- Follow the existing patterns for component structure
+- Add JSDoc comments for complex functions
+- Ensure all tests pass before submitting PRs
 
-// Propagate trace ID to downstream services automatically
-const supabase = createSupabaseClient(traceId); // Trace ID added to all Supabase requests
-// All external API calls automatically include: x-amzn-trace-id header
+### Logging & Monitoring
 
-// Optional: Support ticket for exceptional user assistance (rarely needed)
-const ticketId = createSupportTicketId(userId); // SUPPORT_ABC12345
-// Store mapping: ticketId -> userId in secure support database
+Video Summary uses **LogTape** for production-ready logging with:
 
-// API errors with context
-errorLogger.apiError(error, 'POST', '/api/auth/register', 400, {
-  component: 'auth_service',
-  validation_errors: ['email_required']
-});
-```
+- Structured logging with automatic PII redaction
+- AWS X-Ray distributed tracing support
+- Environment-aware configuration (development vs production)
+- Type-safe logging functions with hierarchical categories
 
-## License
+For detailed logging documentation, see [`docs/logging.md`](docs/logging.md).
 
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for more details.
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [OpenRouter](https://openrouter.ai/) for providing unified AI API access
+- [Supabase](https://supabase.com/) for the excellent backend-as-a-service platform
+- [Shadcn/ui](https://ui.shadcn.com/) for the beautiful component library
+- [Astro](https://astro.build/) for the modern web framework
+
+---
+
+**Video Summary** - Stay informed, save time, never miss important content.
