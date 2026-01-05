@@ -5,14 +5,25 @@
 	"compatibility_flags": [
 		"nodejs_compat_v2"
 	],
-		"kv_namespaces": [
-			{
-				"binding": "SESSION",
-				"id": "fc1a659941d04c1ba4ce6da21828294b",
-				"preview_id": "a32d83bf90934156abe2540971815533"
-			}
-		],
-		"observability": {
+	"kv_namespaces": [
+		{
+			"binding": "SESSION",
+			"id": "fc1a659941d04c1ba4ce6da21828294b",
+			"preview_id": "a32d83bf90934156abe2540971815533"
+		}
+	],
+	"vars": {
+		"SUPABASE_URL": "https://placeholder.supabase.co",
+		"SUPABASE_KEY": "placeholder-anon-key",
+		"SUPABASE_SERVICE_ROLE_KEY": "placeholder-service-role-key",
+		"OPENROUTER_API_KEY": "placeholder-openrouter-key",
+		"OPENROUTER_MODEL": "gpt-3.5-turbo",
+		"YOUTUBE_API_KEY": "placeholder-youtube-key",
+		"GRADIO_TRANSCRIPT_MODEL": "placeholder-gradio-model",
+		"LOGTAPE_API_KEY": "placeholder-logs-key",
+		"LOGTAPE_PROJECT_ID": "placeholder-project-id"
+	},
+	"observability": {
 		"enabled": true
 	}
 }
