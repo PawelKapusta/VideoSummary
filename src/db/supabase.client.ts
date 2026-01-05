@@ -6,9 +6,44 @@ import type { APIContext } from 'astro';
 import { requireEnv } from '../lib/env.ts';
 
 // Helper functions to get environment variables at runtime (not build time)
-const getSupabaseUrl = () => requireEnv('SUPABASE_URL');
-const getSupabaseAnonKey = () => requireEnv('SUPABASE_KEY');
-const getSupabaseServiceRoleKey = () => requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+const getSupabaseUrl = () => {
+  const value = requireEnv('SUPABASE_URL');
+  if (value && value.startsWith('__PLACEHOLDER_')) {
+    // Try to get the real value again
+    const realValue = requireEnv('SUPABASE_URL');
+    if (realValue && !realValue.startsWith('__PLACEHOLDER_')) {
+      return realValue;
+    }
+    throw new Error('SUPABASE_URL is required but not available');
+  }
+  return value;
+};
+
+const getSupabaseAnonKey = () => {
+  const value = requireEnv('SUPABASE_KEY');
+  if (value && value.startsWith('__PLACEHOLDER_')) {
+    // Try to get the real value again
+    const realValue = requireEnv('SUPABASE_KEY');
+    if (realValue && !realValue.startsWith('__PLACEHOLDER_')) {
+      return realValue;
+    }
+    throw new Error('SUPABASE_KEY is required but not available');
+  }
+  return value;
+};
+
+const getSupabaseServiceRoleKey = () => {
+  const value = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+  if (value && value.startsWith('__PLACEHOLDER_')) {
+    // Try to get the real value again
+    const realValue = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+    if (realValue && !realValue.startsWith('__PLACEHOLDER_')) {
+      return realValue;
+    }
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required but not available');
+  }
+  return value;
+};
 
 
 
