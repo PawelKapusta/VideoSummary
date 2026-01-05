@@ -159,27 +159,14 @@ export async function initializeLogging(): Promise<void> {
 
   const isDevelopment = process.env.NODE_ENV !== "production";
   const isTest = process.env.NODE_ENV === "test";
-  // Detect Cloudflare Workers/Pages environment (no filesystem access)
-  const isCloudflare = typeof process !== 'undefined' && 
-    (process.env as any).CLOUDFLARE_ACCOUNT_ID !== undefined;
 
-  // Skip file logging in test environment and Cloudflare
+  // Only use console sink (Cloudflare doesn't support filesystem)
   const sinks: Record<string, any> = {
     console: redactByField(getConsoleSink(), SENSITIVE_FIELDS_MUTABLE),
   };
 
-  // Only use file sink if NOT in test and NOT in Cloudflare
-  if (!isTest && !isCloudflare) {
-    sinks.file = redactByField(
-      getFileSink(isDevelopment ? "logs/dev.log" : "logs/prod.log"),
-      SENSITIVE_FIELDS_MUTABLE
-    );
-  }
-
-  // Determine available sinks based on environment
-  const availableSinks = isCloudflare 
-    ? ["console"]  // Only console in Cloudflare (no filesystem)
-    : (isTest ? ["console"] : ["console", "file"]);
+  // Use only console sinks for all environments
+  const availableSinks = ["console"];
 
   try {
     await configure({
