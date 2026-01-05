@@ -36,7 +36,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Initialize logging on first request
   if (!loggingInitialized) {
-    await initializeLogging();
+    try {
+      await initializeLogging();
+    } catch (error) {
+      // Log to console if LogTape initialization fails (Cloudflare compatibility)
+      console.warn('Failed to initialize LogTape, using console.log fallback:', error);
+    }
     loggingInitialized = true;
   }
 

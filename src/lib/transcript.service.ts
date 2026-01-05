@@ -7,6 +7,7 @@ import {
   YoutubeTranscriptTooManyRequestError,
 } from 'youtube-transcript';
 import { Client } from '@gradio/client';
+import { requireEnv, getEnv } from './env';
 
 export interface TranscriptSegment {
   text: string;
@@ -56,8 +57,7 @@ function parseVttToSegments(vtt: string): TranscriptSegment[] {
 
 async function fetchWithYouTubeApiCaptions(videoId: string): Promise<TranscriptSegment[]> {
   console.log('[transcript] Trying YouTube Data API captions...');
-  const apiKey = import.meta.env.YOUTUBE_API_KEY;
-  if (!apiKey) throw new Error('YOUTUBE_API_KEY missing');
+  const apiKey = requireEnv('YOUTUBE_API_KEY');
 
   const listUrl = new URL('https://www.googleapis.com/youtube/v3/captions');
   listUrl.searchParams.set('videoId', videoId);
@@ -114,7 +114,9 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     const url = `https://www.youtube.com/watch?v=${videoId}`;
     console.log('[gradio-client] Connecting to HuggingFace Space...');
     
-    const client = await Client.connect(import.meta.env.GRADIO_TRANSCRIPT_MODEL);
+    const gradioModel = getEnv('GRADIO_TRANSCRIPT_MODEL');
+    if (!gradioModel) throw new Error('GRADIO_TRANSCRIPT_MODEL not configured');
+    const client = await Client.connect(gradioModel);
     console.log('[gradio-client] Connected successfully, starting transcription...');
     console.log('[gradio-client] Target YouTube URL:', url);
 

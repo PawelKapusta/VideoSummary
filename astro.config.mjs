@@ -14,11 +14,11 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     resolve: {
-      // Use react-dom/server.edge instead of react-dom/server.browser for React 19.
-      // Without this, MessageChannel from node:worker_threads needs to be polyfilled.
-      alias: {
+      // Use react-dom/server.edge for Cloudflare (production only)
+      // In development, use default react-dom/server
+      alias: process.env.CF_PAGES === '1' || process.env.NODE_ENV === 'production' ? {
         "react-dom/server": "react-dom/server.edge",
-      },
+      } : {},
     },
   },
   env: {

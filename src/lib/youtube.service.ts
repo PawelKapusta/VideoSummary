@@ -1,4 +1,5 @@
 import { errorLogger, appLogger } from './logger';
+import { requireEnv } from './env';
 
 /**
  * YouTube API service interfaces and types
@@ -35,11 +36,7 @@ export interface YouTubeVideoMetadata {
  * @returns Channel metadata or throws error
  */
 export async function fetchYouTubeChannelMetadata(channelIdOrHandle: string): Promise<YouTubeChannelMetadata> {
-  const apiKey = import.meta.env.YOUTUBE_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('YouTube API key not configured');
-  }
+  const apiKey = requireEnv('YOUTUBE_API_KEY');
 
   try {
     // Determine if this is a handle (@username) or channel ID (UC...)
@@ -101,8 +98,7 @@ export async function fetchYouTubeChannelMetadata(channelIdOrHandle: string): Pr
  * @returns Video metadata or throws error
  */
 export async function fetchYouTubeVideoMetadata(videoId: string): Promise<YouTubeVideoMetadata> {
-  // Try both import.meta.env and process.env for server compatibility
-  const apiKey = import.meta.env.YOUTUBE_API_KEY;
+  const apiKey = requireEnv('YOUTUBE_API_KEY');
 
   if (!apiKey) {
     throw new Error('YouTube API key not configured');

@@ -12,6 +12,7 @@ import { extractYouTubeVideoId } from './youtube.utils';
 import { fetchYouTubeVideoMetadata } from './youtube.service';
 import { OpenRouterService } from './openrouter.service';
 import { fetchTranscript, transcriptToString } from './transcript.service';
+import { requireEnv, getEnv } from './env';
 
 
 // ---------------------------------------------------------------------------
@@ -269,16 +270,12 @@ async function processSummaryGeneration(
 
     // 3. OpenRouter
     console.log('[summary-gen] Step 3: Calling OpenRouter...');
-    const apiKey = import.meta.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      console.log('[summary-gen] ERROR: OPENROUTER_API_KEY missing!');
-      throw new Error('OPENROUTER_API_KEY missing');
-    }
+    const apiKey = requireEnv('OPENROUTER_API_KEY');
     console.log('[summary-gen] API key found, length:', apiKey.length);
 
     const openRouter = new OpenRouterService({
       apiKey,
-      defaultModel: import.meta.env.OPENROUTER_MODEL || 'x-ai/grok-4.1-fast',
+      defaultModel: getEnv('OPENROUTER_MODEL') || 'x-ai/grok-4.1-fast',
     });
 
     const schema = {

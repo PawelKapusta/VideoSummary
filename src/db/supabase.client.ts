@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import { createTraceHeaders } from '../lib/trace.ts';
 import type { APIContext } from 'astro';
+import { requireEnv } from '../lib/env.ts';
 
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
-const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = requireEnv('SUPABASE_URL');
+const supabaseAnonKey = requireEnv('SUPABASE_KEY');
+const supabaseServiceRoleKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
 
 
 
