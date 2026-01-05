@@ -1,6 +1,5 @@
 {
-	"main": "dist/_worker.js/index.js",
-	"name": "videosummary",
+	"name": "video-summary",
 	"pages_build_output_dir": "dist",
 	"compatibility_date": "2025-08-15",
 	"compatibility_flags": [
