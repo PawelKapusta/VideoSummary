@@ -11,7 +11,7 @@
  */
 
 import { configure, getConsoleSink, getLogger, type LogRecord } from "@logtape/logtape";
-import { getFileSink } from "@logtape/file";
+// import { getFileSink } from "@logtape/file"; // Disabled for Cloudflare - no filesystem
 import { redactByField } from "@logtape/redaction";
 
 // ============================================================================
