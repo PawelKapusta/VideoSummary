@@ -12,6 +12,7 @@ jobs:
       contents: read
       deployments: write
     name: Deploy to Cloudflare Pages
+    environment: production
     
     steps:
       - name: Checkout
