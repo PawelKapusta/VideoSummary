@@ -1,5 +1,5 @@
 import { errorLogger, appLogger } from './logger';
-import { requireEnv, type RuntimeEnv } from './env';
+import { requireEnv, getSiteUrl, type RuntimeEnv } from './env';
 
 /**
  * YouTube API service interfaces and types
@@ -49,7 +49,12 @@ export async function fetchYouTubeChannelMetadata(channelIdOrHandle: string, run
 
     appLogger.debug('Fetching YouTube channel metadata', { url: url.replace(apiKey, 'REDACTED') });
 
-    const response = await fetch(url);
+    // Add Referer header for API key restrictions
+    const response = await fetch(url, {
+      headers: {
+        'Referer': getSiteUrl(runtimeEnv)
+      }
+    });
     const data = await response.json();
 
     if (!response.ok) {
@@ -108,9 +113,17 @@ export async function fetchYouTubeVideoMetadata(videoId: string, runtimeEnv?: Ru
   try {
     // Fetch video details and captions in parallel
     appLogger.debug('Fetching YouTube video metadata', { videoId });
+    
+    // Add Referer header for API key restrictions
+    const fetchOptions = {
+      headers: {
+        'Referer': getSiteUrl(runtimeEnv)
+      }
+    };
+    
     const [videoResponse, captionsResponse] = await Promise.all([
-      fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails,status&id=${videoId}&key=${apiKey}`),
-      fetch(`https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${apiKey}`)
+      fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails,status&id=${videoId}&key=${apiKey}`, fetchOptions),
+      fetch(`https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${apiKey}`, fetchOptions)
     ]);
 
     const [videoData, captionsData] = await Promise.all([

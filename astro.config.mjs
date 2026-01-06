@@ -39,6 +39,14 @@ export default defineConfig({
       // YouTube API
       YOUTUBE_API_KEY: envField.string({ context: "server", access: "secret" }),
       
+      // Site URL (for YouTube API Referer header)
+      SITE_URL: envField.string({ 
+        context: "server", 
+        access: "public",
+        optional: true,
+        default: "https://video-summary.pages.dev"
+      }),
+      
       // Gradio (optional)
       GRADIO_TRANSCRIPT_MODEL: envField.string({ 
         context: "server", 

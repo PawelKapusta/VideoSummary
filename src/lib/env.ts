@@ -43,3 +43,28 @@ export function requireEnv(key: string, runtimeEnv?: RuntimeEnv): string {
   return value;
 }
 
+/**
+ * Get the site URL for API referer headers
+ * In development: http://localhost:3000
+ * In production: from SITE_URL env var or default
+ */
+export function getSiteUrl(runtimeEnv?: RuntimeEnv): string {
+  // Check if we're in development
+  const isDev = getEnv('NODE_ENV', runtimeEnv) === 'development' || 
+                typeof process !== 'undefined' && process.env.NODE_ENV === 'development';
+  
+  if (isDev) {
+    return 'http://localhost:3000/';
+  }
+  
+  // Production URL - configurable via SITE_URL env var
+  const siteUrl = getEnv('SITE_URL', runtimeEnv);
+  if (siteUrl) {
+    // Ensure trailing slash
+    return siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`;
+  }
+  
+  // Fallback to default Cloudflare Pages URL
+  return 'https://video-summary.pages.dev/';
+}
+

@@ -7,7 +7,7 @@ import {
   YoutubeTranscriptTooManyRequestError,
 } from 'youtube-transcript';
 import { Client } from '@gradio/client';
-import { requireEnv, getEnv, type RuntimeEnv } from './env';
+import { requireEnv, getEnv, getSiteUrl, type RuntimeEnv } from './env';
 
 export interface TranscriptSegment {
   text: string;
@@ -64,7 +64,12 @@ async function fetchWithYouTubeApiCaptions(videoId: string, runtimeEnv?: Runtime
   listUrl.searchParams.set('part', 'snippet');
   listUrl.searchParams.set('key', apiKey);
 
-  const listRes = await fetch(listUrl.toString());
+  // Add Referer header for API key restrictions
+  const listRes = await fetch(listUrl.toString(), {
+    headers: {
+      'Referer': getSiteUrl(runtimeEnv)
+    }
+  });
   if (!listRes.ok) {
     if (listRes.status === 401 || listRes.status === 403) {
       throw new Error('YT_CAPTION_LIST_AUTH_REQUIRED');
@@ -91,7 +96,12 @@ async function fetchWithYouTubeApiCaptions(videoId: string, runtimeEnv?: Runtime
   const downloadUrl = new URL(`https://www.googleapis.com/youtube/v3/captions/${chosen.id}`);
   downloadUrl.searchParams.set('tfmt', 'vtt');
   downloadUrl.searchParams.set('key', apiKey);
-  const capRes = await fetch(downloadUrl.toString(), { headers: { Accept: 'text/vtt' } });
+  const capRes = await fetch(downloadUrl.toString(), { 
+    headers: { 
+      Accept: 'text/vtt',
+      'Referer': getSiteUrl(runtimeEnv)
+    } 
+  });
   if (!capRes.ok) {
     if (capRes.status === 401 || capRes.status === 403) {
       throw new Error('YT_CAPTION_DOWNLOAD_AUTH_REQUIRED');
