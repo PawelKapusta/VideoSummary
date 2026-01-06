@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { extractYouTubeVideoId } from '../../../lib/youtube.utils';
 import { fetchYouTubeVideoMetadata } from '../../../lib/youtube.service';
 import type { VideoMetaResponse, ChannelInsert } from '../../../types';
+import type { RuntimeEnv } from '../../../lib/env';
 
 export const GET: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
@@ -28,7 +29,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   try {
     const youtubeVideoId = extractYouTubeVideoId(videoUrl);
-    const videoMetadata = await fetchYouTubeVideoMetadata(youtubeVideoId);
+    const runtimeEnv = locals.runtime?.env as RuntimeEnv;
+    const videoMetadata = await fetchYouTubeVideoMetadata(youtubeVideoId, runtimeEnv);
 
     // Get or create channel
     const { data: existingChannel } = await supabase

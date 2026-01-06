@@ -1,57 +1,43 @@
 /**
- * Helper to get environment variables that works in both build-time and Cloudflare runtime
+ * Runtime environment variables type (from Cloudflare Pages context)
  */
-export function getEnv(key: string): string | undefined {
-  // Try process.env first (Cloudflare runtime with nodejs_compat)
+export type RuntimeEnv = Record<string, string | undefined> | undefined;
+
+/**
+ * Helper to get environment variables that works in both build-time and Cloudflare runtime
+ * @param key - Environment variable name
+ * @param runtimeEnv - Optional Cloudflare runtime env object from context.locals.runtime.env
+ */
+export function getEnv(key: string, runtimeEnv?: RuntimeEnv): string | undefined {
+  // Priority 1: Runtime env from Cloudflare (passed explicitly)
+  if (runtimeEnv?.[key]) {
+    return runtimeEnv[key];
+  }
+
+  // Priority 2: process.env (local development with nodejs_compat)
   if (typeof process !== 'undefined' && process.env?.[key]) {
     return process.env[key];
   }
 
-  // Try import.meta.env (build time and some runtime environments)
+  // Priority 3: import.meta.env (build time and some runtime environments)
   if (typeof import.meta.env !== 'undefined' && import.meta.env[key]) {
     return import.meta.env[key];
-  }
-
-  // Try global scope (Cloudflare Pages might inject secrets here)
-  if (typeof globalThis !== 'undefined' && (globalThis as any)[key]) {
-    return (globalThis as any)[key];
-  }
-
-  // In Cloudflare Pages runtime, try accessing from platform context
-  if (typeof globalThis !== 'undefined' && (globalThis as any).platform?.env?.[key]) {
-    return (globalThis as any).platform.env[key];
-  }
-
-  // Try accessing from CF_PAGES environment (Cloudflare Pages specific)
-  if (typeof process !== 'undefined' && process.env?.CF_PAGES === '1' && process.env?.[key]) {
-    return process.env[key];
-  }
-
-  // Try accessing from various global contexts that Cloudflare might use
-  if (typeof globalThis !== 'undefined') {
-    // Check if secrets are available in different global properties
-    const possibleGlobals = ['env', 'ENV', 'secrets', 'SECRETS', '__env', '__ENV'];
-    for (const globalProp of possibleGlobals) {
-      if ((globalThis as any)[globalProp]?.[key]) {
-        return (globalThis as any)[globalProp][key];
-      }
-    }
-
-    // Check if there's a cf property with env
-    if ((globalThis as any).cf?.env?.[key]) {
-      return (globalThis as any).cf.env[key];
-    }
   }
 
   return undefined;
 }
 
-export function requireEnv(key: string): string {
-  const value = getEnv(key);
+/**
+ * Require an environment variable, throw if not found
+ * @param key - Environment variable name
+ * @param runtimeEnv - Optional Cloudflare runtime env object from context.locals.runtime.env
+ */
+export function requireEnv(key: string, runtimeEnv?: RuntimeEnv): string {
+  const value = getEnv(key, runtimeEnv);
   if (!value) {
     // In Cloudflare Pages runtime, environment variables might be available later
-    // Log a warning and return a placeholder that will be checked again at runtime
-    console.warn(`Environment variable ${key} not found, will retry at runtime`);
+    // Return a placeholder that will be checked again at runtime
+    // Note: This is expected during build time - variables will be available in runtime
     return `__PLACEHOLDER_${key}__`;
   }
   return value;

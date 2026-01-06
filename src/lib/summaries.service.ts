@@ -12,7 +12,7 @@ import { extractYouTubeVideoId } from './youtube.utils';
 import { fetchYouTubeVideoMetadata } from './youtube.service';
 import { OpenRouterService } from './openrouter.service';
 import { fetchTranscript, transcriptToString } from './transcript.service';
-import { requireEnv, getEnv } from './env';
+import { requireEnv, getEnv, type RuntimeEnv } from './env';
 
 
 // ---------------------------------------------------------------------------
@@ -70,7 +70,8 @@ function formatDurationInPolish(seconds: number): string {
 export async function generateSummary(
   supabase: SupabaseClient,
   userId: string,
-  videoUrl: string
+  videoUrl: string,
+  runtimeEnv?: RuntimeEnv
 ): Promise<SummaryBasic & { message: string }> {
   appLogger.debug('Starting generateSummary', { userId, videoUrl });
 
@@ -93,7 +94,7 @@ export async function generateSummary(
     videoId = existingVideo.id;
     channelId = existingVideo.channel_id;
   } else {
-    const meta = await fetchYouTubeVideoMetadata(youtubeVideoId);
+    const meta = await fetchYouTubeVideoMetadata(youtubeVideoId, runtimeEnv);
 
     if (meta.duration > 2700) throw new Error('VIDEO_TOO_LONG');
 
@@ -200,7 +201,7 @@ export async function generateSummary(
   const timeout = setTimeout(() => controller.abort(), 90_000);
 
   try {
-    await processSummaryGeneration(summary.id, youtubeVideoId);
+    await processSummaryGeneration(summary.id, youtubeVideoId, runtimeEnv);
   } catch (err: any) {
     clearTimeout(timeout);
     if (err.name === 'AbortError') throw new Error('GENERATION_TIMEOUT');
@@ -231,24 +232,25 @@ export async function generateSummary(
 // ---------------------------------------------------------------------------
 async function processSummaryGeneration(
   summaryId: string,
-  youtubeVideoId: string
+  youtubeVideoId: string,
+  runtimeEnv?: RuntimeEnv
 ): Promise<void> {
   console.log('[summary-gen] START processSummaryGeneration', { summaryId, youtubeVideoId });
   
   const { createSupabaseServiceClient } = await import('../db/supabase.client');
-  const service = createSupabaseServiceClient();
+  const service = createSupabaseServiceClient(undefined, runtimeEnv);
   console.log('[summary-gen] Supabase service client created');
 
   try {
     // 1. Fetch video metadata for accurate duration
     console.log('[summary-gen] Step 1: Fetching video metadata...');
-    const videoMeta = await fetchYouTubeVideoMetadata(youtubeVideoId);
+    const videoMeta = await fetchYouTubeVideoMetadata(youtubeVideoId, runtimeEnv);
     const actualDuration = formatDurationInPolish(videoMeta.duration);
     console.log('[summary-gen] Video duration:', actualDuration, `(${videoMeta.duration} seconds)`);
 
     // 2. Transkrypt
     console.log('[summary-gen] Step 2: Fetching transcript...');
-    const transcript = await fetchTranscript(youtubeVideoId);
+    const transcript = await fetchTranscript(youtubeVideoId, runtimeEnv);
     console.log('[summary-gen] Transcript fetched, segments:', transcript.length);
     
     const text = transcriptToString(transcript);
@@ -270,12 +272,12 @@ async function processSummaryGeneration(
 
     // 3. OpenRouter
     console.log('[summary-gen] Step 3: Calling OpenRouter...');
-    const apiKey = requireEnv('OPENROUTER_API_KEY');
+    const apiKey = requireEnv('OPENROUTER_API_KEY', runtimeEnv);
     console.log('[summary-gen] API key found, length:', apiKey.length);
 
     const openRouter = new OpenRouterService({
       apiKey,
-      defaultModel: getEnv('OPENROUTER_MODEL') || 'x-ai/grok-4.1-fast',
+      defaultModel: getEnv('OPENROUTER_MODEL', runtimeEnv) || 'x-ai/grok-4.1-fast',
     });
 
     const schema = {

@@ -3,6 +3,7 @@ import type { SubscriptionWithChannel, ApiSuccess, ApiError, PaginatedResponse }
 import { SubscribeRequestSchema, PaginationSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { subscribeToChannel, listUserSubscriptions } from '../../../lib/subscriptions.service';
+import type { RuntimeEnv } from '../../../lib/env';
 
 /**
  * POST /api/subscriptions
@@ -106,10 +107,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { channel_url }: { channel_url: string } = validationResult.data;
 
     // Subscribe to channel
+    const runtimeEnv = locals.runtime?.env as RuntimeEnv;
     const subscriptionData: SubscriptionWithChannel = await subscribeToChannel(
       supabase,
       userId,
-      channel_url
+      channel_url,
+      runtimeEnv
     );
 
     // Log successful subscription

@@ -4,6 +4,7 @@ import { securityLogger, errorLogger, performanceLogger } from '../../../lib/log
 import { getUserProfile } from '../../../lib/profile.service';
 import { SubscribeRequestSchema } from '../../../lib/validation/schemas';
 import { subscribeToChannel } from '../../../lib/subscriptions.service';
+import type { RuntimeEnv } from '../../../lib/env';
 
 /**
  * GET /api/profile/channels
@@ -102,7 +103,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
   
       const { channel_url } = validation.data;
   
-      const newSubscription = await subscribeToChannel(supabase, user.id, channel_url);
+      const runtimeEnv = locals.runtime?.env as RuntimeEnv;
+      const newSubscription = await subscribeToChannel(supabase, user.id, channel_url, runtimeEnv);
   
       const duration = performance.now() - startTime;
       performanceLogger.apiResponseTime('POST', '/api/profile/channels', duration, 201);

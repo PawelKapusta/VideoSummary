@@ -7,7 +7,7 @@ import {
   YoutubeTranscriptTooManyRequestError,
 } from 'youtube-transcript';
 import { Client } from '@gradio/client';
-import { requireEnv, getEnv } from './env';
+import { requireEnv, getEnv, type RuntimeEnv } from './env';
 
 export interface TranscriptSegment {
   text: string;
@@ -55,9 +55,9 @@ function parseVttToSegments(vtt: string): TranscriptSegment[] {
   return segments;
 }
 
-async function fetchWithYouTubeApiCaptions(videoId: string): Promise<TranscriptSegment[]> {
+async function fetchWithYouTubeApiCaptions(videoId: string, runtimeEnv?: RuntimeEnv): Promise<TranscriptSegment[]> {
   console.log('[transcript] Trying YouTube Data API captions...');
-  const apiKey = requireEnv('YOUTUBE_API_KEY');
+  const apiKey = requireEnv('YOUTUBE_API_KEY', runtimeEnv);
 
   const listUrl = new URL('https://www.googleapis.com/youtube/v3/captions');
   listUrl.searchParams.set('videoId', videoId);
@@ -232,7 +232,7 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
  * @returns Array of transcript segments
  * @throws Error if transcript is not available or fetch fails
  */
-export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
+export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv): Promise<TranscriptSegment[]> {
   console.log('[transcript] START fetchTranscript for videoId:', videoId);
   // Minimal ścieżka: YoutubeTranscript z preferencją PL -> EN, z auto-captions.
   const preferredLangs = ['pl', 'en'];
@@ -257,7 +257,7 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptSegmen
   }
 
   try {
-    const ytApiCaptions = await fetchWithYouTubeApiCaptions(videoId);
+    const ytApiCaptions = await fetchWithYouTubeApiCaptions(videoId, runtimeEnv);
     return ytApiCaptions;
   } catch (ytApiErr) {
     console.log('[transcript] YouTube Data API captions failed:', ytApiErr instanceof Error ? ytApiErr.message : ytApiErr);

@@ -4,6 +4,7 @@ import { errorLogger, appLogger, dbLogger, externalLogger } from './logger';
 import type { PaginatedResponse, SubscriptionWithChannel, ChannelInsert, SubscriptionInsert, AtomicSubscriptionResult } from '../types';
 import { extractYouTubeChannelId } from './youtube.utils';
 import { fetchYouTubeChannelMetadata } from './youtube.service';
+import type { RuntimeEnv } from './env';
 
 /**
  * List user's subscribed channels with pagination
@@ -68,12 +69,14 @@ export async function listUserSubscriptions(
  * @param supabase - Supabase client instance
  * @param userId - User ID
  * @param channelUrl - YouTube channel URL
+ * @param runtimeEnv - Optional Cloudflare runtime env object
  * @returns SubscriptionWithChannel data
  */
 export async function subscribeToChannel(
   supabase: SupabaseClient,
   userId: string,
-  channelUrl: string
+  channelUrl: string,
+  runtimeEnv?: RuntimeEnv
 ): Promise<SubscriptionWithChannel> {
   appLogger.debug('subscribeToChannel called', { userId, channelUrl });
 
@@ -105,7 +108,7 @@ export async function subscribeToChannel(
   appLogger.debug('Fetching YouTube channel metadata', { youtubeChannelIdOrHandle });
   let channelMetadata;
   try {
-    channelMetadata = await fetchYouTubeChannelMetadata(youtubeChannelIdOrHandle);
+    channelMetadata = await fetchYouTubeChannelMetadata(youtubeChannelIdOrHandle, runtimeEnv);
   } catch (youtubeError) {
     externalLogger.error('YouTube API call failed', {
       error: youtubeError instanceof Error ? youtubeError.message : String(youtubeError),

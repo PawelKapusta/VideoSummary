@@ -3,6 +3,7 @@ import type { SummaryBasic, SummaryWithVideo, PaginatedResponse, ApiSuccess, Api
 import { GenerateSummaryRequestSchema, SummaryListFiltersSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { generateSummary, listSummaries } from '../../../lib/summaries.service';
+import type { RuntimeEnv } from '../../../lib/env';
 
 /**
  * POST /api/summaries
@@ -108,10 +109,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { video_url }: { video_url: string } = validationResult.data;
 
     // Generate summary
+    const runtimeEnv = locals.runtime?.env as RuntimeEnv;
     const summaryData: SummaryBasic & { message: string } = await generateSummary(
       supabase,
       userId,
-      video_url
+      video_url,
+      runtimeEnv
     );
 
     // Log successful summary generation initiation

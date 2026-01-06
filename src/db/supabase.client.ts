@@ -3,11 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import { createTraceHeaders } from '../lib/trace.ts';
 import type { APIContext } from 'astro';
-import { requireEnv } from '../lib/env.ts';
+import { requireEnv, type RuntimeEnv } from '../lib/env.ts';
 
 // Helper functions to get environment variables with fallback values
-const getSupabaseUrl = () => {
-  const value = requireEnv('SUPABASE_URL');
+const getSupabaseUrl = (runtimeEnv?: RuntimeEnv) => {
+  const value = requireEnv('SUPABASE_URL', runtimeEnv);
   if (value && !value.startsWith('__PLACEHOLDER_')) {
     return value;
   }
@@ -15,8 +15,8 @@ const getSupabaseUrl = () => {
   return 'https://demo.supabase.co';
 };
 
-const getSupabaseAnonKey = () => {
-  const value = requireEnv('SUPABASE_KEY');
+const getSupabaseAnonKey = (runtimeEnv?: RuntimeEnv) => {
+  const value = requireEnv('SUPABASE_KEY', runtimeEnv);
   if (value && !value.startsWith('__PLACEHOLDER_')) {
     return value;
   }
@@ -24,8 +24,8 @@ const getSupabaseAnonKey = () => {
   return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzI3NzQ4MCwiZXhwIjoxOTU4ODUzNDgwfQ.demo-anon-key';
 };
 
-const getSupabaseServiceRoleKey = () => {
-  const value = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+const getSupabaseServiceRoleKey = (runtimeEnv?: RuntimeEnv) => {
+  const value = requireEnv('SUPABASE_SERVICE_ROLE_KEY', runtimeEnv);
   if (value && !value.startsWith('__PLACEHOLDER_')) {
     return value;
   }
@@ -54,12 +54,16 @@ const createTracedFetch = (traceId?: string) => {
 
 // Client-side Supabase client (uses cookies automatically)
 export const createSupabaseBrowserClient = () => {
+  // Browser client doesn't have access to runtime env, uses import.meta.env
   return createBrowserClient<Database>(getSupabaseUrl(), getSupabaseAnonKey());
 };
 
 // Server-side Supabase client (for Astro Middleware/API)
 export const createSupabaseServerClient = (context: APIContext, traceId?: string) => {
-  return createServerClient<Database>(getSupabaseUrl(), getSupabaseAnonKey(), {
+  // Get runtime env from Cloudflare context
+  const runtimeEnv = context.locals.runtime?.env as RuntimeEnv;
+  
+  return createServerClient<Database>(getSupabaseUrl(runtimeEnv), getSupabaseAnonKey(runtimeEnv), {
     cookies: {
       getAll() {
         return parseCookieHeader(context.request.headers.get('Cookie') ?? '') as { name: string; value: string }[];
@@ -91,15 +95,16 @@ export const createSupabaseServerClient = (context: APIContext, traceId?: string
  * - System-level database updates
  * 
  * @param traceId - Optional trace ID for distributed tracing
+ * @param runtimeEnv - Optional Cloudflare runtime env object from context.locals.runtime.env
  * @returns Supabase client with service role privileges
  */
-export const createSupabaseServiceClient = (traceId?: string) => {
-  const serviceRoleKey = getSupabaseServiceRoleKey();
-  if (!serviceRoleKey) {
+export const createSupabaseServiceClient = (traceId?: string, runtimeEnv?: RuntimeEnv) => {
+  const serviceRoleKey = getSupabaseServiceRoleKey(runtimeEnv);
+  if (!serviceRoleKey || serviceRoleKey.startsWith('__PLACEHOLDER_')) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
   }
 
-  return createClient<Database>(getSupabaseUrl(), serviceRoleKey, {
+  return createClient<Database>(getSupabaseUrl(runtimeEnv), serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

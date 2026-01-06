@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import type { ApiSuccess, ApiError } from '../../../types';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { createSupabaseServiceClient } from '../../../db/supabase.client';
+import type { RuntimeEnv } from '../../../lib/env';
 
 /**
  * POST /api/auth/delete-account
@@ -63,7 +64,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
 
     // Create service client for admin operations
-    const serviceClient = createSupabaseServiceClient();
+    const runtimeEnv = locals.runtime?.env as RuntimeEnv;
+    const serviceClient = createSupabaseServiceClient(undefined, runtimeEnv);
 
     // Delete the user from Supabase Auth (this will cascade delete related data)
     const { error: deleteError } = await serviceClient.auth.admin.deleteUser(userId);
