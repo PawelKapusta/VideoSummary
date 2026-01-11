@@ -20,10 +20,10 @@ export function AppFooter() {
               AI-powered YouTube video summarization. Save time and get the key insights from any video in seconds.
             </p>
             <a
-              href="mailto:hello@videosummary.com"
+              href="mailto:hello@videosummary.org"
               className="text-muted-foreground hover:text-primary transition-colors duration-200 text-sm font-medium"
             >
-              hello@videosummary.com
+              hello@videosummary.org
             </a>
           </div>
 
@@ -65,8 +65,8 @@ export function AppFooter() {
                   {[
                     { href: "/terms", label: "Terms of Service" },
                     { href: "/privacy", label: "Privacy Policy" },
-                    { href: "mailto:support@videosummary.com", label: "Contact Support" },
-                    { href: "mailto:privacy@videosummary.com", label: "Privacy Requests" }
+                    { href: "mailto:support@videosummary.org", label: "Contact Support" },
+                    { href: "mailto:privacy@videosummary.org", label: "Privacy Requests" }
                   ].map((link) => (
                     <li key={link.href}>
                       <a

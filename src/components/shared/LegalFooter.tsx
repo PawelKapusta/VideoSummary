@@ -29,7 +29,7 @@ export function LegalFooter({ activePage }: LegalFooterProps = {}) {
               Privacy Policy
             </a>
             <a
-              href="mailto:support@videosummary.com"
+              href="mailto:support@videosummary.org"
               className="text-foreground/80 hover:text-foreground hover:scale-105 px-2 py-1 rounded-md transition-all duration-200"
             >
               Contact

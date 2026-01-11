@@ -39,10 +39,36 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
             </CardHeader>
           </Card>
 
+          {/* Critical AI Disclaimer - Moved to Top */}
+          <Card className="border-red-200 bg-red-50 mx-4 sm:mx-0">
+            <CardHeader>
+              <CardTitle className="text-red-800">⚠️ Critical AI Content Disclaimer</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-red-700 space-y-2">
+                <p className="font-medium">
+                  VideoSummary bears NO RESPONSIBILITY for:
+                </p>
+                <ul className="space-y-1 ml-4">
+                  <li>• Accuracy, completeness, or reliability of AI-generated content</li>
+                  <li>• Any errors, inaccuracies, or harmful information in summaries</li>
+                  <li>• Use of summaries for legal, medical, financial, or other critical decisions</li>
+                  <li>• Copyright violations or other intellectual property rights infringements</li>
+                  <li>• Any damages or consequences resulting from the use of generated content</li>
+                </ul>
+                <p className="text-sm mt-3 font-medium">
+                  Users bear full responsibility for verifying and appropriately using any information obtained through this application.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
+
           {/* Information We Collect */}
           <section>
             <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">What Information We Collect</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
               <Card className="h-full">
                 <CardHeader>
                   <CardTitle className="text-blue-700">👤 Account Data</CardTitle>
@@ -63,9 +89,8 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <span>User preferences</span>
-                    <Badge variant="outline">Future</Badge>
+                    <Badge variant="outline">Optional</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">(coming soon)</p>
                 </CardContent>
               </Card>
 
@@ -90,31 +115,6 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                 </CardContent>
               </Card>
 
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="text-orange-700">💳 Payment Data</CardTitle>
-                  <CardDescription>Future feature - not currently collected</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 flex-1">
-                  <div className="flex items-center justify-between opacity-50">
-                    <span>Payment info</span>
-                    <Badge variant="outline">Future</Badge>
-                  </div>
-                  <div className="flex items-center justify-between opacity-50">
-                    <span>Transaction history</span>
-                    <Badge variant="outline">Future</Badge>
-                  </div>
-                  <div className="flex items-center justify-between opacity-50">
-                    <span>Subscription status</span>
-                    <Badge variant="outline">Future</Badge>
-                  </div>
-                  <div className="border-t border-orange-200 pt-3 mt-3">
-                    <div className="flex items-center justify-center">
-                      <span className="text-green-600 text-sm font-medium">✗ No full card storage</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </section>
 
@@ -138,9 +138,6 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <span>• Send service notifications</span>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-50">
-                    <span>• Process payments (future)</span>
                   </div>
                 </CardContent>
               </Card>
@@ -322,7 +319,7 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <Badge variant="outline" className="mt-0.5">Portability</Badge>
-                      <span className="text-sm">Data export functionality (coming soon)</span>
+                      <span className="text-sm">Data export functionality</span>
                     </div>
                     <div className="flex items-start gap-3">
                       <Badge variant="outline" className="mt-0.5">Object</Badge>
@@ -336,8 +333,8 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                     📧 To exercise your rights, contact us at:
                   </p>
                   <p className="text-lg text-purple-700">
-                    <a href="mailto:privacy@videosummary.com" className="hover:underline">
-                      privacy@videosummary.com
+                    <a href="mailto:privacy@videosummary.org" className="hover:underline">
+                      privacy@videosummary.org
                     </a>
                   </p>
                 </div>
@@ -358,20 +355,21 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">Privacy Inquiries</h4>
-                    <a href="mailto:privacy@videosummary.com" className="text-blue-600 hover:underline">
-                      privacy@videosummary.com
+                    <a href="mailto:privacy@videosummary.org" className="text-blue-600 hover:underline">
+                      privacy@videosummary.org
                     </a>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">General Support</h4>
-                    <a href="mailto:support@videosummary.com" className="text-blue-600 hover:underline">
-                      support@videosummary.com
+                    <a href="mailto:support@videosummary.org" className="text-blue-600 hover:underline">
+                      support@videosummary.org
                     </a>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </section>
+
 
           {/* Acknowledgment */}
           <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
@@ -384,6 +382,8 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
               </p>
             </CardContent>
           </Card>
+
+          <Separator />
         </div>
       </div>
       <LegalFooter activePage="privacy" />

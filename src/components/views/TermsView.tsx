@@ -39,6 +39,37 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
             </CardHeader>
           </Card>
 
+          {/* Important Disclaimer - Moved to Top */}
+          <Card className="border-yellow-200 bg-yellow-50 mx-4 sm:mx-0">
+            <CardHeader>
+              <CardTitle className="text-yellow-800">⚠️ Critical Service Disclaimer</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                  <p className="text-yellow-800 font-medium text-lg">
+                    THE SERVICE IS PROVIDED "AS IS" WITHOUT ANY WARRANTIES OR GUARANTEES OF ANY KIND.
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-yellow-700 font-medium">
+                      ⚠️ VideoSummary bears NO RESPONSIBILITY for:
+                    </p>
+                    <ul className="text-yellow-700 text-sm space-y-1 ml-4">
+                      <li>• Accuracy, completeness, or correctness of AI-generated content</li>
+                      <li>• Any errors, inaccuracies, or harmful information in summaries</li>
+                      <li>• Use of content for legal, medical, financial, or other critical decisions</li>
+                      <li>• Copyright violations or other intellectual property rights infringements</li>
+                      <li>• Any damages resulting from the use of generated content</li>
+                    </ul>
+                    <p className="text-yellow-700 text-sm mt-3 font-medium">
+                      AI may generate incorrect or misleading information. Always verify important information from reliable sources.
+                    </p>
+                  </div>
+                </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
+
           {/* Service Description */}
           <section>
             <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">What We Offer</h2>
@@ -272,8 +303,8 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
                   <h4 className="font-semibold text-blue-800 mb-2">📞 DMCA Compliance</h4>
                   <p className="text-sm text-blue-700 mb-2">
                     For copyright concerns, contact us at{' '}
-                    <a href="mailto:support@videosummary.com" className="underline">
-                      support@videosummary.com
+                    <a href="mailto:support@videosummary.org" className="underline">
+                      support@videosummary.org
                     </a>
                     {' '}with:
                   </p>
@@ -291,24 +322,6 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
             </Card>
           </section>
 
-          <Separator />
-
-          {/* Disclaimer */}
-          <section>
-            <Card className="border-yellow-200 bg-yellow-50 mx-4 sm:mx-0">
-              <CardHeader>
-                <CardTitle className="text-yellow-800">⚠️ Service Disclaimer</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-yellow-800 font-medium">
-                  THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED.
-                </p>
-                <p className="text-yellow-700 text-sm mt-2">
-                  We strive for accuracy but cannot guarantee the completeness or correctness of AI-generated summaries.
-                </p>
-              </CardContent>
-            </Card>
-          </section>
 
           {/* Contact */}
           <section>
@@ -321,8 +334,8 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
               </CardHeader>
               <CardContent>
                 <p className="text-lg">
-                  Email: <a href="mailto:support@videosummary.com" className="text-blue-600 hover:underline">
-                    support@videosummary.com
+                  Email: <a href="mailto:support@videosummary.org" className="text-blue-600 hover:underline">
+                    support@videosummary.org
                   </a>
                 </p>
               </CardContent>
