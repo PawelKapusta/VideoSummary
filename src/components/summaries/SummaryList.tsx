@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, memo } from 'react';
+import React, { useRef, useEffect, useCallback, memo, useState } from 'react';
 import SummaryCard from './SummaryCard';
 import type { SummaryWithVideo, FilterOptions } from '../../types';
 import FuturisticSkeleton from './FuturisticSkeleton';
@@ -35,12 +35,15 @@ const SummaryList: React.FC<Props> = memo(({
 }) => {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+  const [isSentinelVisible, setIsSentinelVisible] = React.useState(false);
 
   const flattenedData = data?.pages.flatMap((page: any) => page.data) || [];
 
   const handleObserve = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
+      setIsSentinelVisible(entry.isIntersecting);
+
       if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
         fetchNextPage();
       }
@@ -111,8 +114,13 @@ const SummaryList: React.FC<Props> = memo(({
       </div>
       <div ref={sentinelRef} className="h-10 flex justify-center items-center">
         {isFetchingNextPage && <FuturisticSkeleton />}
-        {!hasNextPage && flattenedData.length > 0 && (
-          <p className="text-gray-500 text-center">No more summaries</p>
+        {!hasNextPage && flattenedData.length > 10 && isSentinelVisible && (
+          <div className="flex flex-col items-center justify-center py-8 px-4">
+            <div className="w-12 h-px bg-gray-200 dark:bg-gray-700 mb-4"></div>
+            <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
+              You've reached the end
+            </p>
+          </div>
         )}
         {error && flattenedData.length > 0 && ( // Infinite error
           <div className="text-center py-4">

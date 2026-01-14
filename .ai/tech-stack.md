@@ -17,9 +17,12 @@ AI - Komunikacja z modelami przez usługę Openrouter.ai:
 - **Konfiguracja**: Nazwy modeli są przechowywane w pliku `.env`, co pozwala na łatwą zmianę dostawcy bez modyfikacji kodu.
 
 Testowanie - Zapewnienie jakości i stabilności aplikacji:
-- Vitest do testów jednostkowych (unit tests) - szybki framework testowy zintegrowany z Vite/Astro
-- Playwright do testów end-to-end (E2E) - automatyzacja testowania kompletnych workflow'ów użytkownika w przeglądarce
-- Cel: minimum 80% pokrycia kodu dla logiki biznesowej, 100% dla ścieżek krytycznych (auth, płatności, usuwanie danych)
+- Vitest + MSW (Mock Service Worker) do testów jednostkowych i integracyjnych - izolacja logiki od backendu
+- React Testing Library do testowania interakcji komponentów i dostępności (Accessibility)
+- Playwright do testów end-to-end (E2E) oraz automatycznej weryfikacji wyglądu UI (Visual Regression Snapshots)
+- Storybook do rozwoju i testowania stanów komponentów UI w izolacji
+- Supabase CLI (pgtap) do weryfikacji poprawności polityk RLS
+- Cel: minimum 80% pokrycia kodu dla logiki biznesowej, 100% dla ścieżek krytycznych (auth, ścieżka generowania podsumowań)
 
 CI/CD i Hosting:
 - Github Actions do tworzenia pipeline'ów CI/CD (automatyczne testy, linting, deployment)

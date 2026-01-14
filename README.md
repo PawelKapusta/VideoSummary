@@ -71,8 +71,10 @@ Video Summary follows a modern serverless architecture built with:
 ### Development & Quality
 - **[Vite](https://vitejs.dev/)** - Fast build tool and development server
 - **[ESLint](https://eslint.org/)** + **[Prettier](https://prettier.io/)** - Code linting and formatting
-- **[Vitest](https://vitest.dev/)** - Fast unit testing framework
-- **[Playwright](https://playwright.dev/)** - End-to-end testing
+- **[Vitest](https://vitest.dev/)** + **[MSW](https://mswjs.io/)** - Fast unit & integration testing with API mocking
+- **[React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)** - Component testing focused on user interactions
+- **[Playwright](https://playwright.dev/)** - E2E testing with Visual Regression capabilities
+- **[Storybook](https://storybook.js.org/)** - UI component development and isolation
 - **[GitHub Actions](https://github.com/features/actions)** - CI/CD pipelines
 
 ## 🚀 Quick Start
@@ -151,6 +153,10 @@ Get Video Summary running locally in minutes.
 | `npm run lint` | Lint code for errors and style issues |
 | `npm run lint:fix` | Automatically fix linting issues |
 | `npm run format` | Format code with Prettier |
+| `npm run test` | Run unit tests with Vitest |
+| `npm run test:watch` | Run unit tests in watch mode |
+| `npm run test:e2e` | Run end-to-end tests with Playwright |
+| `npm run test:e2e:ui` | Run E2E tests in UI mode |
 
 ## 📚 Documentation
 
@@ -175,7 +181,9 @@ Video Summary uses Supabase with the following main tables:
 
 - Follow TypeScript strict mode for type safety
 - Use ESLint and Prettier for code quality
-- Write unit tests for business logic with Vitest
+- Write unit and integration tests with Vitest and MSW
+- Perform E2E and visual regression testing with Playwright
+- Develop UI components in isolation using Storybook
 - Follow conventional commit messages
 - Use the established project structure for consistency
 
@@ -188,7 +196,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes and add tests
-4. Run the test suite: `npm run lint && npm run typecheck`
+4. Run the test suite: `npm test` and `npm run test:e2e`
 5. Commit your changes: `git commit -m 'Add amazing feature'`
 6. Push to the branch: `git push origin feature/amazing-feature`
 7. Open a Pull Request
