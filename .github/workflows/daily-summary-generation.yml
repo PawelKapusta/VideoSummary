@@ -14,7 +14,7 @@ jobs:
       - name: Trigger Daily Summary Generation
         run: |
           # Use APP_URL if provided, otherwise default to the production URL
-          TARGET_URL="${{ secrets.APP_URL }}/api/summaries/generate-all"
+          TARGET_URL="${{ secrets.APP_URL || 'https://video-summary.pages.dev' }}/api/summaries/generate-all"
           
           echo "Triggering summary generation at $TARGET_URL"
           
