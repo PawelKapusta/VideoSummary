@@ -728,11 +728,8 @@ export async function startBulkSummaryGeneration(
   appLogger.info('Starting system bulk summary generation');
 
   // Użyj service client dla systemowych operacji
-  const { createSupabaseServiceClient } = await import('../db/supabase.client');
-  const service = createSupabaseServiceClient(undefined, runtimeEnv);
-
   // 1. Sprawdź czy już jakaś masowa generacja jest w trakcie (systemowa)
-  const { data: activeGeneration } = await service
+  const { data: activeGeneration } = await supabase
     .from('bulk_generation_status')
     .select('id, status')
     .in('status', ['pending', 'in_progress'])
@@ -744,7 +741,7 @@ export async function startBulkSummaryGeneration(
   }
 
   // 2. Pobierz wszystkie kanały z bazy danych (systemowe)
-  const { data: channels, error: channelsError } = await service
+  const { data: channels, error: channelsError } = await supabase
     .from('channels')
     .select('id, youtube_channel_id, name')
     .order('created_at', { ascending: false });
@@ -759,7 +756,7 @@ export async function startBulkSummaryGeneration(
   }
 
   // 3. Utwórz rekord masowej generacji (systemowej)
-  const { data: bulkGeneration, error: insertError } = await service
+  const { data: bulkGeneration, error: insertError } = await supabase
     .from('bulk_generation_status')
     .insert({
       user_id: null as any, // systemowa generacja, nie powiązana z użytkownikiem
