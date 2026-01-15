@@ -242,12 +242,12 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
  * @throws Error if transcript is not available or fetch fails
  */
 export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv): Promise<TranscriptSegment[]> {
-  appLogger.debug('Starting transcript fetch process', { videoId });
+  appLogger.info(`Starting transcript fetch for video ${videoId}`);
   // Minimal ścieżka: YoutubeTranscript z preferencją PL -> EN, z auto-captions.
   const preferredLangs = ['pl', 'en'];
   for (const lang of preferredLangs) {
     try {
-      appLogger.debug('Attempting YoutubeTranscript fetch', { videoId, lang });
+      appLogger.debug(`Attempting YoutubeTranscript fetch for ${videoId} (lang: ${lang})`);
       const res = await YoutubeTranscript.fetchTranscript(videoId, {
         lang,
       });
@@ -257,46 +257,42 @@ export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv):
           offset: Math.round(item.offset),
           duration: Math.round(item.duration),
         }));
-        appLogger.debug('YoutubeTranscript fetch successful', { videoId, lang, segments: segments.length });
+        appLogger.info(`YoutubeTranscript successful for ${videoId} (${lang}): ${segments.length} segments`);
         return segments;
       }
     } catch (err) {
-      appLogger.debug('YoutubeTranscript fetch failed', {
-        videoId,
-        lang,
-        error: err instanceof Error ? err.message : String(err)
-      });
+      appLogger.debug(`YoutubeTranscript failed for ${videoId} (${lang}): ${err instanceof Error ? err.message : String(err)}`);
     }
   }
+  appLogger.warn(`YoutubeTranscript failed for all languages (${videoId}), trying fallbacks...`);
 
   try {
+    appLogger.info(`Attempting YouTube Data API captions for video ${videoId}`);
     const ytApiCaptions = await fetchWithYouTubeApiCaptions(videoId, runtimeEnv);
+    appLogger.info(`YouTube Data API captions successful for video ${videoId}`);
     return ytApiCaptions;
   } catch (ytApiErr) {
-    appLogger.debug('YouTube Data API captions failed', {
-      videoId,
-      error: ytApiErr instanceof Error ? ytApiErr.message : String(ytApiErr)
-    });
+    appLogger.warn(`YouTube Data API captions failed for video ${videoId}: ${ytApiErr instanceof Error ? ytApiErr.message : String(ytApiErr)}`);
   }
 
   try {
-    appLogger.debug('Attempting fallback provider youtube-transcript-api', { videoId });
+    appLogger.info(`Attempting youtube-transcript-api fallback for video ${videoId}`);
     const result = await fetchWithYoutubeTranscriptApi(videoId);
-    appLogger.debug('Fallback provider successful', { videoId, segments: result.length });
+    appLogger.info(`youtube-transcript-api successful for video ${videoId}: ${result.length} segments`);
     return result;
   } catch (fallbackError) {
     const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-    appLogger.debug('Fallback provider failed', { videoId, error: fallbackMsg });
+    appLogger.warn(`youtube-transcript-api failed for video ${videoId}: ${fallbackMsg}`);
   }
 
   try {
-    appLogger.debug('Attempting Gradio Client fallback', { videoId });
+    appLogger.info(`Attempting Gradio Client fallback for video ${videoId}`);
     const gradioResult = await fetchWithGradioClient(videoId);
-    appLogger.debug('Gradio Client fallback successful', { videoId, segments: gradioResult.length });
+    appLogger.info(`Gradio Client fallback successful for video ${videoId}: ${gradioResult.length} segments`);
     return gradioResult;
   } catch (gradioError) {
     const gradioMsg = gradioError instanceof Error ? gradioError.message : String(gradioError);
-    appLogger.debug('Gradio Client fallback failed', { videoId, error: gradioMsg });
+    appLogger.warn(`Gradio Client fallback failed for video ${videoId}: ${gradioMsg}`);
   }
   throw new Error('TRANSCRIPT_NOT_AVAILABLE');
 
