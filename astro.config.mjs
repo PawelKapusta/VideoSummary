@@ -29,7 +29,11 @@ export default defineConfig({
       SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: "server", access: "secret" }),
 
       // OpenRouter AI
-      OPENROUTER_API_KEY: envField.string({ context: "server", access: "secret" }),
+      OPENROUTER_API_KEY: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
       OPENROUTER_MODEL: envField.string({
         context: "server",
         access: "secret",
@@ -37,7 +41,11 @@ export default defineConfig({
       }),
 
       // YouTube API
-      YOUTUBE_API_KEY: envField.string({ context: "server", access: "secret" }),
+      YOUTUBE_API_KEY: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
 
       // Site URL (for YouTube API Referer header)
       SITE_URL: envField.string({
