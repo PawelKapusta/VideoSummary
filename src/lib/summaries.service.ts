@@ -762,12 +762,12 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
       .select('id');
 
     if (genError) {
-      appLogger.warn('Failed to cleanup stale bulk generations', { error: genError.message, code: genError.code });
+      appLogger.warn(`Failed to cleanup stale bulk generations: ${genError.message} (code: ${genError.code})`);
     } else {
       staleGenerationsCount = staleGenerations?.length || 0;
     }
   } catch (err: any) {
-    appLogger.warn('Exception cleaning up stale bulk generations', { error: err.message });
+    appLogger.warn(`Exception cleaning up stale bulk generations: ${err.message}`);
   }
 
   // Mark stale queue items as failed (table may not have any items yet)
@@ -784,12 +784,12 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
       .select('id');
 
     if (queueError) {
-      appLogger.warn('Failed to cleanup stale queue items', { error: queueError.message, code: queueError.code });
+      appLogger.warn(`Failed to cleanup stale queue items: ${queueError.message} (code: ${queueError.code})`);
     } else {
       staleQueueItemsCount = staleQueueItems?.length || 0;
     }
   } catch (err: any) {
-    appLogger.warn('Exception cleaning up stale queue items', { error: err.message });
+    appLogger.warn(`Exception cleaning up stale queue items: ${err.message}`);
   }
 
   const cleanedCount = staleGenerationsCount + staleQueueItemsCount;
@@ -1216,12 +1216,7 @@ export async function startBulkSummaryGeneration(
     .maybeSingle();
 
   if (activeError) {
-    appLogger.error('Failed to check active generation', { 
-      error: activeError.message, 
-      code: activeError.code,
-      details: activeError.details,
-      hint: activeError.hint 
-    });
+    appLogger.error(`Failed to check active generation: ${activeError.message} (code: ${activeError.code}, hint: ${activeError.hint || 'none'})`);
     errorLogger.dbError(activeError, 'check_active_generation');
     throw activeError;
   }
@@ -1239,11 +1234,7 @@ export async function startBulkSummaryGeneration(
     .order('created_at', { ascending: false });
 
   if (channelsError) {
-    appLogger.error('Failed to fetch channels', { 
-      error: channelsError.message, 
-      code: channelsError.code,
-      details: channelsError.details 
-    });
+    appLogger.error(`Failed to fetch channels: ${channelsError.message} (code: ${channelsError.code})`);
     errorLogger.dbError(channelsError, 'fetch_all_channels');
     throw channelsError;
   }
@@ -1267,12 +1258,7 @@ export async function startBulkSummaryGeneration(
     .single();
 
   if (insertError) {
-    appLogger.error('Failed to create bulk generation', { 
-      error: insertError.message, 
-      code: insertError.code,
-      details: insertError.details,
-      hint: insertError.hint 
-    });
+    appLogger.error(`Failed to create bulk generation: ${insertError.message} (code: ${insertError.code}, hint: ${insertError.hint || 'none'})`);
     errorLogger.dbError(insertError, 'create_bulk_generation');
     throw insertError;
   }
