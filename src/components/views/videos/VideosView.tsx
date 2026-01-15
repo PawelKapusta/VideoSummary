@@ -4,12 +4,14 @@ import VideosFilterBar from './VideosFilterBar';
 import VideosGrid from './VideosGrid';
 import GenerateSummaryDialog from './GenerateSummaryDialog';
 import QueryProvider from '@/components/providers/QueryProvider';
+import ErrorState from '@/components/shared/ErrorState';
 
 const VideosContent = () => {
   const {
     videos,
     isLoading,
     isError,
+    error,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
@@ -25,6 +27,18 @@ const VideosContent = () => {
 
   // Check if any filters are active
   const hasActiveFilters = filters.channelId !== 'all' || filters.summaryStatus !== 'all' || !!(filters.searchQuery && filters.searchQuery.trim());
+
+  // Show error state if there's an error
+  if (isError) {
+    return (
+      <div className="container mx-auto p-4 pt-12 pb-12">
+        <ErrorState
+          error={error}
+          onRetry={() => window.location.reload()}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 pt-12 pb-12">

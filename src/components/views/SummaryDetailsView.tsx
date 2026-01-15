@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AppLoader from '@/components/ui/AppLoader';
 import TypewriterAnimation from '@/components/ui/typewriter-animation';
+import EnhancedProgressBar from '@/components/ui/EnhancedProgressBar';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { generateSummary } from '@/lib/api';
 import GenerateSummaryDialog from '@/components/views/videos/GenerateSummaryDialog';
@@ -85,7 +86,8 @@ const VideoHeader: React.FC<{
   channel: { name: string };
   generated_at: string | null;
   is_hidden?: boolean;
-}> = ({ video, channel, generated_at, is_hidden }) => {
+  status: string;
+}> = ({ video, channel, generated_at, is_hidden, status }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
 
@@ -143,7 +145,7 @@ const VideoHeader: React.FC<{
                     <span className="sm:hidden">{new Date(video.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}</span>
                   </div>
                 )}
-                {generated_at && (
+                {generated_at && status === 'completed' && (
                   <div className="flex items-center gap-1.5 sm:gap-2 bg-white/10 px-2 sm:px-3 py-1 rounded-full backdrop-blur-sm animate-in fade-in-0 duration-300 delay-600">
                     <Star className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Generated {new Date(generated_at).toLocaleDateString()}</span>
@@ -295,8 +297,15 @@ const SummarySidebar: React.FC<{
                 <div className="flex-1">
                   <p className="font-medium text-blue-900">Processing</p>
                   <p className="text-sm text-slate-600">~2-4 minutes remaining</p>
-                  <div className="mt-2 w-full bg-blue-100 rounded-full h-1.5">
-                    <div className="bg-blue-500 h-1.5 rounded-full animate-pulse" style={{ width: '65%' }}></div>
+                  <div className="mt-3">
+                    <EnhancedProgressBar
+                      progress={65}
+                      variant="glow"
+                      color="blue"
+                      height="h-3"
+                      duration={3}
+                      showPercentage={false}
+                    />
                   </div>
                 </div>
               </>
@@ -814,6 +823,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
             channel={summary.channel}
             generated_at={summary.generated_at}
             is_hidden={summary.is_hidden}
+            status={summary.status}
           />
         </div>
 

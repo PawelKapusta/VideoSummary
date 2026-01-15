@@ -21,6 +21,9 @@ export async function listVideos(
     sort: 'published_at_desc' | 'published_at_asc';
   }
 ): Promise<PaginatedResponse<VideoSummary>> {
+  // Ensure sort has a default value
+  const sortParam = filters.sort || 'published_at_desc';
+
   // First, get the list of hidden summary IDs for this user
   const { data: hiddenSummaries } = await supabase
     .from('hidden_summaries')
@@ -75,12 +78,11 @@ export async function listVideos(
     query = query.ilike('title', `%${filters.search}%`);
   }
 
-  // Apply sorting
-  const orderColumn = 'published_at';
-  const ascending = filters.sort === 'published_at_asc';
-  query = query.order(orderColumn, { ascending });
+  // Apply SQL sorting
+  const sortAscending = sortParam === 'published_at_asc';
+  query = query.order('published_at', { ascending: sortAscending });
 
-  // Apply pagination
+  // Apply pagination after sorting
   query = query.range(filters.offset, filters.offset + filters.limit - 1);
 
   const { data: videos, error: videosError, count } = await query;
@@ -90,10 +92,10 @@ export async function listVideos(
   }
 
   // Format videos according to VideoSummary type
-  const data: VideoSummary[] = (videos || []).map(video => {
+  const data: VideoSummary[] = (videos || []).map((video: any) => {
     // Ensure all required fields are present (though DB schema guarantees most)
     // and handle potential join nulls if relationship is optional (though here it should be present)
-    
+
     // Safety check for channel, though the join should ensure it exists if video exists
     // (INNER JOIN behavior depends on supabase-js handling, usually it returns null if relation missing but foreign key is non-nullable)
     // Cast video.channels to handle potential array/single object ambiguity from SelectQuery normalization if needed,

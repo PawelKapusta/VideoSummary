@@ -10,6 +10,7 @@ export const useVideos = () => {
     channelId: 'all',
     summaryStatus: 'all',
     searchQuery: '',
+    sort: 'published_at_desc',
   });
   const [selectedVideo, setSelectedVideo] = useState<VideoSummary | null>(null);
 

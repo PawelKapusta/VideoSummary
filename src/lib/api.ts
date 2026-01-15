@@ -206,6 +206,10 @@ export async function getVideos(
     params.status = filters.summaryStatus;
   }
 
+  if (filters.sort) {
+    params.sort = filters.sort;
+  }
+
   return authApiClient.get<PaginatedResponse<VideoSummary>>('/api/videos', { params });
 }
 
@@ -225,7 +229,6 @@ export const apiClient = {
       }
     }
 
-    console.log('Making GET request to:', url);
 
     const response = await fetch(url, {
       headers: {
@@ -233,7 +236,6 @@ export const apiClient = {
       },
     });
 
-    console.log('Response status:', response.status);
 
     if (!response.ok) {
       const errorData: ApiError = await response.json();
@@ -242,12 +244,10 @@ export const apiClient = {
     }
 
     const data = await response.json();
-    console.log('Response data:', data);
     return data as T;
   },
 
   async post<T>(path: string, body?: any): Promise<T> {
-    console.log('Making POST request to:', path);
 
     const response = await fetch(path, {
       method: 'POST',
@@ -257,7 +257,6 @@ export const apiClient = {
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    console.log('Response status:', response.status);
 
     if (!response.ok) {
       const errorData: ApiError = await response.json();
@@ -266,7 +265,6 @@ export const apiClient = {
     }
 
     const data = await response.json();
-    console.log('Response data:', data);
     return data as T;
   },
 

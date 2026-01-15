@@ -480,4 +480,5 @@ export interface VideosFilterState {
   channelId: string | 'all';
   summaryStatus: 'all' | 'with' | 'without';
   searchQuery?: string;
+  sort?: 'published_at_desc' | 'published_at_asc';
 }

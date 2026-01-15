@@ -5,7 +5,7 @@ import { useSummaries } from '../../hooks/useSummaries';
 import SummaryList from '../summaries/SummaryList';
 import AppLoader from '../ui/AppLoader';
 import EmptyState from '../summaries/EmptyState';
-import { ApiClientError } from '../../lib/api';
+import ErrorState from '../shared/ErrorState';
 import type { FilterOptions, SummaryWithVideo, VideoSummary } from '../../types';
 import QueryProvider from '../providers/QueryProvider';
 import { useMutation } from '@tanstack/react-query';
@@ -93,31 +93,20 @@ const DashboardContent = () => {
     }
   }, [queryClient]);
 
-  const getErrorMessage = (error: any): string => {
-    if (error instanceof ApiClientError) {
-      if (error.code === 'UNAUTHORIZED') {
-        return 'Your session has expired. Please log in again.';
-      }
-      return error.message;
-    }
-    if (error?.message) {
-      return error.message;
-    }
-    return 'An unexpected error occurred. Please try again later.';
-  };
+  const handleRetry = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['summaries'] });
+  }, [queryClient]);
 
   return (
     <div className="container mx-auto p-4 pt-12 pb-12">
-      {!isListEmpty && (
-        <div className="text-center mb-8 space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Track your video insights, manage subscriptions, and access your AI-generated summaries all in one place.
-          </p>
-        </div>
-      )}
+      <div className="text-center mb-8 space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Dashboard
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Track your video insights, manage subscriptions, and access your AI-generated summaries all in one place.
+        </p>
+      </div>
 
       {/* AI Disclaimer - Always visible */}
       <div className="relative mx-3 sm:mx-4 lg:mx-0 mb-6 sm:mb-8 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border border-blue-200/50 shadow-lg shadow-blue-100/50">
@@ -175,7 +164,7 @@ const DashboardContent = () => {
 
       {isInitialLoading && <AppLoader loadingText="Loading summaries..." />}
 
-      {isListEmpty && (
+      {isListEmpty && !isInitialLoading && (
         <EmptyState
           message="Welcome to your dashboard"
         />
@@ -207,9 +196,10 @@ const DashboardContent = () => {
       />
 
       {status === 'error' && !isInitialLoading && (
-        <div className="mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded">
-          <p className="text-red-700 font-medium">{getErrorMessage(error)}</p>
-        </div>
+        <ErrorState
+          error={error}
+          onRetry={handleRetry}
+        />
       )}
     </div>
   );

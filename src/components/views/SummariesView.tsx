@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import FilterPanel from '../summaries/FilterPanel';
 import SummaryList from '../summaries/SummaryList';
 import EmptyState from '../summaries/EmptyState';
+import ErrorState from '../shared/ErrorState';
 import { useSummaries } from '../../hooks/useSummaries';
 import { useUserChannels } from '../../hooks/useUserChannels';
 import type { FilterOptions, SummaryWithVideo } from '../../types';
@@ -14,6 +15,7 @@ import { useMutation } from '@tanstack/react-query';
 import { generateSummary } from '../../lib/api';
 import GenerateSummaryDialog from './videos/GenerateSummaryDialog';
 import type { VideoSummary } from '../../types';
+import { errorLogger } from '../../lib/logger';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
   constructor(props: any) {
@@ -26,24 +28,21 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    // TODO: Log to service like Sentry
+    errorLogger.appError(error, {
+      component: 'SummariesView',
+      operation: 'render',
+      errorInfo: errorInfo.componentStack
+    });
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-4">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-          <p className="text-gray-600 mb-6">An unexpected error occurred while rendering the summaries.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Reload Page
-          </button>
-          {this.state.error && <p className="mt-4 text-sm text-red-500">{this.state.error.message}</p>}
-        </div>
+        <ErrorState
+          error={this.state.error}
+          onRetry={() => window.location.reload()}
+          compact={false}
+        />
       );
     }
 
@@ -164,7 +163,7 @@ const SummariesContent: React.FC = () => {
   }, []);
 
   // Check if any filters are active
-  const hasActiveFilters = filters.channelId !== 'all' || filters.summaryStatus !== 'all' || (filters.searchQuery && filters.searchQuery.trim() !== '');
+  const hasActiveFilters = filters.channel_id !== undefined || filters.status !== undefined || (filters.search && filters.search.trim() !== '');
 
   const emptyMessage = flattenedData.length === 0 && hasActiveFilters
     ? `No summaries match your current filters.`

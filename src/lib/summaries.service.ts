@@ -235,45 +235,45 @@ async function processSummaryGeneration(
   youtubeVideoId: string,
   runtimeEnv?: RuntimeEnv
 ): Promise<void> {
-  console.log('[summary-gen] START processSummaryGeneration', { summaryId, youtubeVideoId });
-  
+  appLogger.debug('Starting summary generation process', { summaryId, youtubeVideoId });
+
   const { createSupabaseServiceClient } = await import('../db/supabase.client');
   const service = createSupabaseServiceClient(undefined, runtimeEnv);
-  console.log('[summary-gen] Supabase service client created');
+  appLogger.debug('Supabase service client created for summary generation');
 
   try {
     // 1. Fetch video metadata for accurate duration
-    console.log('[summary-gen] Step 1: Fetching video metadata...');
+    appLogger.debug('Fetching video metadata for summary generation');
     const videoMeta = await fetchYouTubeVideoMetadata(youtubeVideoId, runtimeEnv);
     const actualDuration = formatDurationInPolish(videoMeta.duration);
-    console.log('[summary-gen] Video duration:', actualDuration, `(${videoMeta.duration} seconds)`);
+    appLogger.debug('Video metadata fetched', { duration: actualDuration, durationSeconds: videoMeta.duration });
 
     // 2. Transkrypt
-    console.log('[summary-gen] Step 2: Fetching transcript...');
+    appLogger.debug('Fetching transcript for summary generation');
     const transcript = await fetchTranscript(youtubeVideoId, runtimeEnv);
-    console.log('[summary-gen] Transcript fetched, segments:', transcript.length);
-    
+    appLogger.debug('Transcript fetched', { segments: transcript.length });
+
     const text = transcriptToString(transcript);
-    console.log('[summary-gen] Transcript text length:', text.length, 'chars');
-    
+    appLogger.debug('Transcript converted to text', { textLength: text.length });
+
     if (!text.trim()) {
-      console.log('[summary-gen] ERROR: Transcript is empty!');
+      appLogger.warning('Empty transcript detected', { summaryId, youtubeVideoId });
       throw new Error('TRANSCRIPT_EMPTY');
     }
 
     // 3. Status → in_progress
-    console.log('[summary-gen] Step 3: Updating status to in_progress...');
+    appLogger.debug('Updating summary status to in_progress');
     const { error: updateError } = await service.from('summaries').update({ status: 'in_progress' }).eq('id', summaryId);
     if (updateError) {
-      console.log('[summary-gen] ERROR updating status:', updateError);
+      errorLogger.dbError(updateError, 'update_summary_status', { summaryId });
     } else {
-      console.log('[summary-gen] Status updated to in_progress');
+      appLogger.debug('Summary status updated to in_progress', { summaryId });
     }
 
     // 3. OpenRouter
-    console.log('[summary-gen] Step 3: Calling OpenRouter...');
+    appLogger.debug('Calling OpenRouter for summary generation');
     const apiKey = requireEnv('OPENROUTER_API_KEY', runtimeEnv);
-    console.log('[summary-gen] API key found, length:', apiKey.length);
+    appLogger.debug('OpenRouter API key validated');
 
     const openRouter = new OpenRouterService({
       apiKey,
@@ -397,7 +397,7 @@ Return JSON with the following structure:
       },
     ];
 
-    console.log('[summary-gen] Calling openRouter.completeJson...');
+    appLogger.debug('Calling OpenRouter completeJson API');
     const result = await openRouter.completeJson<{
       tldr: string;
       full_summary: {
@@ -411,12 +411,13 @@ Return JSON with the following structure:
         worth_watching: string;
       };
     }>(messages, schema);
-    console.log('[summary-gen] OpenRouter response received');
-    console.log('[summary-gen] TLDR length:', result.tldr?.length);
-    console.log('[summary-gen] Full summary keys:', Object.keys(result.full_summary || {}));
+    appLogger.debug('OpenRouter response received', {
+      tldrLength: result.tldr?.length,
+      fullSummaryKeys: Object.keys(result.full_summary || {})
+    });
 
     // 4. Zapisz wynik
-    console.log('[summary-gen] Step 4: Saving result to database...');
+    appLogger.debug('Saving summary result to database');
     const { error: saveError } = await service
       .from('summaries')
       .update({
@@ -426,24 +427,28 @@ Return JSON with the following structure:
         generated_at: new Date().toISOString(),
       })
       .eq('id', summaryId);
-    
+
     if (saveError) {
-      console.log('[summary-gen] ERROR saving result:', saveError);
+      errorLogger.dbError(saveError, 'save_summary_result', { summaryId });
       throw saveError;
     }
-    console.log('[summary-gen] SUCCESS! Summary saved to database');
-    
+    appLogger.info('Summary successfully saved to database', { summaryId });
+
   } catch (err: any) {
-    console.log('[summary-gen] CAUGHT ERROR:', err.message || String(err));
-    console.log('[summary-gen] Error stack:', err.stack);
+    errorLogger.appError(err, {
+      component: 'processSummaryGeneration',
+      operation: 'summary_generation',
+      summaryId,
+      youtubeVideoId
+    });
     
     const msg = err.message || String(err);
     let code: 'NO_SUBTITLES' | 'VIDEO_PRIVATE' | 'VIDEO_TOO_LONG' | null = null;
     if (msg.includes('transcript') || msg.includes('subtitle') || msg.includes('TRANSCRIPT')) code = 'NO_SUBTITLES';
     else if (msg.includes('private = true') || msg.includes('unavailable')) code = 'VIDEO_PRIVATE';
     else if (msg.includes('too long')) code = 'VIDEO_TOO_LONG';
-    
-    console.log('[summary-gen] Determined error code:', code);
+
+    appLogger.debug('Determined error code for summary failure', { summaryId, errorCode: code });
 
     const { error: failError } = await service
       .from('summaries')
@@ -451,9 +456,9 @@ Return JSON with the following structure:
       .eq('id', summaryId);
     
     if (failError) {
-      console.log('[summary-gen] ERROR updating failed status:', failError);
+      errorLogger.dbError(failError, 'update_failed_status', { summaryId, errorCode: code });
     } else {
-      console.log('[summary-gen] Status updated to failed with code:', code);
+      appLogger.debug('Summary status updated to failed', { summaryId, errorCode: code });
     }
 
     errorLogger.appError(err, {
@@ -518,8 +523,9 @@ export async function listSummaries(
   let q = supabase
     .from('summaries')
     .select(selectQuery, { count: 'exact' })
-    .in('videos.channel_id', channelIds)
-    .order('published_at', { ascending: filters.sort === 'oldest', referencedTable: 'videos' });
+    .in('videos.channel_id', channelIds);
+
+  appLogger.debug('Query before filters applied', { userId, channelCount: channelIds.length });
 
   // Handle hidden summaries filtering with subqueries
   if (filters.hidden_only) {
@@ -556,8 +562,27 @@ export async function listSummaries(
   if (filters.status) q = q.eq('status', filters.status);
   if (filters.search) q = q.ilike('videos.title', `%${filters.search}%`);
 
+  appLogger.debug('Query before sorting and range applied', { userId, offset: filters.offset, limit: filters.limit });
+
+  // Apply pagination first (required for complex joins)
   const { data, count, error } = await q.range(filters.offset, filters.offset + filters.limit - 1);
+  appLogger.debug('Query executed', { userId, count, dataLength: data?.length, hasError: !!error });
   if (error) throw error;
+
+  // Sort data in memory using generated_at instead of video published_at
+  if (data && data.length > 0) {
+    const ascending = filters.sort === 'oldest';
+    data.sort((a: any, b: any) => {
+      const dateA = new Date(a.generated_at || 0).getTime();
+      const dateB = new Date(b.generated_at || 0).getTime();
+      return ascending ? dateA - dateB : dateB - dateA;
+    });
+    appLogger.debug('Data sorted in memory by generated_at', {
+      userId,
+      firstItemDate: (data[0] as any)?.generated_at,
+      lastItemDate: (data[data.length - 1] as any)?.generated_at
+    });
+  }
 
   // Get user ratings for all summaries in this batch
   const summaryIds = (data ?? []).map((row: any) => row.id).filter((id): id is string => id !== null);

@@ -56,7 +56,7 @@ function parseVttToSegments(vtt: string): TranscriptSegment[] {
 }
 
 async function fetchWithYouTubeApiCaptions(videoId: string, runtimeEnv?: RuntimeEnv): Promise<TranscriptSegment[]> {
-  console.log('[transcript] Trying YouTube Data API captions...');
+  appLogger.debug('Attempting to fetch captions via YouTube Data API', { videoId });
   const apiKey = requireEnv('YOUTUBE_API_KEY', runtimeEnv);
 
   const listUrl = new URL('https://www.googleapis.com/youtube/v3/captions');
@@ -112,32 +112,32 @@ async function fetchWithYouTubeApiCaptions(videoId: string, runtimeEnv?: Runtime
 
   const segments = parseVttToSegments(body);
   if (!segments.length) throw new Error('TRANSCRIPT_NOT_AVAILABLE');
-  console.log('[transcript] YouTube Data API success, segments:', segments.length);
+  appLogger.debug('YouTube Data API captions fetched successfully', { videoId, segments: segments.length });
   return segments;
 }
 
 async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment[]> {
-  console.log('[gradio-client] START fetchWithGradioClient for:', videoId);
-  appLogger.debug('Fetching transcript using Gradio Client fallback', { videoId });
+  appLogger.debug('Starting Gradio client transcript fetch', { videoId });
 
   try {
     const url = `https://www.youtube.com/watch?v=${videoId}`;
-    console.log('[gradio-client] Connecting to HuggingFace Space...');
-    
+    appLogger.debug('Connecting to HuggingFace Space for transcription');
+
     const gradioModel = getEnv('GRADIO_TRANSCRIPT_MODEL');
     if (!gradioModel) throw new Error('GRADIO_TRANSCRIPT_MODEL not configured');
     const client = await Client.connect(gradioModel);
-    console.log('[gradio-client] Connected successfully, starting transcription...');
-    console.log('[gradio-client] Target YouTube URL:', url);
+    appLogger.debug('Connected to Gradio client, starting transcription', { url });
 
     const result = await client.predict("/get_transcript", {
       param_0: url,
       param_1: "auto"
     });
 
-    console.log('[gradio-client] Transcription received');
-    console.log('[gradio-client] Raw output type:', typeof result);
-    console.log('[gradio-client] Raw output:', JSON.stringify(result).substring(0, 500));
+    // Transcription received - logged above with details
+    appLogger.debug('Gradio transcription received', {
+      resultType: typeof result,
+      resultPreview: JSON.stringify(result).substring(0, 500)
+    });
 
     let fullText = '';
     if (result && result.data) {
@@ -148,9 +148,11 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
       }
     }
 
-    console.log('[gradio-client] Extracted text type:', typeof fullText);
-    console.log('[gradio-client] Transcription length:', fullText.length, 'characters');
-    console.log('[gradio-client] First 200 chars:', fullText.substring(0, 200));
+    appLogger.debug('Transcription text extracted', {
+      textType: typeof fullText,
+      textLength: fullText.length,
+      textPreview: fullText.substring(0, 200)
+    });
 
     // Check for known garbage response patterns (hallucinations)
     const normalizedText = fullText.toLowerCase().trim();
@@ -217,9 +219,6 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     return segments;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.log('[gradio-client] ERROR:', errorMessage);
-    console.log('[gradio-client] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       service: 'transcript_service',
       operation: 'gradio_client_fetch_transcript',
@@ -243,12 +242,12 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
  * @throws Error if transcript is not available or fetch fails
  */
 export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv): Promise<TranscriptSegment[]> {
-  console.log('[transcript] START fetchTranscript for videoId:', videoId);
+  appLogger.debug('Starting transcript fetch process', { videoId });
   // Minimal ścieżka: YoutubeTranscript z preferencją PL -> EN, z auto-captions.
   const preferredLangs = ['pl', 'en'];
   for (const lang of preferredLangs) {
     try {
-      console.log('[transcript] Trying YoutubeTranscript with lang:', lang);
+      appLogger.debug('Attempting YoutubeTranscript fetch', { videoId, lang });
       const res = await YoutubeTranscript.fetchTranscript(videoId, {
         lang,
       });
@@ -258,11 +257,15 @@ export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv):
           offset: Math.round(item.offset),
           duration: Math.round(item.duration),
         }));
-        console.log('[transcript] SUCCESS via YoutubeTranscript, segments:', segments.length);
+        appLogger.debug('YoutubeTranscript fetch successful', { videoId, lang, segments: segments.length });
         return segments;
       }
     } catch (err) {
-      console.log('[transcript] YoutubeTranscript failed for', lang, err instanceof Error ? err.message : err);
+      appLogger.debug('YoutubeTranscript fetch failed', {
+        videoId,
+        lang,
+        error: err instanceof Error ? err.message : String(err)
+      });
     }
   }
 
@@ -270,47 +273,42 @@ export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv):
     const ytApiCaptions = await fetchWithYouTubeApiCaptions(videoId, runtimeEnv);
     return ytApiCaptions;
   } catch (ytApiErr) {
-    console.log('[transcript] YouTube Data API captions failed:', ytApiErr instanceof Error ? ytApiErr.message : ytApiErr);
+    appLogger.debug('YouTube Data API captions failed', {
+      videoId,
+      error: ytApiErr instanceof Error ? ytApiErr.message : String(ytApiErr)
+    });
   }
 
   try {
-    console.log('[transcript] Trying fallback provider (youtube-transcript-api)...');
+    appLogger.debug('Attempting fallback provider youtube-transcript-api', { videoId });
     const result = await fetchWithYoutubeTranscriptApi(videoId);
-    console.log('[transcript] FALLBACK SUCCESS! Got', result.length, 'segments');
+    appLogger.debug('Fallback provider successful', { videoId, segments: result.length });
     return result;
   } catch (fallbackError) {
     const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-    console.log('[transcript] Fallback provider FAILED:', fallbackMsg);
+    appLogger.debug('Fallback provider failed', { videoId, error: fallbackMsg });
   }
 
   try {
-    console.log('[transcript] Trying Gradio Client fallback...');
+    appLogger.debug('Attempting Gradio Client fallback', { videoId });
     const gradioResult = await fetchWithGradioClient(videoId);
-    console.log('[transcript] GRADIO CLIENT SUCCESS! Got', gradioResult.length, 'segments');
+    appLogger.debug('Gradio Client fallback successful', { videoId, segments: gradioResult.length });
     return gradioResult;
   } catch (gradioError) {
     const gradioMsg = gradioError instanceof Error ? gradioError.message : String(gradioError);
-    console.log('[transcript] Gradio Client fallback FAILED:', gradioMsg);
+    appLogger.debug('Gradio Client fallback failed', { videoId, error: gradioMsg });
   }
   throw new Error('TRANSCRIPT_NOT_AVAILABLE');
 
 }
 
 async function fetchWithYoutubeTranscript(videoId: string): Promise<TranscriptSegment[]> {
-  console.log('[youtube-transcript] START fetchWithYoutubeTranscript for:', videoId);
-  appLogger.debug('Fetching transcript from YouTube using youtube-transcript', { videoId });
+  appLogger.debug('Starting YoutubeTranscript fetch', { videoId });
 
   try {
-    console.log('[youtube-transcript] Calling YoutubeTranscript.fetchTranscript...');
     appLogger.debug('Calling YoutubeTranscript.fetchTranscript', { videoId });
     const transcriptResponse = await YoutubeTranscript.fetchTranscript(videoId);
 
-    console.log('[youtube-transcript] Response received:', {
-      type: typeof transcriptResponse,
-      isArray: Array.isArray(transcriptResponse),
-      length: transcriptResponse?.length ?? 'null',
-    });
-    
     appLogger.debug('YoutubeTranscript response received', {
       videoId,
       responseType: typeof transcriptResponse,
@@ -320,12 +318,11 @@ async function fetchWithYoutubeTranscript(videoId: string): Promise<TranscriptSe
     });
 
     if (!transcriptResponse || transcriptResponse.length === 0) {
-      console.log('[youtube-transcript] EMPTY response - no segments!');
       appLogger.warn('No transcript segments found', { videoId });
       throw new Error('TRANSCRIPT_NOT_AVAILABLE');
     }
     
-    console.log('[youtube-transcript] Got', transcriptResponse.length, 'segments');
+    // Segments count logged below
 
     // Convert to our segment format (offset and duration are already in ms)
     const segments: TranscriptSegment[] = transcriptResponse.map((item) => ({
@@ -350,8 +347,11 @@ async function fetchWithYoutubeTranscript(videoId: string): Promise<TranscriptSe
     return segments;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.log('[youtube-transcript] CAUGHT ERROR:', errorMessage);
-    console.log('[youtube-transcript] Error constructor:', error?.constructor?.name);
+    appLogger.debug('YoutubeTranscript fetch failed', {
+      videoId,
+      error: errorMessage,
+      errorConstructor: error?.constructor?.name
+    });
 
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       service: 'transcript_service',
@@ -363,7 +363,7 @@ async function fetchWithYoutubeTranscript(videoId: string): Promise<TranscriptSe
 
     // Handle specific youtube-transcript errors
     if (error instanceof YoutubeTranscriptVideoUnavailableError) {
-      console.log('[youtube-transcript] -> VIDEO_NOT_FOUND');
+      appLogger.debug('Video not found error', { videoId });
       throw new Error('VIDEO_NOT_FOUND');
     }
 
@@ -371,34 +371,32 @@ async function fetchWithYoutubeTranscript(videoId: string): Promise<TranscriptSe
       error instanceof YoutubeTranscriptDisabledError ||
       error instanceof YoutubeTranscriptNotAvailableError
     ) {
-      console.log('[youtube-transcript] -> TRANSCRIPT_NOT_AVAILABLE (disabled/not available)');
+      appLogger.debug('Transcript not available (disabled/not available)', { videoId });
       throw new Error('TRANSCRIPT_NOT_AVAILABLE');
     }
 
     if (error instanceof YoutubeTranscriptTooManyRequestError) {
-      console.log('[youtube-transcript] -> RATE_LIMIT_EXCEEDED');
       appLogger.error('YouTube rate limit hit', { videoId });
       throw new Error('RATE_LIMIT_EXCEEDED');
     }
 
     // Re-throw known errors
     if (errorMessage === 'TRANSCRIPT_NOT_AVAILABLE' || errorMessage === 'VIDEO_NOT_FOUND') {
-      console.log('[youtube-transcript] Rethrowing known error:', errorMessage);
+      appLogger.debug('Rethrowing known transcript error', { videoId, error: errorMessage });
       throw error;
     }
 
-    console.log('[youtube-transcript] Rethrowing unknown error');
+    appLogger.debug('Rethrowing unknown transcript error', { videoId, error: errorMessage });
     throw error;
   }
 }
 
 async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<TranscriptSegment[]> {
-  console.log('[transcript-api] START fetchWithYoutubeTranscriptApi for:', videoId);
-  appLogger.debug('Fetching transcript using youtube-transcript-api fallback', { videoId });
+  appLogger.debug('Starting youtube-transcript-api fallback', { videoId });
 
-  console.log('[transcript-api] Importing youtube-transcript-api module...');
+  appLogger.debug('Importing youtube-transcript-api module');
   const module = await import('youtube-transcript-api');
-  console.log('[transcript-api] Module imported successfully');
+  appLogger.debug('youtube-transcript-api module imported successfully');
 
   type TranscriptApiFn = (
     videoId: string,
@@ -437,7 +435,8 @@ async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<Transcrip
     try {
       client = new CandidateClient();
     } catch (err) {
-      console.log('[transcript-api] Failed to instantiate TranscriptClient, falling back to static method', {
+      appLogger.debug('Failed to instantiate TranscriptClient, falling back to static method', {
+        videoId,
         errorMessage: err instanceof Error ? err.message : String(err),
       });
     }
@@ -446,27 +445,24 @@ async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<Transcrip
   const getTranscript: TranscriptApiFn | undefined =
     client?.getTranscript?.bind(client) ?? transcriptModule.getTranscript ?? defaultFunction;
 
-  console.log('[transcript-api] getTranscript type:', typeof getTranscript);
+  appLogger.debug('getTranscript function type', { videoId, type: typeof getTranscript });
 
   if (typeof getTranscript !== 'function') {
-    console.log('[transcript-api] ERROR: getTranscript is not a function!');
     appLogger.error('FALLBACK_TRANSCRIPT_PROVIDER_UNAVAILABLE', {
       defaultType: typeof getTranscript,
     });
     throw new Error('FALLBACK_TRANSCRIPT_PROVIDER_UNAVAILABLE');
   }
 
-  console.log('[transcript-api] getTranscript function ready, trying languages: pl, en, undefined');
+  appLogger.debug('youtube-transcript-api function ready, trying languages', { videoId, languages: ['pl', 'en', undefined] });
 
   try {
     const languageCandidates: Array<string | undefined> = ['pl', 'en', undefined];
 
     for (const lang of languageCandidates) {
       try {
-        console.log('[transcript-api] calling getTranscript:', { videoId, lang });
         appLogger.debug('youtube-transcript-api attempt', { videoId, lang });
         const response = await getTranscript(videoId, lang);
-        console.log('[transcript-api] response:', response?.length, 'segments');
 
         appLogger.debug('youtube-transcript-api response received', {
           videoId,
@@ -501,13 +497,6 @@ async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<Transcrip
         const innerMessage = innerError instanceof Error ? innerError.message : String(innerError);
         const status = (innerError as { response?: { status?: number } })?.response?.status;
 
-        console.log('[transcript-api] attempt failed:', {
-          lang,
-          innerMessage,
-          status,
-          errorName: (innerError as { name?: string })?.name,
-        });
-
         appLogger.warn('youtube-transcript-api language attempt failed', {
           videoId,
           lang,
@@ -535,15 +524,14 @@ async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<Transcrip
     }
 
     // If all language attempts failed with "not available"
-    console.log('[transcript-api] All language attempts failed - no transcript available');
+    appLogger.debug('All language attempts failed - no transcript available', { videoId });
     throw new Error('TRANSCRIPT_NOT_AVAILABLE');
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.log('[transcript-api] OUTER CATCH - error:', errorMessage);
+    appLogger.debug('Outer catch in youtube-transcript-api', { videoId, error: errorMessage });
 
     // Extract axios-like status if present (youtube-transcript-api uses axios)
     const status = (error as { response?: { status?: number; data?: unknown } })?.response?.status;
-    console.log('[transcript-api] HTTP status (if any):', status);
 
     appLogger.error('youtube-transcript-api fallback failed', {
       videoId,
@@ -566,16 +554,16 @@ async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<Transcrip
       status === 404 ||
       status === 403
     ) {
-      console.log('[transcript-api] Rethrowing as-is (not available/404/403)');
+      appLogger.debug('Rethrowing transcript error as-is', { videoId, status, error: errorMessage });
       throw error;
     }
 
     if (status === 429) {
-      console.log('[transcript-api] Rate limited!');
+      appLogger.warn('Rate limit hit in youtube-transcript-api', { videoId });
       throw new Error('RATE_LIMIT_EXCEEDED');
     }
 
-    console.log('[transcript-api] Unknown error, throwing TRANSCRIPT_NOT_AVAILABLE');
+    appLogger.debug('Unknown transcript error, throwing TRANSCRIPT_NOT_AVAILABLE', { videoId, error: errorMessage });
     throw new Error('TRANSCRIPT_NOT_AVAILABLE');
   }
 }
