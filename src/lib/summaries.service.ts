@@ -722,7 +722,8 @@ export async function getSummaryDetails(
 // ---------------------------------------------------------------------------
 export async function startBulkSummaryGeneration(
   supabase: SupabaseClient,
-  runtimeEnv?: RuntimeEnv
+  runtimeEnv?: RuntimeEnv,
+  waitUntil?: (promise: Promise<any>) => void
 ): Promise<BulkGenerationResponse> {
   appLogger.info('Starting system bulk summary generation');
 
@@ -761,7 +762,7 @@ export async function startBulkSummaryGeneration(
   const { data: bulkGeneration, error: insertError } = await service
     .from('bulk_generation_status')
     .insert({
-      user_id: null, // systemowa generacja, nie powiązana z użytkownikiem
+      user_id: null as any, // systemowa generacja, nie powiązana z użytkownikiem
       status: 'pending',
       total_channels: channels.length,
     })
@@ -774,11 +775,17 @@ export async function startBulkSummaryGeneration(
   }
 
   // 4. Uruchom asynchroniczną generację
-  // W prawdziwej aplikacji użyłbym Supabase Edge Functions lub kolejki
-  // Na razie użyję setImmediate żeby symulować asynchroniczność
-  setImmediate(() => {
-    processBulkSummaryGeneration(bulkGeneration.id, channels, runtimeEnv);
-  });
+  const backgroundTask = processBulkSummaryGeneration(bulkGeneration.id, channels, runtimeEnv);
+
+  if (waitUntil) {
+    // Cloudflare environment
+    waitUntil(backgroundTask);
+  } else {
+    // Node environment or fallback
+    setImmediate(() => {
+      backgroundTask.catch(err => console.error('Background task failed', err));
+    });
+  }
 
   appLogger.info('System bulk summary generation initiated', {
     bulkGenerationId: bulkGeneration.id,

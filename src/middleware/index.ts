@@ -2,6 +2,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { createSupabaseServerClient } from '../db/supabase.client.ts';
 import { initializeLogging } from '../lib/logger.ts';
 import { getAwsTraceId } from '../lib/trace.ts';
+import { CRON_SECRET } from 'astro:env/server';
 
 // Initialize logging once
 let loggingInitialized = false;
@@ -82,6 +83,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (user && AUTH_PAGES.includes(pathname)) {
       return redirect('/dashboard');
     }
+    return next();
+  }
+
+  // Check for Cron Secret bypass
+  const cronSecretHeader = request.headers.get('x-cron-secret');
+  if (
+    cronSecretHeader && 
+    CRON_SECRET && 
+    cronSecretHeader === CRON_SECRET && 
+    pathname === '/api/summaries/generate-all'
+  ) {
     return next();
   }
 

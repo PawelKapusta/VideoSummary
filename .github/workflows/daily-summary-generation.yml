@@ -3,36 +3,33 @@ name: Daily Summary Generation
 on:
   schedule:
     # Every day at 21:23 UTC (9:23 PM UTC)
-    - cron: '28 20 * * *'
+    - cron: '58 20 * * *'
   workflow_dispatch:
 
 jobs:
-  generate-summaries:
+  trigger-summary-generation:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-
-      - name: Generate summaries
+      - name: Trigger Daily Summary Generation
         run: |
-          curl -X POST \
-            "${{ secrets.SUPABASE_URL }}/functions/v1/generate-daily-summaries" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{}'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Use APP_URL if provided, otherwise default to the production URL
+          TARGET_URL="${{ secrets.APP_URL }}/api/summaries/generate-all"
+          
+          echo "Triggering summary generation at $TARGET_URL"
+          
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "$TARGET_URL" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "Response Code: $http_code"
+          echo "Response Body: $body"
+          
+          if [ "$http_code" -ne 202 ] && [ "$http_code" -ne 200 ]; then
+            echo "Failed to trigger summary generation."
+            exit 1
+          fi

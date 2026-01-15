@@ -73,7 +73,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const runtimeEnv = locals.runtime?.env as RuntimeEnv;
     const result: BulkGenerationResponse = await startBulkSummaryGeneration(
       locals.supabase,
-      runtimeEnv
+      runtimeEnv,
+      locals.runtime?.ctx?.waitUntil
     );
 
     // Log successful bulk generation initiation

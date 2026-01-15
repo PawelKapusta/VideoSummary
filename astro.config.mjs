@@ -27,43 +27,50 @@ export default defineConfig({
       SUPABASE_URL: envField.string({ context: "server", access: "secret" }),
       SUPABASE_KEY: envField.string({ context: "server", access: "secret" }),
       SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: "server", access: "secret" }),
-      
+
       // OpenRouter AI
       OPENROUTER_API_KEY: envField.string({ context: "server", access: "secret" }),
-      OPENROUTER_MODEL: envField.string({ 
-        context: "server", 
+      OPENROUTER_MODEL: envField.string({
+        context: "server",
         access: "secret",
         optional: true,
       }),
-      
+
       // YouTube API
       YOUTUBE_API_KEY: envField.string({ context: "server", access: "secret" }),
-      
+
       // Site URL (for YouTube API Referer header)
-      SITE_URL: envField.string({ 
-        context: "server", 
+      SITE_URL: envField.string({
+        context: "server",
         access: "public",
         optional: true,
         default: "https://video-summary.pages.dev"
       }),
-      
+
       // Gradio (optional)
-      GRADIO_TRANSCRIPT_MODEL: envField.string({ 
-        context: "server", 
+      GRADIO_TRANSCRIPT_MODEL: envField.string({
+        context: "server",
         access: "secret",
         optional: true
       }),
-      
+
       // LogTape (optional)
-      LOGTAPE_API_KEY: envField.string({ 
-        context: "server", 
+      LOGTAPE_API_KEY: envField.string({
+        context: "server",
         access: "secret",
         optional: true
       }),
-      LOGTAPE_PROJECT_ID: envField.string({ 
-        context: "server", 
+      LOGTAPE_PROJECT_ID: envField.string({
+        context: "server",
         access: "secret",
         optional: true
+      }),
+
+      // Cron Secret for automated tasks
+      CRON_SECRET: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
       }),
     },
   },
