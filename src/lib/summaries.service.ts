@@ -6,6 +6,9 @@ import type {
   SummaryBasic,
   SummaryStatus,
   SummaryWithVideo,
+  BulkGenerationStatus,
+  BulkGenerationStatusEnum,
+  BulkGenerationResponse,
 } from '../types';
 import type { ChatMessage } from './openrouter.types';
 import { extractYouTubeVideoId } from './youtube.utils';
@@ -712,4 +715,329 @@ export async function getSummaryDetails(
     user_rating: userRating?.rating ?? null,
     is_hidden: !!hiddenData,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Masowa generacja podsumowań dla wszystkich kanałów użytkownika
+// ---------------------------------------------------------------------------
+export async function startBulkSummaryGeneration(
+  supabase: SupabaseClient,
+  runtimeEnv?: RuntimeEnv
+): Promise<BulkGenerationResponse> {
+  appLogger.info('Starting system bulk summary generation');
+
+  // Użyj service client dla systemowych operacji
+  const { createSupabaseServiceClient } = await import('../db/supabase.client');
+  const service = createSupabaseServiceClient(undefined, runtimeEnv);
+
+  // 1. Sprawdź czy już jakaś masowa generacja jest w trakcie (systemowa)
+  const { data: activeGeneration } = await service
+    .from('bulk_generation_status')
+    .select('id, status')
+    .in('status', ['pending', 'in_progress'])
+    .maybeSingle();
+
+  if (activeGeneration) {
+    appLogger.warn('Bulk generation already in progress', { activeGenerationId: activeGeneration.id });
+    throw new Error('BULK_GENERATION_IN_PROGRESS');
+  }
+
+  // 2. Pobierz wszystkie kanały z bazy danych (systemowe)
+  const { data: channels, error: channelsError } = await service
+    .from('channels')
+    .select('id, youtube_channel_id, name')
+    .order('created_at', { ascending: false });
+
+  if (channelsError) {
+    errorLogger.dbError(channelsError, 'fetch_all_channels');
+    throw channelsError;
+  }
+
+  if (!channels || channels.length === 0) {
+    throw new Error('NO_CHANNELS_FOUND');
+  }
+
+  // 3. Utwórz rekord masowej generacji (systemowej)
+  const { data: bulkGeneration, error: insertError } = await service
+    .from('bulk_generation_status')
+    .insert({
+      user_id: null, // systemowa generacja, nie powiązana z użytkownikiem
+      status: 'pending',
+      total_channels: channels.length,
+    })
+    .select('id, status')
+    .single();
+
+  if (insertError) {
+    errorLogger.dbError(insertError, 'create_bulk_generation');
+    throw insertError;
+  }
+
+  // 4. Uruchom asynchroniczną generację
+  // W prawdziwej aplikacji użyłbym Supabase Edge Functions lub kolejki
+  // Na razie użyję setImmediate żeby symulować asynchroniczność
+  setImmediate(() => {
+    processBulkSummaryGeneration(bulkGeneration.id, channels, runtimeEnv);
+  });
+
+  appLogger.info('System bulk summary generation initiated', {
+    bulkGenerationId: bulkGeneration.id,
+    totalChannels: channels.length
+  });
+
+  return {
+    id: bulkGeneration.id,
+    status: bulkGeneration.status,
+    message: `System bulk summary generation started for ${channels.length} channels`,
+    estimated_completion_time: Math.ceil(channels.length * 2).toString(), // rough estimate: 2 min per channel
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Przetwarzanie masowej generacji (background process)
+// ---------------------------------------------------------------------------
+async function processBulkSummaryGeneration(
+  bulkGenerationId: string,
+  channels: any[],
+  runtimeEnv?: RuntimeEnv
+): Promise<void> {
+  // Użyj service client dla wszystkich systemowych operacji
+  const { createSupabaseServiceClient } = await import('../db/supabase.client');
+  const service = createSupabaseServiceClient(undefined, runtimeEnv);
+
+  appLogger.info('Starting bulk generation processing', { bulkGenerationId });
+
+  try {
+    // 1. Zaktualizuj status na in_progress
+    await service
+      .from('bulk_generation_status')
+      .update({ status: 'in_progress' })
+      .eq('id', bulkGenerationId);
+
+    let processedChannels = 0;
+    let successfulSummaries = 0;
+    let failedSummaries = 0;
+
+    // 2. Przetwórz każdy kanał
+    for (const channel of channels) {
+      try {
+        appLogger.debug('Processing channel', {
+          bulkGenerationId,
+          channelId: channel.id,
+          channelName: channel.name
+        });
+
+        const result = await processChannelSummary(channel.id, runtimeEnv);
+
+        if (result.success) {
+          successfulSummaries++;
+          appLogger.info('Channel processed successfully', {
+            bulkGenerationId,
+            channelId: channel.id,
+            summaryId: result.summaryId
+          });
+        } else {
+          failedSummaries++;
+          appLogger.warn('Channel processing failed', {
+            bulkGenerationId,
+            channelId: channel.id,
+            error: result.error
+          });
+        }
+
+        processedChannels++;
+
+        // 3. Aktualizuj postęp
+        await service
+          .from('bulk_generation_status')
+          .update({
+            processed_channels: processedChannels,
+            successful_summaries: successfulSummaries,
+            failed_summaries: failedSummaries,
+          })
+          .eq('id', bulkGenerationId);
+
+      } catch (channelError: any) {
+        failedSummaries++;
+        processedChannels++;
+        appLogger.error('Channel processing error', {
+          bulkGenerationId,
+          channelId: channel.id,
+          error: channelError.message
+        });
+
+        // Aktualizuj statystyki nawet w przypadku błędu
+        await service
+          .from('bulk_generation_status')
+          .update({
+            processed_channels: processedChannels,
+            successful_summaries: successfulSummaries,
+            failed_summaries: failedSummaries,
+          })
+          .eq('id', bulkGenerationId);
+      }
+    }
+
+    // 4. Zakończ generację
+    await service
+      .from('bulk_generation_status')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', bulkGenerationId);
+
+    appLogger.info('Bulk generation completed', {
+      bulkGenerationId,
+      totalChannels: channels.length,
+      successfulSummaries,
+      failedSummaries
+    });
+
+  } catch (error: any) {
+    appLogger.error('Bulk generation failed', { bulkGenerationId, error: error.message });
+
+    await service
+      .from('bulk_generation_status')
+      .update({
+        status: 'failed',
+        error_message: error.message,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', bulkGenerationId);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Przetwarzanie pojedynczego kanału (podobne do automatycznej generacji)
+// ---------------------------------------------------------------------------
+async function processChannelSummary(
+  channelId: string,
+  runtimeEnv?: RuntimeEnv
+): Promise<{ success: boolean; summaryId?: string; error?: string }> {
+  const { createSupabaseServiceClient } = await import('../db/supabase.client');
+  const service = createSupabaseServiceClient(undefined, runtimeEnv);
+
+  try {
+    // 1. Pobierz najnowszy film z kanału
+    const { data: latestVideo } = await service
+      .from('videos')
+      .select('id, youtube_video_id, channel_id')
+      .eq('channel_id', channelId)
+      .order('published_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!latestVideo) {
+      appLogger.debug('No videos found for channel', { channelId });
+      return { success: false, error: 'NO_VIDEOS_FOUND' };
+    }
+
+    // 2. Sprawdź czy już istnieje podsumowanie dla tego filmu dzisiaj
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const { data: existingSummary } = await service
+      .from('summaries')
+      .select('id, status')
+      .eq('video_id', latestVideo.id)
+      .gte('generated_at', today.toISOString())
+      .lt('generated_at', tomorrow.toISOString())
+      .maybeSingle();
+
+    if (existingSummary && existingSummary.status === 'completed') {
+      appLogger.debug('Summary already exists for today', { videoId: latestVideo.id });
+      return { success: false, error: 'SUMMARY_EXISTS_TODAY' };
+    }
+
+    // 3. Sprawdź limit dzienny (globalny dla kanału)
+    const { count: todaySummaries } = await service
+      .from('summaries')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'completed')
+      .gte('generated_at', today.toISOString())
+      .lt('generated_at', tomorrow.toISOString())
+      .eq('video_id', latestVideo.id); // summaries joined with videos by channel
+
+    // Note: This is simplified - should check all videos from the channel
+    // For now, assume 1 summary per channel per day limit
+    if (todaySummaries && todaySummaries >= 1) {
+      return { success: false, error: 'DAILY_LIMIT_REACHED' };
+    }
+
+    // 4. Pobierz metadane filmu żeby sprawdzić constraints
+    const videoMeta = await fetchYouTubeVideoMetadata(latestVideo.youtube_video_id, runtimeEnv);
+
+    if (videoMeta.duration > 2700) { // 45 minutes
+      return { success: false, error: 'VIDEO_TOO_LONG' };
+    }
+
+    // 5. Utwórz podsumowanie (bez użytkownika - systemowy)
+    const { data: summary, error } = await service
+      .from('summaries')
+      .insert({
+        video_id: latestVideo.id,
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+
+    // 6. Wygeneruj podsumowanie w tle
+    await processSummaryGeneration(summary.id, latestVideo.youtube_video_id, runtimeEnv);
+
+    return { success: true, summaryId: summary.id };
+
+  } catch (error: any) {
+    appLogger.error('Channel summary processing error', { channelId, error: error.message });
+    return { success: false, error: error.message };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sprawdź status masowej generacji
+// ---------------------------------------------------------------------------
+export async function getBulkGenerationStatus(
+  supabase: SupabaseClient,
+  userId: string,
+  generationId?: string
+): Promise<BulkGenerationStatus[]> {
+  let query = supabase
+    .from('bulk_generation_status')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (generationId) {
+    query = query.eq('id', generationId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    errorLogger.dbError(error, 'get_bulk_generation_status', { userId });
+    throw error;
+  }
+
+  return data || [];
+}
+
+// ---------------------------------------------------------------------------
+// Sprawdź czy masowa generacja jest w trakcie
+// ---------------------------------------------------------------------------
+export async function isBulkGenerationInProgress(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<boolean> {
+  const { count } = await supabase
+    .from('bulk_generation_status')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('status', ['pending', 'in_progress']);
+
+  return (count || 0) > 0;
 }

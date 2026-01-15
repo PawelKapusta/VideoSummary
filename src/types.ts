@@ -33,6 +33,9 @@ export type SummaryRating = Pick<Tables<'summary_ratings'>, 'id' | 'user_id' | '
 /** Hidden summary information */
 export type HiddenSummary = Pick<Tables<'hidden_summaries'>, 'id' | 'user_id' | 'summary_id' | 'hidden_at'>;
 
+/** Bulk generation status information */
+export type BulkGenerationStatus = Pick<Tables<'bulk_generation_status'>, 'id' | 'user_id' | 'status' | 'started_at' | 'completed_at' | 'total_channels' | 'processed_channels' | 'successful_summaries' | 'failed_summaries' | 'error_message' | 'created_at'>;
+
 /** Generation request information */
 export type GenerationRequest = Pick<Tables<'generation_requests'>, 'id' | 'user_id' | 'video_id' | 'created_at'>;
 
@@ -82,6 +85,19 @@ export interface GenerateSummaryRequest {
 /** Summary rating request payload */
 export interface RateSummaryRequest {
   rating: boolean;
+}
+
+/** Bulk summary generation request payload */
+export interface GenerateBulkSummariesRequest {
+  // No parameters needed - generates for all user's subscribed channels
+}
+
+/** Bulk summary generation response */
+export interface BulkGenerationResponse {
+  id: string;
+  status: BulkGenerationStatusEnum;
+  message: string;
+  estimated_completion_time?: string; // in minutes
 }
 
 // ============================================================================
@@ -229,6 +245,9 @@ export type SummaryStatus = Database['public']['Enums']['summary_status'];
 
 /** Summary error code enum values */
 export type SummaryErrorCode = Database['public']['Enums']['summary_error_code'];
+
+/** Bulk generation status enum values */
+export type BulkGenerationStatusEnum = Database['public']['Enums']['bulk_generation_status_enum'];
 
 /** Standard API error response */
 export interface ApiError {

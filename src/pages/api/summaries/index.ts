@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import type { SummaryBasic, SummaryWithVideo, PaginatedResponse, ApiSuccess, ApiError } from '../../../types';
 import { GenerateSummaryRequestSchema, SummaryListFiltersSchema } from '../../../lib/validation/schemas';
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { generateSummary, listSummaries } from '../../../lib/summaries.service';
+import { generateSummary, listSummaries, isBulkGenerationInProgress } from '../../../lib/summaries.service';
 import type { RuntimeEnv } from '../../../lib/env';
 
 /**
@@ -69,6 +69,34 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const userId = user.id;
+
+    // Check if bulk generation is in progress (block individual generation)
+    const bulkInProgress = await isBulkGenerationInProgress(supabase, userId);
+    if (bulkInProgress) {
+      const duration = performance.now() - startTime;
+      securityLogger.auth('Individual summary generation blocked - bulk generation in progress', {
+        user_id: userId,
+      });
+
+      securityLogger.apiAccess({
+        method: 'POST',
+        path: '/api/summaries',
+        statusCode: 409,
+      });
+      performanceLogger.apiResponseTime('POST', '/api/summaries', duration, 409);
+
+      const errorResponse: ApiError = {
+        error: {
+          code: 'BULK_GENERATION_IN_PROGRESS',
+          message: 'Cannot generate individual summaries while bulk generation is in progress. Please wait for bulk generation to complete.',
+        },
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 409,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Parse request body
     const body = await request.json();

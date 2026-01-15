@@ -29,3 +29,5 @@ test-results/
 playwright-report/
 blob-report/
 coverage/
+test-local-automation.js
+test-edge-function-locally.js

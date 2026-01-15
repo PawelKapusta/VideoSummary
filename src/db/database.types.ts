@@ -328,6 +328,56 @@ export type Database = {
           },
         ]
       }
+      bulk_generation_status: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          failed_summaries: number
+          id: string
+          processed_channels: number
+          started_at: string
+          status: Database["public"]["Enums"]["bulk_generation_status_enum"]
+          successful_summaries: number
+          total_channels: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          failed_summaries?: number
+          id?: string
+          processed_channels?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["bulk_generation_status_enum"]
+          successful_summaries?: number
+          total_channels?: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          failed_summaries?: number
+          id?: string
+          processed_channels?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["bulk_generation_status_enum"]
+          successful_summaries?: number
+          total_channels?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_generation_status_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_summary_atomic: {
@@ -348,6 +398,7 @@ export type Database = {
       }
     }
     Enums: {
+      bulk_generation_status_enum: "pending" | "in_progress" | "completed" | "failed"
       summary_error_code: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG"
       summary_status: "pending" | "in_progress" | "completed" | "failed"
     }
