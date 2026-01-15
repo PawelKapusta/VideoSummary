@@ -22,7 +22,8 @@ jobs:
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "$TARGET_URL" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
           
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
