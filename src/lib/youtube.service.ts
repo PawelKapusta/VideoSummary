@@ -5,6 +5,13 @@ import { requireEnv, getSiteUrl, type RuntimeEnv } from './env';
  * YouTube API service interfaces and types
  */
 
+export interface YouTubeLatestVideo {
+  videoId: string;
+  title: string;
+  publishedAt: string;
+  thumbnailUrl: string;
+}
+
 export interface YouTubeChannelMetadata {
   id: string;
   title: string;
@@ -193,5 +200,76 @@ export async function fetchYouTubeVideoMetadata(videoId: string, runtimeEnv?: Ru
       throw error;
     }
     throw new Error('Failed to fetch YouTube video metadata');
+  }
+}
+
+/**
+ * Fetch the latest video from a YouTube channel using Search API
+ * @param channelId - YouTube channel ID (UC...)
+ * @param runtimeEnv - Optional Cloudflare runtime env object
+ * @returns Latest video info or null if no videos found
+ */
+export async function fetchLatestVideoFromChannel(
+  channelId: string,
+  runtimeEnv?: RuntimeEnv
+): Promise<YouTubeLatestVideo | null> {
+  const apiKey = requireEnv('YOUTUBE_API_KEY', runtimeEnv);
+
+  if (!apiKey) {
+    throw new Error('YouTube API key not configured');
+  }
+
+  try {
+    appLogger.debug('Fetching latest video from channel', { channelId });
+
+    // Use Search API to find the most recent video from the channel
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=1&key=${apiKey}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'Referer': getSiteUrl(runtimeEnv)
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('YouTube API quota exceeded or access denied');
+      }
+      throw new Error(`YouTube API error: ${data.error?.message || 'Unknown error'}`);
+    }
+
+    if (!data.items || data.items.length === 0) {
+      appLogger.debug('No videos found for channel', { channelId });
+      return null;
+    }
+
+    const video = data.items[0];
+    const snippet = video.snippet;
+
+    appLogger.debug('Latest video found', { 
+      channelId, 
+      videoId: video.id.videoId, 
+      title: snippet.title 
+    });
+
+    return {
+      videoId: video.id.videoId,
+      title: snippet.title,
+      publishedAt: snippet.publishedAt,
+      thumbnailUrl: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || '',
+    };
+  } catch (error) {
+    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
+      service: 'youtube_api',
+      operation: 'fetch_latest_video_from_channel',
+      channel_id: channelId,
+    });
+
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch latest video from channel');
   }
 }

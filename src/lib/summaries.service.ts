@@ -12,7 +12,7 @@ import type {
 } from '../types';
 import type { ChatMessage } from './openrouter.types';
 import { extractYouTubeVideoId } from './youtube.utils';
-import { fetchYouTubeVideoMetadata } from './youtube.service';
+import { fetchYouTubeVideoMetadata, fetchLatestVideoFromChannel } from './youtube.service';
 import { OpenRouterService } from './openrouter.service';
 import { fetchTranscript, transcriptToString } from './transcript.service';
 import { requireEnv, getEnv, type RuntimeEnv } from './env';
@@ -810,7 +810,8 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
 async function queueVideosForGeneration(
   supabase: SupabaseClient,
   channels: Array<{ id: string; youtube_channel_id: string; name: string }>,
-  bulkGenerationId: string
+  bulkGenerationId: string,
+  runtimeEnv?: RuntimeEnv
 ): Promise<{ queued: number; skipped: number; errors: string[] }> {
   const { todayStart, tomorrowStart } = getUTCDayBoundaries();
   const errors: string[] = [];
@@ -819,17 +820,85 @@ async function queueVideosForGeneration(
 
   for (const channel of channels) {
     try {
-      // 1. Get latest video for channel
-      const { data: latestVideo } = await supabase
-        .from('videos')
-        .select('id, youtube_video_id, title')
-        .eq('channel_id', channel.id)
-        .order('published_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // 1. Fetch latest video from YouTube API (always check for new content)
+      let latestVideo: { id: string; youtube_video_id: string; title: string } | null = null;
+      
+      try {
+        const ytVideo = await fetchLatestVideoFromChannel(channel.youtube_channel_id, runtimeEnv);
+        
+        if (!ytVideo) {
+          appLogger.info(`Channel "${channel.name}" skipped: no videos found on YouTube`);
+          skipped++;
+          continue;
+        }
+
+        // 2. Check if this video already exists in database
+        const { data: existingVideo } = await supabase
+          .from('videos')
+          .select('id, youtube_video_id, title')
+          .eq('youtube_video_id', ytVideo.videoId)
+          .maybeSingle();
+
+        if (existingVideo) {
+          // Video already in DB - use it
+          latestVideo = existingVideo;
+          appLogger.debug(`Channel "${channel.name}": latest video "${existingVideo.title}" already in DB`);
+        } else {
+          // New video from YouTube - fetch metadata and create in DB
+          appLogger.info(`Channel "${channel.name}": new video found on YouTube, creating in DB...`);
+          
+          const videoMeta = await fetchYouTubeVideoMetadata(ytVideo.videoId, runtimeEnv);
+
+          // Check video duration before creating
+          if (videoMeta.duration > MAX_VIDEO_DURATION_SECONDS) {
+            appLogger.info(`Channel "${channel.name}" skipped: latest video too long (${Math.floor(videoMeta.duration / 60)} min)`);
+            skipped++;
+            continue;
+          }
+
+          // Create video record in database
+          const { data: newVideo, error: insertError } = await supabase
+            .from('videos')
+            .insert({
+              youtube_video_id: ytVideo.videoId,
+              channel_id: channel.id,
+              title: videoMeta.title,
+              published_at: videoMeta.publishedAt,
+              thumbnail_url: videoMeta.thumbnailUrl,
+            })
+            .select('id, youtube_video_id, title')
+            .single();
+
+          if (insertError) {
+            // Handle race condition - video might have been created by another process
+            if (insertError.code === '23505') {
+              const { data: raceVideo } = await supabase
+                .from('videos')
+                .select('id, youtube_video_id, title')
+                .eq('youtube_video_id', ytVideo.videoId)
+                .single();
+              
+              if (raceVideo) {
+                latestVideo = raceVideo;
+              } else {
+                throw insertError;
+              }
+            } else {
+              throw insertError;
+            }
+          } else {
+            latestVideo = newVideo;
+            appLogger.info(`Channel "${channel.name}": created video "${videoMeta.title}" in database`);
+          }
+        }
+      } catch (ytError: any) {
+        appLogger.error(`Channel "${channel.name}": YouTube API error - ${ytError.message}`);
+        errors.push(`${channel.name}: ${ytError.message}`);
+        continue;
+      }
 
       if (!latestVideo) {
-        appLogger.debug('No videos found for channel', { channelId: channel.id, channelName: channel.name });
+        appLogger.info(`Channel "${channel.name}" skipped: could not get video`);
         skipped++;
         continue;
       }
@@ -844,10 +913,7 @@ async function queueVideosForGeneration(
         .maybeSingle();
 
       if (existingSummaryToday && existingSummaryToday.status === 'completed') {
-        appLogger.debug('Summary already exists today for channel', {
-          channelId: channel.id,
-          videoId: latestVideo.id,
-        });
+        appLogger.info(`Channel "${channel.name}" skipped: summary already generated today`);
         skipped++;
         continue;
       }
@@ -861,7 +927,7 @@ async function queueVideosForGeneration(
         .maybeSingle();
 
       if (existingQueueItem) {
-        appLogger.debug('Video already in queue', { videoId: latestVideo.id });
+        appLogger.info(`Channel "${channel.name}" skipped: video already in queue`);
         skipped++;
         continue;
       }
@@ -875,7 +941,7 @@ async function queueVideosForGeneration(
         .maybeSingle();
 
       if (existingSummary) {
-        appLogger.debug('Completed summary already exists for video', { videoId: latestVideo.id });
+        appLogger.info(`Channel "${channel.name}" skipped: summary already exists for latest video`);
         skipped++;
         continue;
       }
@@ -900,12 +966,7 @@ async function queueVideosForGeneration(
       }
 
       queued++;
-      appLogger.debug('Video queued for summary generation', {
-        channelId: channel.id,
-        channelName: channel.name,
-        videoId: latestVideo.id,
-        videoTitle: latestVideo.title,
-      });
+      appLogger.info(`Channel "${channel.name}" queued: video "${latestVideo.title}"`);
 
     } catch (error: any) {
       const errorMsg = `Channel ${channel.name}: ${error.message}`;
@@ -1243,7 +1304,7 @@ export async function startBulkSummaryGeneration(
     throw new Error('NO_CHANNELS_FOUND');
   }
 
-  appLogger.info('Found channels', { count: channels.length });
+  appLogger.info(`Found ${channels.length} channels to process`);
 
   // 4. Create bulk generation record
   appLogger.debug('Creating bulk generation record...');
@@ -1264,14 +1325,9 @@ export async function startBulkSummaryGeneration(
   }
 
   // 5. Queue videos for generation
-  const queueResult = await queueVideosForGeneration(supabase, channels, bulkGeneration.id);
+  const queueResult = await queueVideosForGeneration(supabase, channels, bulkGeneration.id, runtimeEnv);
 
-  appLogger.info('Videos queued for generation', {
-    bulkGenerationId: bulkGeneration.id,
-    queued: queueResult.queued,
-    skipped: queueResult.skipped,
-    errors: queueResult.errors.length,
-  });
+  appLogger.info(`Videos queued: ${queueResult.queued} queued, ${queueResult.skipped} skipped, ${queueResult.errors.length} errors`);
 
   // 6. If nothing to process, mark as completed
   if (queueResult.queued === 0) {
