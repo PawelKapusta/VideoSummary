@@ -755,24 +755,11 @@ export async function startBulkSummaryGeneration(
     throw new Error('NO_CHANNELS_FOUND');
   }
 
-  // 3a. Pobierz ID użytkownika systemowego (lub pierwszego admina)
-  // Wymagane, ponieważ tabela bulk_generation_status ma NOT NULL na user_id.
-  const { data: systemUser } = await supabase
-    .from('profiles')
-    .select('id')
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single();
-
-  if (!systemUser) {
-    throw new Error('SYSTEM_USER_NOT_FOUND');
-  }
-
-  // 3b. Utwórz rekord masowej generacji (systemowej)
+  // 3. Utwórz rekord masowej generacji (systemowej)
   const { data: bulkGeneration, error: insertError } = await supabase
     .from('bulk_generation_status')
     .insert({
-      user_id: systemUser.id, // Używamy istniejącego użytkownika jako właściciela procesu
+      user_id: null as any, // Dozwolone po migracji (DROP NOT NULL)
       status: 'pending',
       total_channels: channels.length,
     })
