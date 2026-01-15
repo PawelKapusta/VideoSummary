@@ -3,6 +3,8 @@ import type { BulkGenerationResponse, ApiError, ApiSuccess } from '../../../type
 import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
 import { startBulkSummaryGeneration } from '../../../lib/summaries.service';
 import type { RuntimeEnv } from '../../../lib/env';
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from 'astro:env/server';
 
 /**
  * POST /api/summaries/generate-all
@@ -71,8 +73,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Start bulk summary generation
     const runtimeEnv = locals.runtime?.env as RuntimeEnv;
+
+    // Create a Supabase client with the SERVICE ROLE key to bypass RLS.
+    // This is crucial because the Cron job has no user session.
+    const supabaseAdmin = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+
     const result: BulkGenerationResponse = await startBulkSummaryGeneration(
-      locals.supabase,
+      supabaseAdmin,
       runtimeEnv,
       locals.runtime?.ctx?.waitUntil
     );
@@ -145,6 +161,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       error: {
         code: errorCode,
         message,
+        // @ts-ignore
+        details: error instanceof Error ? error.message : String(error), // Debug info
       },
     };
 
