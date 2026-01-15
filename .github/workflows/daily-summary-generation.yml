@@ -2,8 +2,8 @@ name: Daily Summary Generation
 
 on:
   schedule:
-    # Every day at 21:23 UTC (9:23 PM UTC)
-    - cron: '58 20 * * *'
+    # Every day at 18:00 UTC (19:00 Polish winter time / 20:00 Polish summer time)
+    - cron: '0 18 * * *'
   workflow_dispatch:
 
 jobs:

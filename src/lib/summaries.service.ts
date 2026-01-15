@@ -718,7 +718,456 @@ export async function getSummaryDetails(
 }
 
 // ---------------------------------------------------------------------------
-// Masowa generacja podsumowań dla wszystkich kanałów użytkownika
+// Constants for bulk generation
+// ---------------------------------------------------------------------------
+const QUEUE_PROCESSING_CONCURRENCY = 3; // Process 3 videos in parallel
+const STALE_GENERATION_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+const MAX_VIDEO_DURATION_SECONDS = 2700; // 45 minutes
+
+// ---------------------------------------------------------------------------
+// Helper: Get UTC date boundaries for "today"
+// ---------------------------------------------------------------------------
+function getUTCDayBoundaries(): { todayStart: string; tomorrowStart: string } {
+  const now = new Date();
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
+  
+  return {
+    todayStart: todayStart.toISOString(),
+    tomorrowStart: tomorrowStart.toISOString(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Cleanup stale generations (stuck in pending/in_progress for > 1 hour)
+// ---------------------------------------------------------------------------
+async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number> {
+  const staleThreshold = new Date(Date.now() - STALE_GENERATION_TIMEOUT_MS).toISOString();
+  
+  // Mark stale bulk generations as failed
+  const { data: staleGenerations } = await supabase
+    .from('bulk_generation_status')
+    .update({
+      status: 'failed',
+      error_message: 'Generation timed out (stale cleanup)',
+      completed_at: new Date().toISOString(),
+    })
+    .in('status', ['pending', 'in_progress'])
+    .lt('started_at', staleThreshold)
+    .select('id');
+
+  // Mark stale queue items as failed
+  const { data: staleQueueItems } = await supabase
+    .from('summary_queue')
+    .update({
+      status: 'failed',
+      error_message: 'Queue item timed out (stale cleanup)',
+      completed_at: new Date().toISOString(),
+    })
+    .in('status', ['pending', 'in_progress'])
+    .lt('queued_at', staleThreshold)
+    .select('id');
+
+  const cleanedCount = (staleGenerations?.length || 0) + (staleQueueItems?.length || 0);
+  
+  if (cleanedCount > 0) {
+    appLogger.info('Cleaned up stale generations', {
+      staleGenerations: staleGenerations?.length || 0,
+      staleQueueItems: staleQueueItems?.length || 0,
+    });
+  }
+  
+  return cleanedCount;
+}
+
+// ---------------------------------------------------------------------------
+// Queue videos for summary generation
+// ---------------------------------------------------------------------------
+async function queueVideosForGeneration(
+  supabase: SupabaseClient,
+  channels: Array<{ id: string; youtube_channel_id: string; name: string }>,
+  bulkGenerationId: string
+): Promise<{ queued: number; skipped: number; errors: string[] }> {
+  const { todayStart, tomorrowStart } = getUTCDayBoundaries();
+  const errors: string[] = [];
+  let queued = 0;
+  let skipped = 0;
+
+  for (const channel of channels) {
+    try {
+      // 1. Get latest video for channel
+      const { data: latestVideo } = await supabase
+        .from('videos')
+        .select('id, youtube_video_id, title')
+        .eq('channel_id', channel.id)
+        .order('published_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!latestVideo) {
+        appLogger.debug('No videos found for channel', { channelId: channel.id, channelName: channel.name });
+        skipped++;
+        continue;
+      }
+
+      // 2. Check if this channel already has a summary generated today (UTC)
+      const { data: existingSummaryToday } = await supabase
+        .from('summaries')
+        .select('id, status')
+        .eq('video_id', latestVideo.id)
+        .gte('generated_at', todayStart)
+        .lt('generated_at', tomorrowStart)
+        .maybeSingle();
+
+      if (existingSummaryToday && existingSummaryToday.status === 'completed') {
+        appLogger.debug('Summary already exists today for channel', {
+          channelId: channel.id,
+          videoId: latestVideo.id,
+        });
+        skipped++;
+        continue;
+      }
+
+      // 3. Check if video is already in queue (pending or processing)
+      const { data: existingQueueItem } = await supabase
+        .from('summary_queue')
+        .select('id')
+        .eq('video_id', latestVideo.id)
+        .in('status', ['pending', 'in_progress'])
+        .maybeSingle();
+
+      if (existingQueueItem) {
+        appLogger.debug('Video already in queue', { videoId: latestVideo.id });
+        skipped++;
+        continue;
+      }
+
+      // 4. Check if completed summary already exists for this video (any day)
+      const { data: existingSummary } = await supabase
+        .from('summaries')
+        .select('id, status')
+        .eq('video_id', latestVideo.id)
+        .eq('status', 'completed')
+        .maybeSingle();
+
+      if (existingSummary) {
+        appLogger.debug('Completed summary already exists for video', { videoId: latestVideo.id });
+        skipped++;
+        continue;
+      }
+
+      // 5. Add to queue
+      const { error: queueError } = await supabase
+        .from('summary_queue')
+        .insert({
+          video_id: latestVideo.id,
+          priority: 1, // Normal priority for daily generation
+          status: 'pending',
+        });
+
+      if (queueError) {
+        // Handle unique constraint violation (video already in queue)
+        if (queueError.code === '23505') {
+          appLogger.debug('Video already in queue (race condition)', { videoId: latestVideo.id });
+          skipped++;
+          continue;
+        }
+        throw queueError;
+      }
+
+      queued++;
+      appLogger.debug('Video queued for summary generation', {
+        channelId: channel.id,
+        channelName: channel.name,
+        videoId: latestVideo.id,
+        videoTitle: latestVideo.title,
+      });
+
+    } catch (error: any) {
+      const errorMsg = `Channel ${channel.name}: ${error.message}`;
+      errors.push(errorMsg);
+      appLogger.error('Error queueing video for channel', {
+        channelId: channel.id,
+        error: error.message,
+      });
+    }
+  }
+
+  return { queued, skipped, errors };
+}
+
+// ---------------------------------------------------------------------------
+// Process a single queue item
+// ---------------------------------------------------------------------------
+async function processQueueItem(
+  supabase: SupabaseClient,
+  queueItem: {
+    id: string;
+    video_id: string;
+    retry_count: number;
+    max_retries: number;
+  },
+  workerId: string,
+  runtimeEnv?: RuntimeEnv
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Mark as in_progress
+    await supabase
+      .from('summary_queue')
+      .update({
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+        worker_id: workerId,
+      })
+      .eq('id', queueItem.id);
+
+    // Get video details
+    const { data: video } = await supabase
+      .from('videos')
+      .select('id, youtube_video_id, title, channel_id')
+      .eq('id', queueItem.video_id)
+      .single();
+
+    if (!video) {
+      throw new Error('VIDEO_NOT_FOUND');
+    }
+
+    // Check video duration
+    const videoMeta = await fetchYouTubeVideoMetadata(video.youtube_video_id, runtimeEnv);
+    if (videoMeta.duration > MAX_VIDEO_DURATION_SECONDS) {
+      throw new Error('VIDEO_TOO_LONG');
+    }
+
+    // Check/create summary record
+    let summaryId: string;
+    const { data: existingSummary } = await supabase
+      .from('summaries')
+      .select('id, status')
+      .eq('video_id', video.id)
+      .maybeSingle();
+
+    if (existingSummary) {
+      if (existingSummary.status === 'completed') {
+        // Already completed, mark queue item as completed
+        await supabase
+          .from('summary_queue')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', queueItem.id);
+        return { success: true };
+      }
+      summaryId = existingSummary.id;
+    } else {
+      // Create new summary record
+      const { data: newSummary, error: createError } = await supabase
+        .from('summaries')
+        .insert({
+          video_id: video.id,
+          status: 'pending',
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        // Handle race condition
+        if (createError.code === '23505') {
+          const { data: retry } = await supabase
+            .from('summaries')
+            .select('id')
+            .eq('video_id', video.id)
+            .single();
+          summaryId = retry!.id;
+        } else {
+          throw createError;
+        }
+      } else {
+        summaryId = newSummary.id;
+      }
+    }
+
+    // Generate summary using existing processSummaryGeneration
+    await processSummaryGeneration(summaryId, video.youtube_video_id, runtimeEnv);
+
+    // Mark queue item as completed
+    await supabase
+      .from('summary_queue')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', queueItem.id);
+
+    appLogger.info('Queue item processed successfully', {
+      queueItemId: queueItem.id,
+      videoId: video.id,
+      summaryId,
+    });
+
+    return { success: true };
+
+  } catch (error: any) {
+    const errorMsg = error.message || String(error);
+    
+    // Check if should retry
+    const newRetryCount = queueItem.retry_count + 1;
+    if (newRetryCount < queueItem.max_retries) {
+      // Reset to pending for retry
+      await supabase
+        .from('summary_queue')
+        .update({
+          status: 'pending',
+          retry_count: newRetryCount,
+          error_message: errorMsg,
+          worker_id: null,
+          started_at: null,
+        })
+        .eq('id', queueItem.id);
+
+      appLogger.warn('Queue item failed, will retry', {
+        queueItemId: queueItem.id,
+        retryCount: newRetryCount,
+        error: errorMsg,
+      });
+    } else {
+      // Mark as failed
+      await supabase
+        .from('summary_queue')
+        .update({
+          status: 'failed',
+          error_message: errorMsg,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', queueItem.id);
+
+      appLogger.error('Queue item failed permanently', {
+        queueItemId: queueItem.id,
+        error: errorMsg,
+      });
+    }
+
+    return { success: false, error: errorMsg };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Process queue with parallel workers
+// ---------------------------------------------------------------------------
+async function processQueueWithWorkers(
+  supabase: SupabaseClient,
+  bulkGenerationId: string,
+  runtimeEnv?: RuntimeEnv
+): Promise<void> {
+  const workerId = `bulk-${bulkGenerationId}-${Date.now()}`;
+  let totalProcessed = 0;
+  let totalSuccessful = 0;
+  let totalFailed = 0;
+
+  appLogger.info('Starting queue processing', { bulkGenerationId, workerId });
+
+  // Update bulk generation status to in_progress
+  await supabase
+    .from('bulk_generation_status')
+    .update({ status: 'in_progress' })
+    .eq('id', bulkGenerationId);
+
+  try {
+    while (true) {
+      // Fetch batch of pending queue items
+      const { data: queueItems, error: fetchError } = await supabase
+        .from('summary_queue')
+        .select('id, video_id, retry_count, max_retries')
+        .eq('status', 'pending')
+        .order('priority', { ascending: false })
+        .order('queued_at', { ascending: true })
+        .limit(QUEUE_PROCESSING_CONCURRENCY);
+
+      if (fetchError) {
+        appLogger.error('Error fetching queue items', { error: fetchError.message });
+        break;
+      }
+
+      if (!queueItems || queueItems.length === 0) {
+        appLogger.info('No more pending queue items');
+        break;
+      }
+
+      // Process batch in parallel
+      const results = await Promise.allSettled(
+        queueItems.map(item => processQueueItem(supabase, item, workerId, runtimeEnv))
+      );
+
+      // Count results
+      for (const result of results) {
+        totalProcessed++;
+        if (result.status === 'fulfilled' && result.value.success) {
+          totalSuccessful++;
+        } else {
+          totalFailed++;
+        }
+      }
+
+      // Update bulk generation progress
+      await supabase
+        .from('bulk_generation_status')
+        .update({
+          processed_channels: totalProcessed,
+          successful_summaries: totalSuccessful,
+          failed_summaries: totalFailed,
+        })
+        .eq('id', bulkGenerationId);
+
+      appLogger.debug('Batch processed', {
+        bulkGenerationId,
+        totalProcessed,
+        totalSuccessful,
+        totalFailed,
+      });
+    }
+
+    // Mark as completed
+    await supabase
+      .from('bulk_generation_status')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        processed_channels: totalProcessed,
+        successful_summaries: totalSuccessful,
+        failed_summaries: totalFailed,
+      })
+      .eq('id', bulkGenerationId);
+
+    appLogger.info('Bulk generation completed', {
+      bulkGenerationId,
+      totalProcessed,
+      totalSuccessful,
+      totalFailed,
+    });
+
+  } catch (error: any) {
+    appLogger.error('Bulk generation failed', {
+      bulkGenerationId,
+      error: error.message,
+    });
+
+    await supabase
+      .from('bulk_generation_status')
+      .update({
+        status: 'failed',
+        error_message: error.message,
+        completed_at: new Date().toISOString(),
+        processed_channels: totalProcessed,
+        successful_summaries: totalSuccessful,
+        failed_summaries: totalFailed,
+      })
+      .eq('id', bulkGenerationId);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Masowa generacja podsumowań dla wszystkich kanałów (system cron job)
 // ---------------------------------------------------------------------------
 export async function startBulkSummaryGeneration(
   supabase: SupabaseClient,
@@ -727,8 +1176,10 @@ export async function startBulkSummaryGeneration(
 ): Promise<BulkGenerationResponse> {
   appLogger.info('Starting system bulk summary generation');
 
-  // Użyj service client dla systemowych operacji
-  // 1. Sprawdź czy już jakaś masowa generacja jest w trakcie (systemowa)
+  // 1. Cleanup stale generations first
+  await cleanupStaleGenerations(supabase);
+
+  // 2. Check if bulk generation is already in progress
   const { data: activeGeneration } = await supabase
     .from('bulk_generation_status')
     .select('id, status')
@@ -740,7 +1191,7 @@ export async function startBulkSummaryGeneration(
     throw new Error('BULK_GENERATION_IN_PROGRESS');
   }
 
-  // 2. Pobierz wszystkie kanały z bazy danych (systemowe)
+  // 3. Fetch all channels
   const { data: channels, error: channelsError } = await supabase
     .from('channels')
     .select('id, youtube_channel_id, name')
@@ -755,11 +1206,11 @@ export async function startBulkSummaryGeneration(
     throw new Error('NO_CHANNELS_FOUND');
   }
 
-  // 3. Utwórz rekord masowej generacji (systemowej)
+  // 4. Create bulk generation record
   const { data: bulkGeneration, error: insertError } = await supabase
     .from('bulk_generation_status')
     .insert({
-      user_id: null as any, // Dozwolone po migracji (DROP NOT NULL)
+      user_id: null, // System generation (no user)
       status: 'pending',
       total_channels: channels.length,
     })
@@ -771,235 +1222,64 @@ export async function startBulkSummaryGeneration(
     throw insertError;
   }
 
-  // 4. Uruchom asynchroniczną generację
-  const backgroundTask = processBulkSummaryGeneration(bulkGeneration.id, channels, runtimeEnv);
+  // 5. Queue videos for generation
+  const queueResult = await queueVideosForGeneration(supabase, channels, bulkGeneration.id);
+
+  appLogger.info('Videos queued for generation', {
+    bulkGenerationId: bulkGeneration.id,
+    queued: queueResult.queued,
+    skipped: queueResult.skipped,
+    errors: queueResult.errors.length,
+  });
+
+  // 6. If nothing to process, mark as completed
+  if (queueResult.queued === 0) {
+    await supabase
+      .from('bulk_generation_status')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        processed_channels: 0,
+        successful_summaries: 0,
+        failed_summaries: 0,
+      })
+      .eq('id', bulkGeneration.id);
+
+    return {
+      id: bulkGeneration.id,
+      status: 'completed',
+      message: `No new summaries to generate. ${queueResult.skipped} channels skipped (already have summaries).`,
+      estimated_completion_time: '0',
+    };
+  }
+
+  // 7. Start background queue processing
+  const backgroundTask = processQueueWithWorkers(supabase, bulkGeneration.id, runtimeEnv);
 
   if (waitUntil) {
-    // Cloudflare environment
     waitUntil(backgroundTask);
   } else {
-    // Node environment or fallback
     setImmediate(() => {
-      backgroundTask.catch(err => console.error('Background task failed', err));
+      backgroundTask.catch(err => {
+        appLogger.error('Background task failed', { error: err.message });
+      });
     });
   }
 
   appLogger.info('System bulk summary generation initiated', {
     bulkGenerationId: bulkGeneration.id,
-    totalChannels: channels.length
+    totalChannels: channels.length,
+    queuedVideos: queueResult.queued,
   });
 
   return {
     id: bulkGeneration.id,
     status: bulkGeneration.status,
-    message: `System bulk summary generation started for ${channels.length} channels`,
-    estimated_completion_time: Math.ceil(channels.length * 2).toString(), // rough estimate: 2 min per channel
+    message: `Bulk summary generation started. ${queueResult.queued} videos queued, ${queueResult.skipped} skipped.`,
+    estimated_completion_time: Math.ceil(queueResult.queued * 1.5).toString(), // ~1.5 min per video with parallel processing
   };
 }
 
-// ---------------------------------------------------------------------------
-// Przetwarzanie masowej generacji (background process)
-// ---------------------------------------------------------------------------
-async function processBulkSummaryGeneration(
-  bulkGenerationId: string,
-  channels: any[],
-  runtimeEnv?: RuntimeEnv
-): Promise<void> {
-  // Użyj service client dla wszystkich systemowych operacji
-  const { createSupabaseServiceClient } = await import('../db/supabase.client');
-  const service = createSupabaseServiceClient(undefined, runtimeEnv);
-
-  appLogger.info('Starting bulk generation processing', { bulkGenerationId });
-
-  try {
-    // 1. Zaktualizuj status na in_progress
-    await service
-      .from('bulk_generation_status')
-      .update({ status: 'in_progress' })
-      .eq('id', bulkGenerationId);
-
-    let processedChannels = 0;
-    let successfulSummaries = 0;
-    let failedSummaries = 0;
-
-    // 2. Przetwórz każdy kanał
-    for (const channel of channels) {
-      try {
-        appLogger.debug('Processing channel', {
-          bulkGenerationId,
-          channelId: channel.id,
-          channelName: channel.name
-        });
-
-        const result = await processChannelSummary(channel.id, runtimeEnv);
-
-        if (result.success) {
-          successfulSummaries++;
-          appLogger.info('Channel processed successfully', {
-            bulkGenerationId,
-            channelId: channel.id,
-            summaryId: result.summaryId
-          });
-        } else {
-          failedSummaries++;
-          appLogger.warn('Channel processing failed', {
-            bulkGenerationId,
-            channelId: channel.id,
-            error: result.error
-          });
-        }
-
-        processedChannels++;
-
-        // 3. Aktualizuj postęp
-        await service
-          .from('bulk_generation_status')
-          .update({
-            processed_channels: processedChannels,
-            successful_summaries: successfulSummaries,
-            failed_summaries: failedSummaries,
-          })
-          .eq('id', bulkGenerationId);
-
-      } catch (channelError: any) {
-        failedSummaries++;
-        processedChannels++;
-        appLogger.error('Channel processing error', {
-          bulkGenerationId,
-          channelId: channel.id,
-          error: channelError.message
-        });
-
-        // Aktualizuj statystyki nawet w przypadku błędu
-        await service
-          .from('bulk_generation_status')
-          .update({
-            processed_channels: processedChannels,
-            successful_summaries: successfulSummaries,
-            failed_summaries: failedSummaries,
-          })
-          .eq('id', bulkGenerationId);
-      }
-    }
-
-    // 4. Zakończ generację
-    await service
-      .from('bulk_generation_status')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', bulkGenerationId);
-
-    appLogger.info('Bulk generation completed', {
-      bulkGenerationId,
-      totalChannels: channels.length,
-      successfulSummaries,
-      failedSummaries
-    });
-
-  } catch (error: any) {
-    appLogger.error('Bulk generation failed', { bulkGenerationId, error: error.message });
-
-    await service
-      .from('bulk_generation_status')
-      .update({
-        status: 'failed',
-        error_message: error.message,
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', bulkGenerationId);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Przetwarzanie pojedynczego kanału (podobne do automatycznej generacji)
-// ---------------------------------------------------------------------------
-async function processChannelSummary(
-  channelId: string,
-  runtimeEnv?: RuntimeEnv
-): Promise<{ success: boolean; summaryId?: string; error?: string }> {
-  const { createSupabaseServiceClient } = await import('../db/supabase.client');
-  const service = createSupabaseServiceClient(undefined, runtimeEnv);
-
-  try {
-    // 1. Pobierz najnowszy film z kanału
-    const { data: latestVideo } = await service
-      .from('videos')
-      .select('id, youtube_video_id, channel_id')
-      .eq('channel_id', channelId)
-      .order('published_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!latestVideo) {
-      appLogger.debug('No videos found for channel', { channelId });
-      return { success: false, error: 'NO_VIDEOS_FOUND' };
-    }
-
-    // 2. Sprawdź czy już istnieje podsumowanie dla tego filmu dzisiaj
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const { data: existingSummary } = await service
-      .from('summaries')
-      .select('id, status')
-      .eq('video_id', latestVideo.id)
-      .gte('generated_at', today.toISOString())
-      .lt('generated_at', tomorrow.toISOString())
-      .maybeSingle();
-
-    if (existingSummary && existingSummary.status === 'completed') {
-      appLogger.debug('Summary already exists for today', { videoId: latestVideo.id });
-      return { success: false, error: 'SUMMARY_EXISTS_TODAY' };
-    }
-
-    // 3. Sprawdź limit dzienny (globalny dla kanału)
-    const { count: todaySummaries } = await service
-      .from('summaries')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'completed')
-      .gte('generated_at', today.toISOString())
-      .lt('generated_at', tomorrow.toISOString())
-      .eq('video_id', latestVideo.id); // summaries joined with videos by channel
-
-    // Note: This is simplified - should check all videos from the channel
-    // For now, assume 1 summary per channel per day limit
-    if (todaySummaries && todaySummaries >= 1) {
-      return { success: false, error: 'DAILY_LIMIT_REACHED' };
-    }
-
-    // 4. Pobierz metadane filmu żeby sprawdzić constraints
-    const videoMeta = await fetchYouTubeVideoMetadata(latestVideo.youtube_video_id, runtimeEnv);
-
-    if (videoMeta.duration > 2700) { // 45 minutes
-      return { success: false, error: 'VIDEO_TOO_LONG' };
-    }
-
-    // 5. Utwórz podsumowanie (bez użytkownika - systemowy)
-    const { data: summary, error } = await service
-      .from('summaries')
-      .insert({
-        video_id: latestVideo.id,
-        status: 'pending',
-      })
-      .select('id')
-      .single();
-
-    if (error) throw error;
-
-    // 6. Wygeneruj podsumowanie w tle
-    await processSummaryGeneration(summary.id, latestVideo.youtube_video_id, runtimeEnv);
-
-    return { success: true, summaryId: summary.id };
-
-  } catch (error: any) {
-    appLogger.error('Channel summary processing error', { channelId, error: error.message });
-    return { success: false, error: error.message };
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Sprawdź status masowej generacji

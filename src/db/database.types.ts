@@ -282,6 +282,109 @@ export type Database = {
           },
         ]
       }
+      summary_queue: {
+        Row: {
+          id: string
+          video_id: string
+          priority: number
+          status: Database["public"]["Enums"]["summary_status"]
+          queued_at: string
+          started_at: string | null
+          completed_at: string | null
+          retry_count: number
+          max_retries: number
+          error_message: string | null
+          worker_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          video_id: string
+          priority?: number
+          status?: Database["public"]["Enums"]["summary_status"]
+          queued_at?: string
+          started_at?: string | null
+          completed_at?: string | null
+          retry_count?: number
+          max_retries?: number
+          error_message?: string | null
+          worker_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          video_id?: string
+          priority?: number
+          status?: Database["public"]["Enums"]["summary_status"]
+          queued_at?: string
+          started_at?: string | null
+          completed_at?: string | null
+          retry_count?: number
+          max_retries?: number
+          error_message?: string | null
+          worker_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "summary_queue_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bulk_generation_status: {
+        Row: {
+          id: string
+          user_id: string | null
+          status: Database["public"]["Enums"]["bulk_generation_status_enum"]
+          started_at: string
+          completed_at: string | null
+          total_channels: number
+          processed_channels: number
+          successful_summaries: number
+          failed_summaries: number
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          status?: Database["public"]["Enums"]["bulk_generation_status_enum"]
+          started_at?: string
+          completed_at?: string | null
+          total_channels?: number
+          processed_channels?: number
+          successful_summaries?: number
+          failed_summaries?: number
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          status?: Database["public"]["Enums"]["bulk_generation_status_enum"]
+          started_at?: string
+          completed_at?: string | null
+          total_channels?: number
+          processed_channels?: number
+          successful_summaries?: number
+          failed_summaries?: number
+          error_message?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_generation_status_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       videos_with_summaries: {
@@ -324,56 +427,6 @@ export type Database = {
             columns: ["channel_id"]
             isOneToOne: false
             referencedRelation: "channels"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bulk_generation_status: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          error_message: string | null
-          failed_summaries: number
-          id: string
-          processed_channels: number
-          started_at: string
-          status: Database["public"]["Enums"]["bulk_generation_status_enum"]
-          successful_summaries: number
-          total_channels: number
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          failed_summaries?: number
-          id?: string
-          processed_channels?: number
-          started_at?: string
-          status?: Database["public"]["Enums"]["bulk_generation_status_enum"]
-          successful_summaries?: number
-          total_channels?: number
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          failed_summaries?: number
-          id?: string
-          processed_channels?: number
-          started_at?: string
-          status?: Database["public"]["Enums"]["bulk_generation_status_enum"]
-          successful_summaries?: number
-          total_channels?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bulk_generation_status_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

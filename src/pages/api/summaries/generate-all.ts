@@ -1,174 +1,174 @@
 import type { APIRoute } from 'astro';
 import type { BulkGenerationResponse, ApiError, ApiSuccess } from '../../../types';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
+import { securityLogger, errorLogger, performanceLogger, appLogger } from '../../../lib/logger';
 import { startBulkSummaryGeneration } from '../../../lib/summaries.service';
 import type { RuntimeEnv } from '../../../lib/env';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from 'astro:env/server';
 
+const ENDPOINT_PATH = '/api/summaries/generate-all';
+
 /**
  * POST /api/summaries/generate-all
  *
  * Starts system bulk summary generation for all channels in the database.
- * This process runs asynchronously and generates summaries for the latest videos
- * from all channels (system operation, not user-specific).
+ * This endpoint is called by a cron job (GitHub Actions) to generate daily summaries.
  *
- * Authentication: Not required (system endpoint)
+ * Process:
+ * 1. Cleans up stale generations (stuck > 1 hour)
+ * 2. Fetches all channels from the database
+ * 3. For each channel, gets the latest video
+ * 4. Checks if summary is needed (not generated today, video not too long)
+ * 5. Adds videos to the summary_queue table
+ * 6. Processes queue with parallel workers (3 concurrent)
+ *
+ * Authentication: x-cron-secret header (validated in middleware)
  * Request Body: Empty (no parameters needed)
  *
  * Response (202 Accepted):
  * {
- *   id: string,                    // Bulk generation ID
- *   status: "pending",            // Initial status
- *   message: string,              // Success message
- *   estimated_completion_time: string // Estimated time in minutes
+ *   data: {
+ *     id: string,                    // Bulk generation ID
+ *     status: "pending",             // Initial status
+ *     message: string,               // Success message with queue stats
+ *     estimated_completion_time: string // Estimated time in minutes
+ *   }
  * }
  *
  * Error Responses:
- * - 400 Bad Request: Invalid request
+ * - 400 Bad Request: Invalid request body
  * - 409 Conflict: Bulk generation already in progress
  * - 422 Unprocessable Entity: No channels found
- * - 500 Internal Server Error: Database error
+ * - 500 Internal Server Error: Database or processing error
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   const startTime = performance.now();
 
   try {
+    appLogger.info('Daily summary generation triggered', {
+      endpoint: ENDPOINT_PATH,
+      timestamp: new Date().toISOString(),
+    });
 
     // Validate request body (should be empty, but check if valid JSON)
-    try {
-      const body = await request.text();
-      if (body && body.trim()) {
-        // If body exists, it should be empty or valid JSON
+    const body = await request.text();
+    if (body && body.trim()) {
+      try {
         JSON.parse(body);
+      } catch {
+        const duration = performance.now() - startTime;
+        errorLogger.validationError(
+          new Error('Request body validation failed'),
+          undefined,
+          undefined,
+          { endpoint: ENDPOINT_PATH, method: 'POST' }
+        );
+
+        securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode: 400 });
+        performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, 400);
+
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: 'INVALID_REQUEST_BODY',
+              message: 'Request body must be empty or valid JSON',
+            },
+          } satisfies ApiError),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-    } catch (parseError) {
-      const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Request body validation failed'),
-        undefined,
-        undefined,
-        { endpoint: '/api/summaries/generate-all', method: 'POST' }
-      );
-
-      securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/summaries/generate-all',
-        statusCode: 400,
-      });
-      performanceLogger.apiResponseTime('POST', '/api/summaries/generate-all', duration, 400);
-
-      const errorResponse: ApiError = {
-        error: {
-          code: 'INVALID_REQUEST_BODY',
-          message: 'Request body must be empty or valid JSON',
-        },
-      };
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
     }
 
-    // Start bulk summary generation
+    // Get runtime environment and create admin client
     const runtimeEnv = locals.runtime?.env as RuntimeEnv;
 
-    // Create a Supabase client with the SERVICE ROLE key to bypass RLS.
-    // This is crucial because the Cron job has no user session.
-    const supabaseAdmin = createClient(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
+    // Create Supabase client with SERVICE ROLE key to bypass RLS
+    // Required because cron job has no user session
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
 
+    // Start bulk summary generation
     const result: BulkGenerationResponse = await startBulkSummaryGeneration(
       supabaseAdmin,
       runtimeEnv,
       locals.runtime?.ctx?.waitUntil
     );
 
-    // Log successful bulk generation initiation
-    securityLogger.auth('System bulk summary generation initiated successfully', {
+    // Log success
+    const duration = performance.now() - startTime;
+    securityLogger.auth('System bulk summary generation initiated', {
       bulk_generation_id: result.id,
+      status: result.status,
     });
+    securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode: 202 });
+    performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, 202);
 
-    // Format successful response
-    const successResponse: ApiSuccess<BulkGenerationResponse> = {
-      data: result,
+    appLogger.info('Daily summary generation started successfully', {
+      bulkGenerationId: result.id,
       message: result.message,
-    };
-
-    // Log API access and performance
-    const duration = performance.now() - startTime;
-    securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/summaries/generate-all',
-      statusCode: 202,
-    });
-    performanceLogger.apiResponseTime('POST', '/api/summaries/generate-all', duration, 202);
-
-    return new Response(JSON.stringify(successResponse), {
-      status: 202,
-      headers: {
-        'Content-Type': 'application/json',
-        // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
-      },
+      estimatedTime: result.estimated_completion_time,
     });
 
+    return new Response(
+      JSON.stringify({
+        data: result,
+        message: result.message,
+      } satisfies ApiSuccess<BulkGenerationResponse>),
+      {
+        status: 202,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY',
+          'X-XSS-Protection': '1; mode=block',
+        },
+      }
+    );
   } catch (error) {
-    // Handle specific error types
     const duration = performance.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Map error codes to HTTP status codes
     let statusCode = 500;
     let errorCode = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred';
 
-    if (error instanceof Error) {
-      if (error.message === 'BULK_GENERATION_IN_PROGRESS') {
-        statusCode = 409;
-        errorCode = 'BULK_GENERATION_IN_PROGRESS';
-        message = 'Bulk summary generation is already in progress';
-      } else if (error.message === 'NO_CHANNELS_FOUND') {
-        statusCode = 422;
-        errorCode = 'NO_CHANNELS_FOUND';
-        message = 'No channels found in database';
-      }
+    if (errorMessage === 'BULK_GENERATION_IN_PROGRESS') {
+      statusCode = 409;
+      errorCode = 'BULK_GENERATION_IN_PROGRESS';
+      message = 'Bulk summary generation is already in progress. Please wait for it to complete.';
+    } else if (errorMessage === 'NO_CHANNELS_FOUND') {
+      statusCode = 422;
+      errorCode = 'NO_CHANNELS_FOUND';
+      message = 'No channels found in database. Subscribe to channels first.';
     }
 
     // Log error
-    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/summaries/generate-all',
+    errorLogger.appError(error instanceof Error ? error : new Error(errorMessage), {
+      endpoint: ENDPOINT_PATH,
       method: 'POST',
     });
+    securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode });
+    performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, statusCode);
 
-    // Log API access and performance for error response
-    securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/summaries/generate-all',
+    appLogger.error('Daily summary generation failed', {
+      errorCode,
+      errorMessage,
       statusCode,
     });
-    performanceLogger.apiResponseTime('POST', '/api/summaries/generate-all', duration, statusCode);
 
-    const errorResponse: ApiError = {
-      error: {
-        code: errorCode,
-        message,
-        // @ts-ignore
-        details: error instanceof Error ? error.message : String(error), // Debug info
-      },
-    };
-
-    return new Response(JSON.stringify(errorResponse), {
-      status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: errorCode,
+          message,
+        },
+      } satisfies ApiError),
+      { status: statusCode, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 };
