@@ -745,36 +745,59 @@ function getUTCDayBoundaries(): { todayStart: string; tomorrowStart: string } {
 async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number> {
   const staleThreshold = new Date(Date.now() - STALE_GENERATION_TIMEOUT_MS).toISOString();
   
+  let staleGenerationsCount = 0;
+  let staleQueueItemsCount = 0;
+
   // Mark stale bulk generations as failed
-  const { data: staleGenerations } = await supabase
-    .from('bulk_generation_status')
-    .update({
-      status: 'failed',
-      error_message: 'Generation timed out (stale cleanup)',
-      completed_at: new Date().toISOString(),
-    })
-    .in('status', ['pending', 'in_progress'])
-    .lt('started_at', staleThreshold)
-    .select('id');
+  try {
+    const { data: staleGenerations, error: genError } = await supabase
+      .from('bulk_generation_status')
+      .update({
+        status: 'failed',
+        error_message: 'Generation timed out (stale cleanup)',
+        completed_at: new Date().toISOString(),
+      })
+      .in('status', ['pending', 'in_progress'])
+      .lt('started_at', staleThreshold)
+      .select('id');
 
-  // Mark stale queue items as failed
-  const { data: staleQueueItems } = await supabase
-    .from('summary_queue')
-    .update({
-      status: 'failed',
-      error_message: 'Queue item timed out (stale cleanup)',
-      completed_at: new Date().toISOString(),
-    })
-    .in('status', ['pending', 'in_progress'])
-    .lt('queued_at', staleThreshold)
-    .select('id');
+    if (genError) {
+      appLogger.warn('Failed to cleanup stale bulk generations', { error: genError.message, code: genError.code });
+    } else {
+      staleGenerationsCount = staleGenerations?.length || 0;
+    }
+  } catch (err: any) {
+    appLogger.warn('Exception cleaning up stale bulk generations', { error: err.message });
+  }
 
-  const cleanedCount = (staleGenerations?.length || 0) + (staleQueueItems?.length || 0);
+  // Mark stale queue items as failed (table may not have any items yet)
+  try {
+    const { data: staleQueueItems, error: queueError } = await supabase
+      .from('summary_queue')
+      .update({
+        status: 'failed',
+        error_message: 'Queue item timed out (stale cleanup)',
+        completed_at: new Date().toISOString(),
+      })
+      .in('status', ['pending', 'in_progress'])
+      .lt('queued_at', staleThreshold)
+      .select('id');
+
+    if (queueError) {
+      appLogger.warn('Failed to cleanup stale queue items', { error: queueError.message, code: queueError.code });
+    } else {
+      staleQueueItemsCount = staleQueueItems?.length || 0;
+    }
+  } catch (err: any) {
+    appLogger.warn('Exception cleaning up stale queue items', { error: err.message });
+  }
+
+  const cleanedCount = staleGenerationsCount + staleQueueItemsCount;
   
   if (cleanedCount > 0) {
     appLogger.info('Cleaned up stale generations', {
-      staleGenerations: staleGenerations?.length || 0,
-      staleQueueItems: staleQueueItems?.length || 0,
+      staleGenerations: staleGenerationsCount,
+      staleQueueItems: staleQueueItemsCount,
     });
   }
   
@@ -1176,15 +1199,32 @@ export async function startBulkSummaryGeneration(
 ): Promise<BulkGenerationResponse> {
   appLogger.info('Starting system bulk summary generation');
 
-  // 1. Cleanup stale generations first
-  await cleanupStaleGenerations(supabase);
+  // 1. Cleanup stale generations first (non-blocking)
+  try {
+    await cleanupStaleGenerations(supabase);
+    appLogger.debug('Stale cleanup completed');
+  } catch (cleanupErr: any) {
+    appLogger.warn('Stale cleanup failed (continuing anyway)', { error: cleanupErr.message });
+  }
 
   // 2. Check if bulk generation is already in progress
-  const { data: activeGeneration } = await supabase
+  appLogger.debug('Checking for active generation...');
+  const { data: activeGeneration, error: activeError } = await supabase
     .from('bulk_generation_status')
     .select('id, status')
     .in('status', ['pending', 'in_progress'])
     .maybeSingle();
+
+  if (activeError) {
+    appLogger.error('Failed to check active generation', { 
+      error: activeError.message, 
+      code: activeError.code,
+      details: activeError.details,
+      hint: activeError.hint 
+    });
+    errorLogger.dbError(activeError, 'check_active_generation');
+    throw activeError;
+  }
 
   if (activeGeneration) {
     appLogger.warn('Bulk generation already in progress', { activeGenerationId: activeGeneration.id });
@@ -1192,12 +1232,18 @@ export async function startBulkSummaryGeneration(
   }
 
   // 3. Fetch all channels
+  appLogger.debug('Fetching all channels...');
   const { data: channels, error: channelsError } = await supabase
     .from('channels')
     .select('id, youtube_channel_id, name')
     .order('created_at', { ascending: false });
 
   if (channelsError) {
+    appLogger.error('Failed to fetch channels', { 
+      error: channelsError.message, 
+      code: channelsError.code,
+      details: channelsError.details 
+    });
     errorLogger.dbError(channelsError, 'fetch_all_channels');
     throw channelsError;
   }
@@ -1206,7 +1252,10 @@ export async function startBulkSummaryGeneration(
     throw new Error('NO_CHANNELS_FOUND');
   }
 
+  appLogger.info('Found channels', { count: channels.length });
+
   // 4. Create bulk generation record
+  appLogger.debug('Creating bulk generation record...');
   const { data: bulkGeneration, error: insertError } = await supabase
     .from('bulk_generation_status')
     .insert({
@@ -1218,6 +1267,12 @@ export async function startBulkSummaryGeneration(
     .single();
 
   if (insertError) {
+    appLogger.error('Failed to create bulk generation', { 
+      error: insertError.message, 
+      code: insertError.code,
+      details: insertError.details,
+      hint: insertError.hint 
+    });
     errorLogger.dbError(insertError, 'create_bulk_generation');
     throw insertError;
   }
