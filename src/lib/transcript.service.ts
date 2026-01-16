@@ -116,14 +116,14 @@ async function fetchWithYouTubeApiCaptions(videoId: string, runtimeEnv?: Runtime
   return segments;
 }
 
-async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment[]> {
+async function fetchWithGradioClient(videoId: string, runtimeEnv?: RuntimeEnv): Promise<TranscriptSegment[]> {
   appLogger.debug('Starting Gradio client transcript fetch', { videoId });
 
   try {
     const url = `https://www.youtube.com/watch?v=${videoId}`;
     appLogger.debug('Connecting to HuggingFace Space for transcription');
 
-    const gradioModel = getEnv('GRADIO_TRANSCRIPT_MODEL');
+    const gradioModel = getEnv('GRADIO_TRANSCRIPT_MODEL', runtimeEnv);
     if (!gradioModel) throw new Error('GRADIO_TRANSCRIPT_MODEL not configured');
     const client = await Client.connect(gradioModel);
     appLogger.debug('Connected to Gradio client, starting transcription', { url });
@@ -246,6 +246,13 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
  */
 export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv): Promise<TranscriptSegment[]> {
   appLogger.info(`Starting transcript fetch for video ${videoId}`);
+
+  // Check if we're running in Cloudflare Workers (nodejs_compat environment)
+  const isCloudflare = typeof globalThis !== 'undefined' && 'CF_PAGES' in globalThis;
+  if (isCloudflare) {
+    appLogger.debug('Running in Cloudflare Workers environment - some transcript libraries may have compatibility issues');
+  }
+
   // Minimal ścieżka: YoutubeTranscript z preferencją PL -> EN, z auto-captions.
   const preferredLangs = ['pl', 'en'];
   for (const lang of preferredLangs) {
@@ -264,7 +271,18 @@ export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv):
         return segments;
       }
     } catch (err) {
-      appLogger.debug(`YoutubeTranscript failed for ${videoId} (${lang}): ${err instanceof Error ? err.message : String(err)}`);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      appLogger.debug(`YoutubeTranscript failed for ${videoId} (${lang}): ${errorMsg}`);
+
+      // Log additional context for Cloudflare compatibility issues
+      if (isCloudflare && (errorMsg.includes('fetch') || errorMsg.includes('network'))) {
+        appLogger.debug('Possible Cloudflare compatibility issue with YoutubeTranscript library', {
+          videoId,
+          lang,
+          error: errorMsg,
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+        });
+      }
     }
   }
   appLogger.warn(`YoutubeTranscript failed for all languages (${videoId}), trying fallbacks...`);
@@ -275,7 +293,16 @@ export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv):
     appLogger.info(`YouTube Data API captions successful for video ${videoId}`);
     return ytApiCaptions;
   } catch (ytApiErr) {
-    appLogger.warn(`YouTube Data API captions failed for video ${videoId}: ${ytApiErr instanceof Error ? ytApiErr.message : String(ytApiErr)}`);
+    const errorMsg = ytApiErr instanceof Error ? ytApiErr.message : String(ytApiErr);
+    appLogger.warn(`YouTube Data API captions failed for video ${videoId}: ${errorMsg}`);
+
+    // YouTube API might be blocked or rate limited in cloud environments
+    if (isCloudflare && (errorMsg.includes('403') || errorMsg.includes('quota') || errorMsg.includes('auth'))) {
+      appLogger.debug('YouTube API access issue in Cloudflare environment - this is expected due to IP restrictions', {
+        videoId,
+        error: errorMsg
+      });
+    }
   }
 
   try {
@@ -286,17 +313,44 @@ export async function fetchTranscript(videoId: string, runtimeEnv?: RuntimeEnv):
   } catch (fallbackError) {
     const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
     appLogger.warn(`youtube-transcript-api failed for video ${videoId}: ${fallbackMsg}`);
+
+    // This library may have issues in Cloudflare due to Node.js API differences
+    if (isCloudflare && (fallbackMsg.includes('import') || fallbackMsg.includes('module') || fallbackMsg.includes('axios'))) {
+      appLogger.debug('youtube-transcript-api library compatibility issue in Cloudflare - Node.js API differences', {
+        videoId,
+        error: fallbackMsg
+      });
+    }
   }
 
   try {
     appLogger.info(`Attempting Gradio Client fallback for video ${videoId}`);
-    const gradioResult = await fetchWithGradioClient(videoId);
+    const gradioResult = await fetchWithGradioClient(videoId, runtimeEnv);
     appLogger.info(`Gradio Client fallback successful for video ${videoId}: ${gradioResult.length} segments`);
     return gradioResult;
   } catch (gradioError) {
     const gradioMsg = gradioError instanceof Error ? gradioError.message : String(gradioError);
     appLogger.warn(`Gradio Client fallback failed for video ${videoId}: ${gradioMsg}`);
+
+    // Gradio API might be rate limited or unavailable in cloud environments
+    if (isCloudflare && (gradioMsg.includes('fetch') || gradioMsg.includes('network') || gradioMsg.includes('connect'))) {
+      appLogger.debug('Gradio Client network issue in Cloudflare environment - API may be rate limited or blocked', {
+        videoId,
+        error: gradioMsg
+      });
+    }
   }
+
+  // Final summary when all methods fail
+  appLogger.error('All transcript fetching methods failed', {
+    videoId,
+    environment: isCloudflare ? 'cloudflare' : 'local',
+    methodsAttempted: ['YoutubeTranscript', 'YouTubeDataAPI', 'youtube-transcript-api', 'GradioClient'],
+    commonIssues: isCloudflare ?
+      ['IP blocking by YouTube', 'Cloudflare Node.js API limitations', 'Rate limiting'] :
+      ['Video has no captions', 'Network issues', 'Library bugs']
+  });
+
   throw new Error('TRANSCRIPT_NOT_AVAILABLE');
 
 }

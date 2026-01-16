@@ -438,14 +438,26 @@ Return JSON with the following structure:
     appLogger.info('Summary successfully saved to database', { summaryId });
 
   } catch (err: any) {
-    errorLogger.appError(err, {
-      component: 'processSummaryGeneration',
-      operation: 'summary_generation',
-      summaryId,
-      youtubeVideoId
-    });
-    
     const msg = err.message || String(err);
+
+    // Don't log transcript errors as application errors - they're expected business cases
+    const isTranscriptError = msg.includes('transcript') || msg.includes('subtitle') || msg.includes('TRANSCRIPT') ||
+                             msg === 'NO_SUBTITLES' || msg === 'TRANSCRIPT_NOT_AVAILABLE' || msg === 'TRANSCRIPT_EMPTY';
+
+    if (!isTranscriptError) {
+      errorLogger.appError(err, {
+        component: 'processSummaryGeneration',
+        operation: 'summary_generation',
+        summaryId,
+        youtubeVideoId
+      });
+    } else {
+      appLogger.warn('Summary generation failed due to transcript issues', {
+        summaryId,
+        youtubeVideoId,
+        error: msg
+      });
+    }
     let code: 'NO_SUBTITLES' | 'VIDEO_PRIVATE' | 'VIDEO_TOO_LONG' | null = null;
     if (msg.includes('transcript') || msg.includes('subtitle') || msg.includes('TRANSCRIPT')) code = 'NO_SUBTITLES';
     else if (msg.includes('private = true') || msg.includes('unavailable')) code = 'VIDEO_PRIVATE';
