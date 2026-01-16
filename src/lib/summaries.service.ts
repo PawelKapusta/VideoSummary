@@ -995,6 +995,8 @@ async function processQueueItem(
   workerId: string,
   runtimeEnv?: RuntimeEnv
 ): Promise<{ success: boolean; error?: string }> {
+  let summaryId: string | null = null; // Track summaryId for error handling
+  
   try {
     // Mark as in_progress
     await supabase
@@ -1024,7 +1026,6 @@ async function processQueueItem(
     }
 
     // Check/create summary record
-    let summaryId: string;
     const { data: existingSummary } = await supabase
       .from('summaries')
       .select('id, status')
@@ -1063,13 +1064,19 @@ async function processQueueItem(
             .select('id')
             .eq('video_id', video.id)
             .single();
-          summaryId = retry!.id;
+          if (retry) {
+            summaryId = retry.id;
+          }
         } else {
           throw createError;
         }
-      } else {
+      } else if (newSummary) {
         summaryId = newSummary.id;
       }
+    }
+    
+    if (!summaryId) {
+      throw new Error('SUMMARY_CREATION_FAILED');
     }
 
     // Generate summary using existing processSummaryGeneration
@@ -1095,6 +1102,16 @@ async function processQueueItem(
   } catch (error: any) {
     const errorMsg = error.message || String(error);
     
+    // Determine error code for summary
+    let errorCode: 'NO_SUBTITLES' | 'VIDEO_PRIVATE' | 'VIDEO_TOO_LONG' | null = null;
+    if (errorMsg.includes('transcript') || errorMsg.includes('subtitle') || errorMsg.includes('TRANSCRIPT')) {
+      errorCode = 'NO_SUBTITLES';
+    } else if (errorMsg.includes('private') || errorMsg.includes('unavailable')) {
+      errorCode = 'VIDEO_PRIVATE';
+    } else if (errorMsg.includes('TOO_LONG')) {
+      errorCode = 'VIDEO_TOO_LONG';
+    }
+    
     // Check if should retry
     const newRetryCount = queueItem.retry_count + 1;
     if (newRetryCount < queueItem.max_retries) {
@@ -1110,13 +1127,9 @@ async function processQueueItem(
         })
         .eq('id', queueItem.id);
 
-      appLogger.warn('Queue item failed, will retry', {
-        queueItemId: queueItem.id,
-        retryCount: newRetryCount,
-        error: errorMsg,
-      });
+      appLogger.warn(`Queue item failed, will retry (attempt ${newRetryCount}/${queueItem.max_retries}): ${errorMsg}`);
     } else {
-      // Mark as failed
+      // Mark queue item as failed
       await supabase
         .from('summary_queue')
         .update({
@@ -1126,10 +1139,20 @@ async function processQueueItem(
         })
         .eq('id', queueItem.id);
 
-      appLogger.error('Queue item failed permanently', {
-        queueItemId: queueItem.id,
-        error: errorMsg,
-      });
+      // Also mark the summary as failed if we have a summaryId
+      if (summaryId) {
+        await supabase
+          .from('summaries')
+          .update({
+            status: 'failed',
+            error_code: errorCode,
+          })
+          .eq('id', summaryId);
+        
+        appLogger.error(`Summary ${summaryId} failed permanently: ${errorMsg}`);
+      } else {
+        appLogger.error(`Queue item failed permanently (no summaryId): ${errorMsg}`);
+      }
     }
 
     return { success: false, error: errorMsg };

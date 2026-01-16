@@ -21,7 +21,7 @@ interface AddChannelFormProps {
 }
 
 const urlSchema = z.string().url().regex(
-  /^https:\/\/(www\.)?youtube\.com\/(channel\/|@)[\w-]+$/,
+  /^https?:\/\/(www\.)?youtube\.com\/(channel\/|user\/|@|c\/)[^/?#]+$/,
   "Invalid YouTube channel URL. Use format: youtube.com/channel/UC... or youtube.com/@channelname"
 );
 

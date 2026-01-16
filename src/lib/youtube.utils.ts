@@ -9,8 +9,10 @@
  */
 export function extractYouTubeChannelId(url: string): string {
   try {
+    // Decode URL to handle encoded characters like %C4%99 (ę)
+    const decodedUrl = decodeURIComponent(url);
     // Remove protocol and www if present
-    const cleanUrl = url.replace(/^https?:\/\//, '').replace(/^www\./, '');
+    const cleanUrl = decodedUrl.replace(/^https?:\/\//, '').replace(/^www\./, '');
 
     // Handle different YouTube URL formats
     if (cleanUrl.startsWith('youtube.com/channel/')) {
@@ -21,7 +23,8 @@ export function extractYouTubeChannelId(url: string): string {
 
     if (cleanUrl.startsWith('youtube.com/@')) {
       // youtube.com/@channelname - return the handle with @
-      const match = cleanUrl.match(/youtube\.com\/(@[\w-]+)/);
+      // Extract everything after @ until end of path or query/fragment
+      const match = cleanUrl.match(/youtube\.com\/(@[^/?#]+)/);
       if (match) return match[1];
     }
 
