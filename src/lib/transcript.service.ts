@@ -169,7 +169,8 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     const isGarbage = garbagePatterns.some(pattern => pattern.test(normalizedText));
 
     if (isGarbage) {
-      console.error('[gradio-client] Known garbage transcription pattern detected', {
+      appLogger.warn('Gradio Client: Known garbage transcription pattern detected', {
+        videoId,
         pattern: 'repetitive nonsense',
         preview: fullText.substring(0, 100)
       });
@@ -181,7 +182,8 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     if (words.length > 5) {
       const shortWords = words.filter(word => word.length <= 4);
       if (shortWords.length / words.length > 0.8) { // >80% short words
-        console.error('[gradio-client] Excessive short word repetition detected', {
+        appLogger.warn('Gradio Client: Excessive short word repetition detected', {
+          videoId,
           shortWordRatio: shortWords.length / words.length,
           preview: fullText.substring(0, 100)
         });
@@ -190,7 +192,7 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     }
 
     if (!fullText || fullText.trim().length === 0) {
-      console.error('[gradio-client] Empty transcription');
+      appLogger.warn('Gradio Client: Empty transcription received', { videoId });
       throw new Error('TRANSCRIPT_NOT_AVAILABLE');
     }
 
@@ -219,12 +221,13 @@ async function fetchWithGradioClient(videoId: string): Promise<TranscriptSegment
     return segments;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      service: 'transcript_service',
-      operation: 'gradio_client_fetch_transcript',
-      video_id: videoId,
-      error_message: errorMessage,
-      error_stack: error instanceof Error ? error.stack : undefined,
+
+    // Log error details for debugging (will be logged at WARN level in caller)
+    appLogger.debug('Gradio Client fetch failed', {
+      videoId,
+      error: errorMessage,
+      errorType: error?.constructor?.name,
+      stack: error instanceof Error ? error.stack?.split('\n')[0] : undefined
     });
 
     if (errorMessage === 'TRANSCRIPT_NOT_AVAILABLE') {
@@ -346,15 +349,8 @@ async function fetchWithYoutubeTranscript(videoId: string): Promise<TranscriptSe
     appLogger.debug('YoutubeTranscript fetch failed', {
       videoId,
       error: errorMessage,
-      errorConstructor: error?.constructor?.name
-    });
-
-    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      service: 'transcript_service',
-      operation: 'fetch_transcript',
-      video_id: videoId,
-      error_message: errorMessage,
-      error_stack: error instanceof Error ? error.stack : undefined,
+      errorConstructor: error?.constructor?.name,
+      stack: error instanceof Error ? error.stack?.split('\n')[0] : undefined
     });
 
     // Handle specific youtube-transcript errors
@@ -534,15 +530,7 @@ async function fetchWithYoutubeTranscriptApi(videoId: string): Promise<Transcrip
       errorMessage,
       status,
       name: (error as { name?: string })?.name,
-    });
-
-    errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      service: 'transcript_service',
-      operation: 'fallback_fetch_transcript',
-      video_id: videoId,
-      error_message: errorMessage,
-      error_stack: error instanceof Error ? error.stack : undefined,
-      status,
+      stack: error instanceof Error ? error.stack?.split('\n')[0] : undefined
     });
 
     if (
