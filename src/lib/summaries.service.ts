@@ -74,7 +74,8 @@ export async function generateSummary(
   supabase: SupabaseClient,
   userId: string,
   videoUrl: string,
-  runtimeEnv?: RuntimeEnv
+  runtimeEnv?: RuntimeEnv,
+  waitUntil?: (promise: Promise<unknown>) => void
 ): Promise<SummaryBasic & { message: string }> {
   appLogger.debug('Starting generateSummary', { userId, videoUrl });
 
@@ -198,19 +199,51 @@ export async function generateSummary(
   if (!summary?.id) throw new Error('SUMMARY_CREATION_FAILED');
 
   // -------------------------------------------------
-  // 5. Generacja (z timeoutem 90 s)
+  // 5. Generacja – w tle (waitUntil) lub synchronicznie
   // -------------------------------------------------
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000);
+  const backgroundTask = async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90_000);
 
+    try {
+      await processSummaryGeneration(summary.id, youtubeVideoId, runtimeEnv);
+    } catch (err: any) {
+      clearTimeout(timeout);
+      appLogger.error('Background summary generation failed', {
+        summaryId: summary.id,
+        error: err.message,
+      });
+      // Update status to failed in case of error
+      const { createSupabaseServiceClient } = await import('../db/supabase.client');
+      const service = createSupabaseServiceClient(undefined, runtimeEnv);
+      await service
+        .from('summaries')
+        .update({ status: 'failed' })
+        .eq('id', summary.id);
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
+  // If waitUntil is provided (Cloudflare Workers), run in background and return immediately
+  if (waitUntil) {
+    appLogger.info('Starting background summary generation', { summaryId: summary.id });
+    waitUntil(backgroundTask());
+    
+    return {
+      id: summary.id,
+      status: 'pending' as SummaryStatus,
+      generated_at: null,
+      message: 'Summary generation started. You can navigate away - it will complete in the background.',
+    };
+  }
+
+  // Synchronous fallback (local dev without waitUntil)
   try {
-    await processSummaryGeneration(summary.id, youtubeVideoId, runtimeEnv);
+    await backgroundTask();
   } catch (err: any) {
-    clearTimeout(timeout);
     if (err.name === 'AbortError') throw new Error('GENERATION_TIMEOUT');
     throw err;
-  } finally {
-    clearTimeout(timeout);
   }
 
   const { data: final } = await supabase
