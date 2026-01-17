@@ -1370,8 +1370,7 @@ async function processQueueWithWorkers(
 // ---------------------------------------------------------------------------
 export async function startBulkSummaryGeneration(
   supabase: SupabaseClient,
-  runtimeEnv?: RuntimeEnv,
-  waitUntil?: (promise: Promise<any>) => void
+  runtimeEnv?: RuntimeEnv
 ): Promise<BulkGenerationResponse> {
   appLogger.info('Starting system bulk summary generation');
 
@@ -1465,20 +1464,16 @@ export async function startBulkSummaryGeneration(
     };
   }
 
-  // 7. Start background queue processing
-  const backgroundTask = processQueueWithWorkers(supabase, bulkGeneration.id, runtimeEnv);
+  // 7. Queue processing is handled by GitHub Actions workflow calling /api/summaries/process-next
+  // Don't start background processing here - it causes "stuck" items due to waitUntil limits
+  
+  // Mark bulk generation as in_progress (workflow will update to completed when done)
+  await supabase
+    .from('bulk_generation_status')
+    .update({ status: 'in_progress' })
+    .eq('id', bulkGeneration.id);
 
-  if (waitUntil) {
-    waitUntil(backgroundTask);
-  } else {
-    setImmediate(() => {
-      backgroundTask.catch(err => {
-        appLogger.error('Background task failed', { error: err.message });
-      });
-    });
-  }
-
-  appLogger.info('System bulk summary generation initiated', {
+  appLogger.info('System bulk summary generation - videos queued', {
     bulkGenerationId: bulkGeneration.id,
     totalChannels: channels.length,
     queuedVideos: queueResult.queued,
@@ -1486,9 +1481,9 @@ export async function startBulkSummaryGeneration(
 
   return {
     id: bulkGeneration.id,
-    status: bulkGeneration.status,
-    message: `Bulk summary generation started. ${queueResult.queued} videos queued, ${queueResult.skipped} skipped.`,
-    estimated_completion_time: Math.ceil(queueResult.queued * 1.5).toString(), // ~1.5 min per video with parallel processing
+    status: 'in_progress' as const,
+    message: `${queueResult.queued} videos queued for processing. ${queueResult.skipped} skipped. Processing via cron.`,
+    estimated_completion_time: Math.ceil(queueResult.queued * 1.5).toString(),
   };
 }
 

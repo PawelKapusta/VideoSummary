@@ -91,11 +91,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
     });
 
-    // Start bulk summary generation
+    // Start bulk summary generation (queues videos, processing done by cron)
     const result: BulkGenerationResponse = await startBulkSummaryGeneration(
       supabaseAdmin,
-      runtimeEnv,
-      locals.runtime?.ctx?.waitUntil
+      runtimeEnv
     );
 
     // Log success
