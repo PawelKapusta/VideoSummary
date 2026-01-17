@@ -154,15 +154,8 @@ export async function generateSummary(data: GenerateSummaryRequest): Promise<Api
   
   const result = await response.json();
   
-  // Trigger queue processing immediately (don't wait for cron)
-  // This runs the actual summary generation - can take 5-10 min for Gradio
-  // Fire and forget - we don't need to wait for it here
-  fetch('/api/summaries/process-next', {
-    method: 'POST',
-    headers,
-  }).catch(() => {
-    // Ignore errors - cron will pick it up as backup
-  });
+  // Queue processing is handled by GitHub Actions cron (every 10 min)
+  // Don't trigger from frontend - it causes "stuck" items when browser closes
   
   return result;
 }

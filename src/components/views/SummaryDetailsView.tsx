@@ -203,7 +203,7 @@ const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
           <Loader2 className="h-4 w-4 animate-spin" />
           <div className="text-sm">
             <span className="font-medium">Generating summary...</span>
-            <span className="text-blue-600"> • ~2-4 minutes remaining</span>
+            <span className="text-blue-600"> • ~5-10 minutes remaining</span>
           </div>
         </div>
       );
