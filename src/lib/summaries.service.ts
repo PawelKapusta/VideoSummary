@@ -201,9 +201,12 @@ export async function generateSummary(
   // -------------------------------------------------
   // 5. Generacja – w tle (waitUntil) lub synchronicznie
   // -------------------------------------------------
+  // 10 minute timeout - Gradio AI transcription can take 5-10 mins for longer videos
+  const GENERATION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+  
   const backgroundTask = async () => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90_000);
+    const timeout = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
 
     try {
       await processSummaryGeneration(summary.id, youtubeVideoId, runtimeEnv);
@@ -227,14 +230,14 @@ export async function generateSummary(
 
   // If waitUntil is provided (Cloudflare Workers), run in background and return immediately
   if (waitUntil) {
-    appLogger.info('Starting background summary generation', { summaryId: summary.id });
+    appLogger.info('Starting background summary generation (timeout: 10 min)', { summaryId: summary.id });
     waitUntil(backgroundTask());
     
     return {
       id: summary.id,
       status: 'pending' as SummaryStatus,
       generated_at: null,
-      message: 'Summary generation started. You can navigate away - it will complete in the background.',
+      message: 'Summary generation started. This may take 5-10 minutes. You can navigate away - it will complete in the background.',
     };
   }
 
