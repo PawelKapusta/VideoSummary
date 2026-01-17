@@ -136,16 +136,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { video_url }: { video_url: string } = validationResult.data;
 
-    // Generate summary (with background processing via waitUntil in Cloudflare)
+    // Generate summary (queued for async processing - bypasses 30s waitUntil limit)
     const runtimeEnv = locals.runtime?.env as RuntimeEnv;
-    const waitUntil = locals.runtime?.ctx?.waitUntil?.bind(locals.runtime.ctx) as ((promise: Promise<unknown>) => void) | undefined;
     
     const summaryData: SummaryBasic & { message: string } = await generateSummary(
       supabase,
       userId,
       video_url,
-      runtimeEnv,
-      waitUntil
+      runtimeEnv
     );
 
     // Log successful summary generation initiation

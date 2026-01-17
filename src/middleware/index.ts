@@ -86,13 +86,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  // Check for Cron Secret bypass
+  // Check for Cron Secret bypass (for cron job endpoints)
   const cronSecretHeader = request.headers.get('x-cron-secret');
+  const cronProtectedPaths = [
+    '/api/summaries/generate-all',
+    '/api/summaries/process-next',
+  ];
   if (
     cronSecretHeader && 
     CRON_SECRET && 
     cronSecretHeader === CRON_SECRET && 
-    pathname === '/api/summaries/generate-all'
+    cronProtectedPaths.includes(pathname)
   ) {
     return next();
   }

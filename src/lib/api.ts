@@ -151,7 +151,20 @@ export async function generateSummary(data: GenerateSummaryRequest): Promise<Api
     const errorData: ApiError = await response.json();
     throw errorData;
   }
-  return response.json();
+  
+  const result = await response.json();
+  
+  // Trigger queue processing immediately (don't wait for cron)
+  // This runs the actual summary generation - can take 5-10 min for Gradio
+  // Fire and forget - we don't need to wait for it here
+  fetch('/api/summaries/process-next', {
+    method: 'POST',
+    headers,
+  }).catch(() => {
+    // Ignore errors - cron will pick it up as backup
+  });
+  
+  return result;
 }
 
 export async function fetchVideoMeta(videoUrl: string): Promise<VideoMetaResponse> {

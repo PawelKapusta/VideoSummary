@@ -68,14 +68,13 @@ function formatDurationInPolish(seconds: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Główna funkcja – generowanie podsumowania
+// Główna funkcja – generowanie podsumowania (queue-based)
 // ---------------------------------------------------------------------------
 export async function generateSummary(
   supabase: SupabaseClient,
   userId: string,
   videoUrl: string,
-  runtimeEnv?: RuntimeEnv,
-  waitUntil?: (promise: Promise<unknown>) => void
+  runtimeEnv?: RuntimeEnv
 ): Promise<SummaryBasic & { message: string }> {
   appLogger.debug('Starting generateSummary', { userId, videoUrl });
 
@@ -199,70 +198,39 @@ export async function generateSummary(
   if (!summary?.id) throw new Error('SUMMARY_CREATION_FAILED');
 
   // -------------------------------------------------
-  // 5. Generacja – w tle (waitUntil) lub synchronicznie
+  // 5. Add to queue for async processing (bypasses 30s waitUntil limit)
   // -------------------------------------------------
-  // 10 minute timeout - Gradio AI transcription can take 5-10 mins for longer videos
-  const GENERATION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-  
-  const backgroundTask = async () => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
+  // Queue-based processing allows Gradio (5-10 min) to complete without timeout
+  const { error: queueError } = await supabase
+    .from('summary_queue')
+    .insert({
+      video_id: videoId,
+      priority: 10, // High priority for individual user requests
+      status: 'pending',
+      max_retries: 3,
+    });
 
-    try {
-      await processSummaryGeneration(summary.id, youtubeVideoId, runtimeEnv);
-    } catch (err: any) {
-      clearTimeout(timeout);
-      appLogger.error('Background summary generation failed', {
-        summaryId: summary.id,
-        error: err.message,
-      });
-      // Update status to failed in case of error
-      const { createSupabaseServiceClient } = await import('../db/supabase.client');
-      const service = createSupabaseServiceClient(undefined, runtimeEnv);
-      await service
-        .from('summaries')
-        .update({ status: 'failed' })
-        .eq('id', summary.id);
-    } finally {
-      clearTimeout(timeout);
-    }
-  };
-
-  // If waitUntil is provided (Cloudflare Workers), run in background and return immediately
-  if (waitUntil) {
-    appLogger.info('Starting background summary generation (timeout: 10 min)', { summaryId: summary.id });
-    waitUntil(backgroundTask());
-    
-    return {
-      id: summary.id,
-      status: 'pending' as SummaryStatus,
-      generated_at: null,
-      message: 'Summary generation started. This may take 5-10 minutes. You can navigate away - it will complete in the background.',
-    };
+  if (queueError) {
+    // If queue insert fails (e.g., duplicate), log but continue
+    // The summary was already created with pending status
+    appLogger.warn('Failed to add to summary_queue (may already exist)', {
+      summaryId: summary.id,
+      videoId,
+      error: queueError.message,
+    });
+  } else {
+    appLogger.info('Summary added to processing queue', {
+      summaryId: summary.id,
+      videoId,
+      priority: 10,
+    });
   }
-
-  // Synchronous fallback (local dev without waitUntil)
-  try {
-    await backgroundTask();
-  } catch (err: any) {
-    if (err.name === 'AbortError') throw new Error('GENERATION_TIMEOUT');
-    throw err;
-  }
-
-  const { data: final } = await supabase
-    .from('summaries')
-    .select('status, generated_at')
-    .eq('id', summary.id)
-    .single();
 
   return {
     id: summary.id,
-    status: final?.status || 'completed',
-    generated_at: final?.generated_at || new Date().toISOString(),
-    message:
-      final?.status === 'completed'
-        ? 'Summary generated successfully'
-        : 'Summary generation failed – try again later',
+    status: 'pending' as SummaryStatus,
+    generated_at: null,
+    message: 'Summary queued for generation. This may take 5-10 minutes. Refresh the page to check status.',
   };
 }
 
@@ -1205,6 +1173,82 @@ async function processQueueItem(
 
     return { success: false, error: errorMsg };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Process next pending queue item (for cron - no 30s limit)
+// ---------------------------------------------------------------------------
+export interface ProcessNextQueueResult {
+  processed: boolean;
+  queueItemId?: string;
+  videoId?: string;
+  summaryId?: string;
+  success?: boolean;
+  error?: string;
+  message: string;
+}
+
+export async function processNextQueueItem(
+  supabase: SupabaseClient,
+  runtimeEnv?: RuntimeEnv
+): Promise<ProcessNextQueueResult> {
+  const workerId = `single-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  
+  appLogger.info('Processing next queue item', { workerId });
+
+  // Fetch the next pending queue item (highest priority first, oldest first)
+  const { data: queueItem, error: fetchError } = await supabase
+    .from('summary_queue')
+    .select('id, video_id, retry_count, max_retries')
+    .eq('status', 'pending')
+    .order('priority', { ascending: false })
+    .order('queued_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (fetchError) {
+    appLogger.error('Error fetching queue item', { error: fetchError.message });
+    return {
+      processed: false,
+      message: `Error fetching queue: ${fetchError.message}`,
+    };
+  }
+
+  if (!queueItem) {
+    appLogger.info('No pending queue items to process');
+    return {
+      processed: false,
+      message: 'No pending queue items',
+    };
+  }
+
+  appLogger.info('Found queue item to process', {
+    queueItemId: queueItem.id,
+    videoId: queueItem.video_id,
+    retryCount: queueItem.retry_count,
+  });
+
+  // Get summary ID for this video
+  const { data: summary } = await supabase
+    .from('summaries')
+    .select('id')
+    .eq('video_id', queueItem.video_id)
+    .maybeSingle();
+
+  // Process the queue item (this can take several minutes for Gradio)
+  const result = await processQueueItem(supabase, queueItem, workerId, runtimeEnv);
+
+  return {
+    processed: true,
+    queueItemId: queueItem.id,
+    videoId: queueItem.video_id,
+    summaryId: summary?.id,
+    success: result.success,
+    error: result.error,
+    message: result.success 
+      ? `Queue item processed successfully`
+      : `Queue item failed: ${result.error}`,
+  };
 }
 
 // ---------------------------------------------------------------------------

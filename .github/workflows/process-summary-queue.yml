@@ -1,0 +1,42 @@
+name: Process Summary Queue
+
+on:
+  schedule:
+    # Every 30 minutes (backup - primary processing is frontend-triggered)
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  process-queue:
+    runs-on: ubuntu-latest
+    environment: production
+    # Timeout after 10 minutes (for Gradio long-running tasks)
+    timeout-minutes: 10
+
+    steps:
+      - name: Process Next Queue Item
+        run: |
+          TARGET_URL="${{ secrets.APP_URL || 'https://videosummary.org' }}/api/summaries/process-next"
+          
+          echo "Processing queue at $TARGET_URL"
+          
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "$TARGET_URL" \
+            --http1.1 \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 600)
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "Response Code: $http_code"
+          echo "Response Body: $body"
+          
+          # Success even if no items to process (200 with processed: false)
+          if [ "$http_code" -ne 200 ]; then
+            echo "Failed to process queue."
+            exit 1
+          fi
+          
+          echo "Queue processing completed successfully"

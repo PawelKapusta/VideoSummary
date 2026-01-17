@@ -10,17 +10,15 @@ jobs:
   trigger-summary-generation:
     runs-on: ubuntu-latest
     environment: production
+    # Allow up to 6 hours for processing all queued summaries
+    timeout-minutes: 360
 
     steps:
-      - name: Trigger Daily Summary Generation
+      - name: Queue Videos for Generation
         run: |
-          # Use APP_URL if provided, otherwise default to the production URL
           TARGET_URL="${{ secrets.APP_URL || 'https://videosummary.org' }}/api/summaries/generate-all"
           
-          echo "Triggering summary generation at $TARGET_URL"
-          
-          SECRET_INITIAL="${{ secrets.CRON_SECRET }}"
-          echo "Secret starts with: ${SECRET_INITIAL:0:4}..."
+          echo "Queueing videos for summary generation at $TARGET_URL"
 
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "$TARGET_URL" \
@@ -35,6 +33,49 @@ jobs:
           echo "Response Body: $body"
           
           if [ "$http_code" -ne 202 ] && [ "$http_code" -ne 200 ]; then
-            echo "Failed to trigger summary generation."
+            echo "Failed to queue videos for generation."
             exit 1
           fi
+          
+          echo "Videos queued successfully!"
+
+      - name: Process Queue (up to 50 items)
+        run: |
+          PROCESS_URL="${{ secrets.APP_URL || 'https://videosummary.org' }}/api/summaries/process-next"
+          
+          echo "Processing queued summaries..."
+          
+          # Process up to 50 items (or until queue is empty)
+          for i in $(seq 1 50); do
+            echo ""
+            echo "=== Processing item $i ==="
+            
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              "$PROCESS_URL" \
+              --http1.1 \
+              -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+              -H "Content-Type: application/json" \
+              --max-time 600)
+            
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+            
+            echo "Response: $body"
+            
+            if [ "$http_code" -ne 200 ]; then
+              echo "Process-next failed with code $http_code"
+              continue
+            fi
+            
+            # Check if there are no more items to process
+            if echo "$body" | grep -q '"processed":false'; then
+              echo ""
+              echo "Queue is empty - all items processed!"
+              break
+            fi
+            
+            echo "Item $i processed."
+          done
+          
+          echo ""
+          echo "Daily summary generation completed!"
