@@ -92,11 +92,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
     '/api/summaries/generate-all',
     '/api/summaries/process-next',
   ];
+
+  // Allow access to cron endpoints in development or with valid cron secret
+  const isDevelopment = import.meta.env.DEV;
+  const hasValidCronSecret = cronSecretHeader && CRON_SECRET && cronSecretHeader === CRON_SECRET;
+
   if (
-    cronSecretHeader && 
-    CRON_SECRET && 
-    cronSecretHeader === CRON_SECRET && 
-    cronProtectedPaths.includes(pathname)
+    cronProtectedPaths.includes(pathname) &&
+    (isDevelopment || hasValidCronSecret)
   ) {
     return next();
   }

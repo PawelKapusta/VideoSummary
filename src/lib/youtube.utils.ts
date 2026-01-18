@@ -107,3 +107,21 @@ export function isValidYouTubeVideoId(videoId: string): boolean {
 }
 
 export const YOUTUBE_VIDEO_URL_PREFIX = 'https://www.youtube.com/watch?v=';
+
+/**
+ * Construct YouTube channel URL from channel ID or handle
+ * @param channelId - YouTube channel ID (UC...) or handle (@username)
+ * @returns Full YouTube channel URL
+ */
+export function constructYouTubeChannelUrl(channelId: string): string {
+  if (channelId.startsWith('@')) {
+    // Handle format: @username
+    return `https://www.youtube.com/${channelId}`;
+  } else if (channelId.startsWith('UC')) {
+    // Channel ID format: UCxxxxxxxxxxxxxxxxxxxx
+    return `https://www.youtube.com/channel/${channelId}`;
+  } else {
+    // Fallback - assume it's a handle without @
+    return `https://www.youtube.com/@${channelId}`;
+  }
+}

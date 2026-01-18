@@ -825,6 +825,15 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
             is_hidden={summary.is_hidden}
             status={summary.status}
           />
+          {/* Auto-refresh indicator */}
+          {(summary.status === 'pending' || summary.status === 'in_progress') && (
+            <div className="mt-4 flex items-center justify-center">
+              <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full px-4 py-2 shadow-sm">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                <span className="text-xs font-medium text-blue-800">Auto-refreshing...</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-8 lg:grid-cols-4">
@@ -834,6 +843,12 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
             {(summary.status === 'pending' || summary.status === 'in_progress') && (
               <div className="mb-6">
                 <StatusIndicator status={summary.status} />
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium">This page updates automatically every 3 seconds - no need to refresh!</span>
+                  </div>
+                </div>
               </div>
             )}
 

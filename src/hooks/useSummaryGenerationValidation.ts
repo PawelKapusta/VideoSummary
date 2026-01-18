@@ -53,8 +53,8 @@ export const useSummaryGenerationValidation = (video: VideoSummary | null) => {
     } else {
       newState.isUrlValid = { text: 'Video is valid', status: 'success' };
 
-      // Step 2: Subscription check
-      if (videoMeta.is_subscribed) {
+      // Step 2: Subscription check - allow retries for failed summaries
+      if (videoMeta.is_subscribed || video.summary_status === 'failed') {
         newState.isSubscribed = { text: 'Channel is subscribed', status: 'success' };
       } else {
         newState.isSubscribed = { text: 'Channel not subscribed', status: 'error', error_message: 'You must be subscribed to the channel.' };

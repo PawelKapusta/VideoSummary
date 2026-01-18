@@ -24,7 +24,7 @@ const DashboardContent = () => {
       return generateSummary({ video_url: videoUrl });
     },
     onSuccess: () => {
-      toast.success('Summary generation started!');
+      toast.success('Summary queued for generation - processing will begin in ~10 minutes');
       queryClient.invalidateQueries({ queryKey: ['summaries'] });
       setSelectedVideo(null);
     },

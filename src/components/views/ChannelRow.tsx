@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trash2, MoreHorizontal, Youtube } from 'lucide-react';
+import { Trash2, MoreHorizontal, Youtube, ExternalLink } from 'lucide-react';
 import {
   TableCell,
   TableRow,
@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import type { SubscriptionWithChannel } from '@/types';
+import { constructYouTubeChannelUrl } from '@/lib/youtube.utils';
 
 interface ChannelRowProps {
   channel: SubscriptionWithChannel;
@@ -24,6 +25,8 @@ interface ChannelRowProps {
 export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
   const subscribedDate = new Date(channel.subscribed_at).toLocaleDateString();
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const youtubeUrl = constructYouTubeChannelUrl(channel.channel.youtube_channel_id || channel.channel.name);
 
   const handleRemove = () => {
     if (confirm(`Are you sure you want to unsubscribe from ${channel.channel.name}? This will stop generating summaries for this channel.`)) {
@@ -43,7 +46,16 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
             <Youtube className="h-4 w-4 text-red-500" />
           </div>
-          <span className="truncate">{channel.channel.name}</span>
+          <a
+            href={youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate text-slate-900 hover:text-red-600 hover:underline flex items-center gap-1 transition-colors"
+            title={`Visit ${channel.channel.name} on YouTube`}
+          >
+            {channel.channel.name}
+            <ExternalLink className="h-3 w-3 opacity-50 flex-shrink-0" />
+          </a>
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell text-slate-600 py-3">{subscribedDate}</TableCell>
@@ -81,6 +93,20 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
                 <div className="grid grid-cols-3 gap-4 items-center">
                   <span className="font-medium text-sm">Subscribed:</span>
                   <span className="col-span-2 text-sm">{subscribedDate}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 items-start">
+                  <span className="font-medium text-sm">YouTube:</span>
+                  <div className="col-span-2">
+                    <a
+                      href={youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 text-sm transition-colors"
+                    >
+                      Visit Channel
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
                 </div>
                 {channel.channel.youtube_channel_id && (
                   <div className="grid grid-cols-3 gap-4 items-center">

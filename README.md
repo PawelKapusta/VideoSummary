@@ -141,6 +141,22 @@ Get Video Summary running locally in minutes.
 
    The application will be available at `http://localhost:3000`.
 
+6. **Process summary queue (when needed)**
+   ```bash
+   # First, make sure the dev server is running in another terminal
+   npm run dev
+
+   # Then in a new terminal, process next queue item
+   npm run process-queue
+
+   # Or process all pending queue items
+   npm run process-queue-all
+   ```
+
+   **Note**: Summary generation uses a queue system processed by GitHub Actions cron jobs in production. For local development, use these scripts to manually process pending summaries. The development server must be running (no additional authentication required for local access).
+
+   **Bulk Generation Status**: Check status with `npm run check-bulk-status status` or reset stuck processes with `npm run check-bulk-status reset`.
+
 ## 📋 Available Scripts
 
 | Command | Description |
@@ -157,6 +173,11 @@ Get Video Summary running locally in minutes.
 | `npm run test:watch` | Run unit tests in watch mode |
 | `npm run test:e2e` | Run end-to-end tests with Playwright |
 | `npm run test:e2e:ui` | Run E2E tests in UI mode |
+| `npm run process-queue` | Process next pending summary from queue |
+| `npm run process-queue-all` | Process all pending summaries from queue |
+| `npm run check-bulk-status status` | Check bulk generation status |
+| `npm run check-bulk-status reset` | Reset stuck bulk generation status |
+| `npm run check-bulk-status-cli` | Check/reset status via Supabase CLI |
 
 ## 📚 Documentation
 

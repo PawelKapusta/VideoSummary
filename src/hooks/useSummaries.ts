@@ -41,6 +41,16 @@ export function useSummaries(filters: FilterOptions) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes cache
+    refetchInterval: (query) => {
+      // Poll every 30 seconds if there are pending/in_progress summaries
+      const data = query.state.data;
+      const hasActiveSummaries = data?.pages?.some(page =>
+        page.data?.some((summary: SummaryWithVideo) =>
+          summary.status === 'pending' || summary.status === 'in_progress'
+        )
+      );
+      return hasActiveSummaries ? 30 * 1000 : false; // 30s polling for active summaries
+    },
     retry: (failureCount, error) => failureCount < 3 && !error.message.includes('401'), // No retry on auth
   });
 }

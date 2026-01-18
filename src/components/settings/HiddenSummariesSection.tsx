@@ -54,7 +54,7 @@ const HiddenSummariesSection = () => {
           color: 'bg-rose-100 text-rose-800',
           label: 'Failed'
         };
-      case 'processing':
+      case 'in_progress':
         return {
           color: 'bg-blue-100 text-blue-800',
           label: 'Processing'

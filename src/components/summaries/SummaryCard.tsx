@@ -90,7 +90,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
                   text: "text-[10px] font-bold text-rose-100 tracking-widest uppercase",
                   label: "Failed"
                 };
-              case 'processing':
+              case 'in_progress':
                 return {
                   container: containerStyle,
                   dot: "w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.6)] animate-pulse",
@@ -100,9 +100,9 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
               case 'pending':
                 return {
                   container: containerStyle,
-                  dot: "w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.6)]",
+                  dot: "w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.6)] animate-pulse",
                   text: "text-[10px] font-bold text-amber-100 tracking-widest uppercase",
-                  label: "Pending"
+                  label: "Queued"
                 };
               default:
                 return {
@@ -120,6 +120,20 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
             <div className={config.container}>
               <div className={config.dot} />
               <span className={config.text}>{config.label}</span>
+              {summary.status === 'pending' && (
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                  <span className="text-[8px] bg-amber-500/90 text-amber-100 px-1.5 py-0.5 rounded-full font-medium">
+                    Processing in ~10 min
+                  </span>
+                </div>
+              )}
+              {summary.status === 'in_progress' && (
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                  <span className="text-[8px] bg-blue-500/90 text-blue-100 px-1.5 py-0.5 rounded-full font-medium">
+                    Generating summary...
+                  </span>
+                </div>
+              )}
             </div>
           );
         })()}

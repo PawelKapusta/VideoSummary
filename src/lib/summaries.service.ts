@@ -175,6 +175,14 @@ export async function generateSummary(
     if (existingSummary.status === 'completed') throw new Error('SUMMARY_ALREADY_EXISTS');
     if (['pending', 'in_progress'].includes(existingSummary.status))
       throw new Error('GENERATION_IN_PROGRESS');
+
+    // For failed summaries, update status back to pending for retry
+    if (existingSummary.status === 'failed') {
+      await supabase
+        .from('summaries')
+        .update({ status: 'pending', error_code: null })
+        .eq('id', existingSummary.id);
+    }
   }
 
   // -------------------------------------------------

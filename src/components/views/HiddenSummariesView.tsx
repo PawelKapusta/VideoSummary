@@ -81,7 +81,7 @@ const HiddenSummariesContent = () => {
                     color: 'bg-rose-100 text-rose-800 border-rose-200',
                     label: 'Failed'
                 };
-            case 'processing':
+            case 'in_progress':
                 return {
                     color: 'bg-blue-100 text-blue-800 border-blue-200',
                     label: 'Processing'

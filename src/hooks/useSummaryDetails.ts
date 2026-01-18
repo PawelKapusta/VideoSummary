@@ -15,13 +15,13 @@ export function useSummaryDetails(summaryId: string) {
     retry: (failureCount, error) => failureCount < 3 && !error.message.includes('401'),
     enabled: !!summaryId, // Only run the query if summaryId is available
     refetchInterval: (query) => {
-      // Auto-refresh every 10 seconds if status is pending or in_progress
+      // Check if we have data and it's still processing
       if (query.state.data?.status === 'pending' || query.state.data?.status === 'in_progress') {
-        return 10000; // 10 seconds
+        return 3000; // 3 seconds - very frequent updates during processing
       }
-      return false; // Stop auto-refresh for completed or failed statuses
+      return false; // Stop polling for completed/failed summaries
     },
-    refetchIntervalInBackground: false, // Don't refetch when window is not focused
+    refetchIntervalInBackground: true, // Continue polling even when window is not focused
   });
 
   return query;

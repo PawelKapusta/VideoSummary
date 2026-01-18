@@ -17,7 +17,11 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "process-queue": "node scripts/process-queue.js",
+    "process-queue-all": "node scripts/process-queue-all.js",
+    "check-bulk-status": "node scripts/check-bulk-status.js",
+    "check-bulk-status-cli": "node scripts/check-bulk-status-cli.js"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.6",
@@ -83,6 +87,7 @@
     "eslint-plugin-react-compiler": "^19.1.0-rc.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
+    "dotenv": "^16.4.5",
     "jsdom": "^27.4.0",
     "lint-staged": "^16.2.6",
     "msw": "^2.12.7",
