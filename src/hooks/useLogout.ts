@@ -9,7 +9,7 @@ export function useLogout() {
   const mutation = useMutation({
     mutationFn: async () => {
       // Use the new authenticated client
-      return await authApiClient.post<void>("/api/auth/logout");
+      return await authApiClient.post("/api/auth/logout");
     },
     onError: (error) => {
       console.error("Logout API call failed", error);
@@ -23,6 +23,7 @@ export function useLogout() {
 
       toast.success("Logged out successfully");
 
+      // eslint-disable-next-line react-compiler/react-compiler
       window.location.href = "/login"; // Redirect to login
     },
   });

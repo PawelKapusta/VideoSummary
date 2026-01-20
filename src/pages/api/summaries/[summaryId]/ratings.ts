@@ -128,7 +128,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     let body;
     try {
       body = (await request.json()) as RateSummaryRequest;
-    } catch (parseError) {
+    } catch {
       const duration = performance.now() - startTime;
       errorLogger.validationError(new Error("Invalid JSON body"), undefined, undefined, {
         endpoint: `/api/summaries/${params.summaryId}/ratings`,
@@ -254,7 +254,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     performanceLogger.apiResponseTime("POST", `/api/summaries/${summaryId}/ratings`, duration, ratingResult.statusCode);
 
     // Remove statusCode from response as per type
-    const { statusCode, ...responseData } = ratingResult;
+    const { ...responseData } = ratingResult;
 
     return new Response(JSON.stringify(responseData), {
       status: ratingResult.statusCode,
@@ -313,7 +313,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
  * - 404 Not Found: Rating not found
  * - 500 Internal Server Error: Database error
  */
-export const DELETE: APIRoute = async ({ request, locals, params }) => {
+export const DELETE: APIRoute = async ({ locals, params }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

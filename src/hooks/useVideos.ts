@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { generateSummary, getVideos } from "@/lib/api";
-import type { VideosFilterState, VideoSummary, UserProfile, ApiError } from "@/types";
+import type { VideosFilterState, VideoSummary, ApiError } from "@/types";
 import { useProfile } from "./useProfile";
 
 export const useVideos = () => {
@@ -14,7 +14,7 @@ export const useVideos = () => {
   });
   const [selectedVideo, setSelectedVideo] = useState<VideoSummary | null>(null);
 
-  const { profile, isLoading: isLoadingProfile } = useProfile();
+  const { profile } = useProfile();
   const channels = profile?.subscribed_channels?.map((sub) => sub.channel) ?? [];
   const queryClient = useQueryClient();
 

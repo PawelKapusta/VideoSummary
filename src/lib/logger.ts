@@ -53,13 +53,13 @@ export type SensitiveField = (typeof SENSITIVE_FIELDS)[number];
 /**
  * Structured log properties - any serializable data except sensitive fields
  */
-export type LogProperties = Record<string, any> & Partial<Record<SensitiveField, never>>;
+export type LogProperties = Record<string, unknown> & Partial<Record<SensitiveField, never>>;
 
 /**
  * Safe logging utility that converts typed properties to LogTape-compatible format
  * This eliminates the need for ugly 'as unknown as Record<string, unknown>' casts
  */
-export function toLogProperties<T extends Record<string, any>>(properties: T): Record<string, unknown> {
+export function toLogProperties<T extends Record<string, unknown>>(properties: T): Record<string, unknown> {
   return properties;
 }
 
@@ -139,7 +139,7 @@ export interface ErrorContext {
   traceId?: string; // AWS X-Ray style trace ID
   retryCount?: number;
   endpoint?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Custom filter to exclude debug logs in production
@@ -157,7 +157,7 @@ export async function initializeLogging(): Promise<void> {
   const isTest = process.env.NODE_ENV === "test";
 
   // Only use console sink (Cloudflare doesn't support filesystem)
-  const sinks: Record<string, any> = {
+  const sinks: Record<string, unknown> = {
     console: redactByField(getConsoleSink(), SENSITIVE_FIELDS_MUTABLE),
   };
 
@@ -386,7 +386,7 @@ export const errorLogger = {
   /**
    * Log validation errors
    */
-  validationError: (error: Error, field?: string, value?: any, context?: ErrorContext) => {
+  validationError: (error: Error, field?: string, value?: unknown, context?: ErrorContext) => {
     appLogger.warning(
       "Validation error",
       toLogProperties({

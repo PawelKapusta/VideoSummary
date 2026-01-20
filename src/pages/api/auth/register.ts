@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { RegisterRequestSchema } from "../../../lib/validation/schemas";
 import type { RegisterRequest, AuthResponse, ApiError } from "../../../types";
-import { z } from "zod";
 import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
 
 /**
@@ -229,8 +228,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const authResponse: AuthResponse = {
         user: {
           id: data.user.id,
-          email: data.user.email!,
-          created_at: data.user.created_at!,
+          email: data.user.email || "",
+          created_at: data.user.created_at || new Date().toISOString(),
         },
       };
 
@@ -253,8 +252,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Create profile row explicitly after auth success (RLS allows insert for new auth users: auth.uid() = id)
     const { error: profileError } = await supabase.from("profiles").insert({
       id: data.user.id,
-      email: data.user.email!,
-      created_at: data.user.created_at!,
+      email: data.user.email || "",
+      created_at: data.user.created_at || new Date().toISOString(),
     });
 
     if (profileError) {
@@ -276,13 +275,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const authResponse: AuthResponse = {
       user: {
         id: data.user.id,
-        email: data.user.email!,
-        created_at: data.user.created_at!,
+        email: data.user.email || "",
+        created_at: data.user.created_at || new Date().toISOString(),
       },
       session: {
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token,
-        expires_at: Math.floor(new Date(data.session.expires_at!).getTime() / 1000),
+        expires_at: Math.floor(new Date(data.session.expires_at || Date.now()).getTime() / 1000),
       },
     };
 

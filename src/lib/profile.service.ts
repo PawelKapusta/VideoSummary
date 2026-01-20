@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "../db/supabase.client";
-import type { Database } from "../db/database.types";
-import type { UserProfile } from "../types";
+import type { UserProfile, SubscriptionWithChannel } from "../types";
 import { errorLogger } from "./logger";
 
 /**
@@ -43,7 +42,7 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
     }
 
     userCreatedAt = newProfile.created_at;
-    userEmail = user.email!;
+    userEmail = user.email || "";
   } else {
     // Profile exists, get user email
     const {
@@ -56,11 +55,11 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
     }
 
     userCreatedAt = profileData.created_at;
-    userEmail = user.email!;
+    userEmail = user.email || "";
   }
 
   // Query subscriptions with channel information
-  let subscribedChannels: any[] = [];
+  let subscribedChannels: SubscriptionWithChannel[] = [];
 
   try {
     const { data: subscriptions, error: subscriptionsError } = await supabase
@@ -90,16 +89,21 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
       // Don't throw - return profile with empty subscriptions
     } else {
       // Format subscriptions according to SubscriptionWithChannel type
-      subscribedChannels = (subscriptions || []).map((sub: any) => ({
-        subscription_id: sub.id,
-        channel: {
-          id: sub.channels.id,
-          youtube_channel_id: sub.channels.youtube_channel_id,
-          name: sub.channels.name,
-          created_at: sub.channels.created_at,
-        },
-        subscribed_at: sub.created_at,
-      }));
+      subscribedChannels = (subscriptions || []).map(
+        (sub: {
+          id: string;
+          channels: { id: string; youtube_channel_id: string; name: string; created_at: string };
+        }) => ({
+          subscription_id: sub.id,
+          channel: {
+            id: sub.channels.id,
+            youtube_channel_id: sub.channels.youtube_channel_id,
+            name: sub.channels.name,
+            created_at: sub.channels.created_at,
+          },
+          subscribed_at: sub.created_at,
+        })
+      );
     }
   } catch (dbError) {
     // Log database connection errors but continue

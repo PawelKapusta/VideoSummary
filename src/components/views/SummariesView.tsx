@@ -8,17 +8,18 @@ import EmptyState from "../summaries/EmptyState";
 import ErrorState from "../shared/ErrorState";
 import { useSummaries } from "../../hooks/useSummaries";
 import { useUserChannels } from "../../hooks/useUserChannels";
-import type { FilterOptions, SummaryWithVideo } from "../../types";
+import type { FilterOptions, SummaryWithVideo, PaginatedResponse, ApiError } from "../../types";
 import AppLoader from "../ui/AppLoader";
 import { Button } from "../ui/button";
 import { useMutation } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
 import { generateSummary } from "../../lib/api";
 import GenerateSummaryDialog from "./videos/GenerateSummaryDialog";
 import type { VideoSummary } from "../../types";
 import { errorLogger } from "../../lib/logger";
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: Error }> {
-  constructor(props: any) {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -47,7 +48,6 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 const SummariesContent: React.FC = () => {
   const [filters, setFilters] = useState<FilterOptions>({});
   const [isRefetchDisabled, setIsRefetchDisabled] = useState(false);
-  const [disableUntil, setDisableUntil] = useState<number | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoSummary | null>(null);
   const queryClient = useQueryClient();
 
@@ -61,7 +61,7 @@ const SummariesContent: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["summaries"] });
       setSelectedVideo(null);
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       const errorMessage = error?.error?.message || "An unknown error occurred.";
       toast.error(`Failed to generate summary: ${errorMessage}`);
     },
@@ -83,8 +83,8 @@ const SummariesContent: React.FC = () => {
     useSummaries(filters);
   const { data: channelsData, isLoading: channelsLoading } = useUserChannels();
 
-  const flattenedData = data?.pages.flatMap((page: any) => page.data) || [];
-  const firstPage = data?.pages[0] as any;
+  const flattenedData = data?.pages.flatMap((page: PaginatedResponse<SummaryWithVideo>) => page.data) || [];
+  const firstPage = data?.pages[0] as PaginatedResponse<SummaryWithVideo>;
   const totalCount = firstPage?.pagination?.total || 0;
 
   // Handle auth errors - redirect to login
@@ -98,13 +98,12 @@ const SummariesContent: React.FC = () => {
   // Rate limiting - disable refetch for 30s on 429
   useEffect(() => {
     if (error?.message.includes("429") || error?.message.includes("RATE_LIMIT")) {
-      const now = Date.now();
-      setDisableUntil(now + 30000);
-      setIsRefetchDisabled(true);
-      toast.warning("Too many requests. Please wait 30 seconds before trying again.", { duration: 5000 });
+      setIsRefetchDisabled(() => true);
+      toast.warning("Too many requests. Please wait 30 seconds before trying 30 seconds before trying again.", {
+        duration: 5000,
+      });
       const timer = setTimeout(() => {
-        setIsRefetchDisabled(false);
-        setDisableUntil(null);
+        setIsRefetchDisabled(() => false);
       }, 30000);
       return () => clearTimeout(timer);
     }
@@ -123,10 +122,21 @@ const SummariesContent: React.FC = () => {
   const handleHide = useCallback(
     async (id: string) => {
       try {
-        // Optimistic update can be added here
+        const response = await fetch(`/api/summaries/${id}/hide`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || "Failed to hide summary");
+        }
+
         await queryClient.invalidateQueries({ queryKey: ["summaries", filters] });
         toast.success("Summary hidden successfully");
-      } catch (err) {
+      } catch {
         toast.error("Failed to hide summary");
       }
     },
@@ -137,22 +147,25 @@ const SummariesContent: React.FC = () => {
     async (id: string, rating: boolean | null) => {
       try {
         // Update the specific summary in the cache instead of invalidating everything
-        queryClient.setQueryData(["summaries", filters], (oldData: any) => {
-          if (!oldData) return oldData;
+        queryClient.setQueryData(
+          ["summaries", filters],
+          (oldData: InfiniteData<PaginatedResponse<SummaryWithVideo>> | undefined) => {
+            if (!oldData) return oldData;
 
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page: any) => ({
-              ...page,
-              data: page.data.map((summary: any) =>
-                summary.id === id ? { ...summary, user_rating: rating } : summary
-              ),
-            })),
-          };
-        });
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page: PaginatedResponse<SummaryWithVideo>) => ({
+                ...page,
+                data: page.data.map((summary: SummaryWithVideo) =>
+                  summary.id === id ? { ...summary, user_rating: rating } : summary
+                ),
+              })),
+            };
+          }
+        );
 
         // Don't invalidate here - useRating hook will handle success/error states
-      } catch (err) {
+      } catch {
         toast.error("Failed to update rating");
       }
     },
@@ -242,7 +255,6 @@ const SummariesContent: React.FC = () => {
             fetchNextPage={fetchNextPage}
             error={error}
             refetch={() => !isRefetchDisabled && refetch()}
-            filters={filters}
             onHide={handleHide}
             onRate={handleRate}
             onRegenerate={handleRegenerate}

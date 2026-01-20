@@ -31,7 +31,7 @@ export const useSummaryGenerationValidation = (video: VideoSummary | null) => {
     isError: isErrorStatus,
   } = useQuery({
     queryKey: ["generationStatus", video?.channel.id],
-    queryFn: () => fetchGenerationStatus(video!.channel.id),
+    queryFn: () => fetchGenerationStatus(video?.channel.id || ""),
     enabled: !!video,
   });
 
@@ -39,6 +39,7 @@ export const useSummaryGenerationValidation = (video: VideoSummary | null) => {
 
   useEffect(() => {
     if (!video) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValidationState(INITIAL_VALIDATION_STATE);
       return;
     }

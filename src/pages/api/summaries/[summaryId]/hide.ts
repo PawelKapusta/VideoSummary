@@ -26,7 +26,7 @@ import { hideSummary, unhideSummary } from "../../../../lib/hidden-summaries.ser
  * - 404 Not Found: Summary not found
  * - 500 Internal Server Error: Database or server error
  */
-export const POST: APIRoute = async ({ request, locals, params }) => {
+export const POST: APIRoute = async ({ locals, params }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware
@@ -249,7 +249,7 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
  * - 404 Not Found: Summary not found or not hidden
  * - 500 Internal Server Error: Database error
  */
-export const DELETE: APIRoute = async ({ request, locals, params }) => {
+export const DELETE: APIRoute = async ({ locals, params }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

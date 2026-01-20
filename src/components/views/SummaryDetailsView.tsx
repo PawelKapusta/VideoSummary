@@ -4,7 +4,6 @@ import { useRating } from "@/hooks/useRating";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AppLoader from "@/components/ui/AppLoader";
 import TypewriterAnimation from "@/components/ui/typewriter-animation";
@@ -12,7 +11,7 @@ import EnhancedProgressBar from "@/components/ui/EnhancedProgressBar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateSummary } from "@/lib/api";
 import GenerateSummaryDialog from "@/components/views/videos/GenerateSummaryDialog";
-import type { VideoSummary, DetailedSummary, SummaryData, ApiError } from "@/types";
+import type { VideoSummary, SummaryData, ApiError } from "@/types";
 import { toast } from "sonner";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { motion, useScroll, useTransform, useSpring, useInView, useMotionValueEvent } from "framer-motion";
@@ -55,7 +54,7 @@ const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!");
-  } catch (err) {
+  } catch {
     toast.error("Failed to copy to clipboard");
   }
 };
@@ -269,6 +268,7 @@ const SummarySidebar: React.FC<{
 
   useEffect(() => {
     if (user_rating !== null && hasInteracted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowConfirmation(true);
       const timer = setTimeout(() => {
         setShowConfirmation(false);
@@ -1014,7 +1014,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
 
                       <div className="space-y-3">
                         <p className="text-gray-700 font-medium leading-relaxed">
-                          This summary was created by AI to help you quickly grasp the video's main points.
+                          This summary was created by AI to help you quickly grasp the video&apos;s main points.
                         </p>
 
                         <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-emerald-100/50">
@@ -1161,7 +1161,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                               >
                                 <div className="absolute -left-2 top-4 w-1 h-8 bg-amber-400 rounded-full animate-pulse" />
                                 <blockquote className="border-l-4 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 p-5 italic text-amber-900 text-base leading-relaxed rounded-r-lg ml-2 transition-colors duration-200">
-                                  "{quote}"
+                                  &ldquo;{quote}&rdquo;
                                 </blockquote>
                               </motion.div>
                             ))}

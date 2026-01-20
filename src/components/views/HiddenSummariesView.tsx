@@ -24,7 +24,7 @@ import FilterPanel from "../summaries/FilterPanel";
 import { useUserChannels } from "../../hooks/useUserChannels";
 
 const HiddenSummariesContent = () => {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, setFilters] = useState<FilterOptions>({});
   const { data, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage, refetch } =
     useHiddenSummaries(filters);
   const { data: channelsData } = useUserChannels();
@@ -32,10 +32,10 @@ const HiddenSummariesContent = () => {
   const [unhidingIds, setUnhidingIds] = useState<Set<string>>(new Set());
   const [isUnhidingAll, setIsUnhidingAll] = useState(false);
 
-  const hiddenSummaries = data?.pages.flatMap((page: any) => page.data) || [];
+  const hiddenSummaries = data?.pages.flatMap((page: PaginatedResponse<SummaryWithVideo>) => page.data) || [];
   const totalCount = data?.pages[0]?.pagination?.total || 0;
 
-  const handleFiltersChange = (newFilters: any) => {
+  const handleFiltersChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
   };
 
@@ -46,9 +46,8 @@ const HiddenSummariesContent = () => {
       await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
       await queryClient.invalidateQueries({ queryKey: ["summaries"] });
       toast.success("All summaries restored to your dashboard");
-    } catch (error) {
+    } catch {
       toast.error("Failed to restore all summaries");
-      console.error("Unhide all failed:", error);
     } finally {
       setIsUnhidingAll(false);
     }
@@ -66,9 +65,8 @@ const HiddenSummariesContent = () => {
       await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
       await queryClient.invalidateQueries({ queryKey: ["summaries"] });
       toast.success("Summary restored to your dashboard");
-    } catch (error) {
+    } catch {
       toast.error("Failed to unhide summary");
-      console.error("Unhide failed:", error);
     } finally {
       setUnhidingIds((prev) => {
         const newSet = new Set(prev);
@@ -205,7 +203,7 @@ const HiddenSummariesContent = () => {
             )}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            View and manage summaries you've hidden from your dashboard.
+            View and manage summaries you&apos;ve hidden from your dashboard.
           </p>
         </div>
       </div>
@@ -250,7 +248,15 @@ const HiddenSummariesContent = () => {
                   <div
                     key={summary.id}
                     onClick={() => (window.location.href = `/summaries/${summary.id}`)}
-                    className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 border border-slate-100 rounded-xl hover:bg-slate-50/50 hover:border-slate-200 transition-all duration-200 cursor-pointer"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        window.location.href = `/summaries/${summary.id}`;
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 border border-slate-100 rounded-xl hover:bg-slate-50/50 hover:border-slate-200 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                   >
                     <div className="flex-1 min-w-0 pr-4">
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -279,6 +285,7 @@ const HiddenSummariesContent = () => {
                     <div
                       className="flex items-center gap-2 mt-4 sm:mt-0 sm:self-center shrink-0"
                       onClick={(e) => e.stopPropagation()}
+                      role="presentation"
                     >
                       <Dialog>
                         <DialogTrigger asChild>
@@ -305,7 +312,7 @@ const HiddenSummariesContent = () => {
                           <DialogHeader>
                             <DialogTitle className="text-xl">Restore Summary</DialogTitle>
                             <DialogDescription className="pt-2 text-base">
-                              Are you sure you want to restore <strong>"{summary.video.title}"</strong>?
+                              Are you sure you want to restore <strong>&quot;{summary.video.title}&quot;</strong>?
                             </DialogDescription>
                           </DialogHeader>
                           <div className="py-2 text-sm text-muted-foreground">
@@ -319,7 +326,7 @@ const HiddenSummariesContent = () => {
                               Cancel
                             </Button>
                             <Button
-                              onClick={(e) => {
+                              onClick={() => {
                                 handleUnhide(summary.id);
                               }}
                               disabled={isUnhiding}

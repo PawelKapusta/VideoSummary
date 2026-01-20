@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useHiddenSummaries } from "../../hooks/useHiddenSummaries";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient as api } from "../../lib/api";
-import type { SummaryWithVideo } from "../../types";
+import type { SummaryWithVideo, PaginatedResponse } from "../../types";
 import AppLoader from "../ui/AppLoader";
 
 const HiddenSummariesSection = () => {
@@ -25,7 +25,7 @@ const HiddenSummariesSection = () => {
   const queryClient = useQueryClient();
   const [unhidingIds, setUnhidingIds] = useState<Set<string>>(new Set());
 
-  const hiddenSummaries = data?.pages.flatMap((page: any) => page.data) || [];
+  const hiddenSummaries = data?.pages.flatMap((page: PaginatedResponse<SummaryWithVideo>) => page.data) || [];
 
   const handleUnhide = async (summaryId: string) => {
     if (unhidingIds.has(summaryId)) return;
@@ -38,9 +38,8 @@ const HiddenSummariesSection = () => {
       await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
       await queryClient.invalidateQueries({ queryKey: ["summaries"] });
       toast.success("Summary restored to your dashboard");
-    } catch (error) {
+    } catch {
       toast.error("Failed to unhide summary");
-      console.error("Unhide failed:", error);
     } finally {
       setUnhidingIds((prev) => {
         const newSet = new Set(prev);

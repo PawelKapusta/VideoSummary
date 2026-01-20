@@ -1,7 +1,6 @@
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { apiClient as api } from "../lib/api"; // Named import with alias
-import type { PaginatedResponse, SummaryWithVideo, FilterOptions, SummaryStatus } from "../types";
+import type { PaginatedResponse, SummaryWithVideo, FilterOptions } from "../types";
 
 interface PageParam {
   offset: number;

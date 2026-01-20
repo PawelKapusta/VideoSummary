@@ -26,7 +26,7 @@ import { unsubscribeFromChannel } from "../../../lib/subscriptions.service";
  * - 404 Not Found: Subscription not found
  * - 500 Internal Server Error: Database error
  */
-export const DELETE: APIRoute = async ({ request, locals, params }) => {
+export const DELETE: APIRoute = async ({ locals, params }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

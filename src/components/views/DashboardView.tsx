@@ -6,7 +6,8 @@ import SummaryList from "../summaries/SummaryList";
 import AppLoader from "../ui/AppLoader";
 import EmptyState from "../summaries/EmptyState";
 import ErrorState from "../shared/ErrorState";
-import type { FilterOptions, SummaryWithVideo, VideoSummary } from "../../types";
+import type { FilterOptions, SummaryWithVideo, VideoSummary, ApiError, PaginatedResponse } from "../../types";
+import type { InfiniteData } from "@tanstack/react-query";
 import QueryProvider from "../providers/QueryProvider";
 import { useMutation } from "@tanstack/react-query";
 import { generateSummary } from "../../lib/api";
@@ -27,7 +28,7 @@ const DashboardContent = () => {
       queryClient.invalidateQueries({ queryKey: ["summaries"] });
       setSelectedVideo(null);
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       const errorMessage = error?.error?.message || "An unknown error occurred.";
       toast.error(`Failed to generate summary: ${errorMessage}`);
     },
@@ -47,7 +48,7 @@ const DashboardContent = () => {
   }, []);
   const { data, isLoading, isFetching, error, hasNextPage, fetchNextPage, isFetchingNextPage } = useSummaries(filters);
 
-  const summaries = data?.pages.flatMap((page: any) => page.data) || [];
+  const summaries = data?.pages.flatMap((page: PaginatedResponse<SummaryWithVideo>) => page.data) || [];
   const status = isLoading ? "loading" : error ? "error" : summaries.length > 0 ? "success" : "empty";
   const isInitialLoading = isLoading && summaries.length === 0;
   const isListEmpty = status === "empty";
@@ -55,17 +56,22 @@ const DashboardContent = () => {
   const handleRate = useCallback(
     async (id: string, rating: boolean | null) => {
       // Update the specific summary in the cache instead of invalidating everything
-      queryClient.setQueryData(["summaries", filters], (oldData: any) => {
-        if (!oldData) return oldData;
+      queryClient.setQueryData(
+        ["summaries", filters],
+        (oldData: InfiniteData<PaginatedResponse<SummaryWithVideo>> | undefined) => {
+          if (!oldData) return oldData;
 
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: any) => ({
-            ...page,
-            data: page.data.map((summary: any) => (summary.id === id ? { ...summary, user_rating: rating } : summary)),
-          })),
-        };
-      });
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: PaginatedResponse<SummaryWithVideo>) => ({
+              ...page,
+              data: page.data.map((summary: SummaryWithVideo) =>
+                summary.id === id ? { ...summary, user_rating: rating } : summary
+              ),
+            })),
+          };
+        }
+      );
     },
     [queryClient, filters]
   );
@@ -90,7 +96,6 @@ const DashboardContent = () => {
         await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
         toast.success("Summary hidden successfully");
       } catch (err) {
-        console.error("Hide summary error:", err);
         toast.error(err instanceof Error ? err.message : "Failed to hide summary");
       }
     },

@@ -7,7 +7,7 @@ export function useUserChannels() {
     queryKey: ["userChannels"],
     queryFn: async () => {
       const response = await api.get<Channel[]>("/api/profile/channels");
-      // @ts-ignore - api.get returns the data directly according to updated api.ts
+      // @ts-expect-error - api.get returns the data directly according to updated api.ts
       return response || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

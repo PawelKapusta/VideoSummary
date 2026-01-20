@@ -61,17 +61,14 @@ const FilterBar: React.FC<FilterBarProps> = ({
     return () => clearTimeout(timer);
   }, [localSearch, searchQuery, onSearchChange]);
 
-  // Sync local state when external searchQuery changes (e.g. clear filters)
-  useEffect(() => {
-    setLocalSearch(searchQuery || "");
-  }, [searchQuery]);
-
   return (
     <div className="bg-card w-full p-4 rounded-lg border shadow-sm mb-6">
       <div className="flex flex-col md:flex-row gap-4 items-end">
         {/* Search Input */}
         <div className="flex-1 w-full space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground ml-1">Search by title or channel</label>
+          <label htmlFor="search-input" className="text-xs font-medium text-muted-foreground ml-1">
+            Search by title or channel
+          </label>
           <div className="relative">
             {disabled ? (
               <Loader2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
@@ -79,6 +76,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             )}
             <Input
+              id="search-input"
               placeholder={searchPlaceholder}
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}

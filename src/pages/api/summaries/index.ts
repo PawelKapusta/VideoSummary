@@ -293,7 +293,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
  * - 401 Unauthorized: Missing or invalid authentication session
  * - 500 Internal Server Error: Database query error
  */
-export const GET: APIRoute = async ({ request, locals, url }) => {
+export const GET: APIRoute = async ({ locals, url }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

@@ -46,14 +46,15 @@ export function useGenerateSummary() {
     error: generationStatusError,
   } = useQuery<GenerationStatusResponse, ApiError>({
     queryKey: ["generationStatus", channelId],
-    queryFn: () => fetchGenerationStatus(channelId!),
+    queryFn: () => fetchGenerationStatus(channelId as string),
     enabled: !!channelId && !!isSubscribed,
     retry: false,
   });
 
-  const { mutate: submit, isPending: isSubmitting } = useMutation<any, ApiError, GenerateSummaryRequest>({
+  const { mutate: submit, isPending: isSubmitting } = useMutation<unknown, ApiError, GenerateSummaryRequest>({
     mutationFn: generateSummary,
     onSuccess: () => {
+      // eslint-disable-next-line react-compiler/react-compiler
       window.location.href = "/dashboard";
     },
     onError: (error) => {

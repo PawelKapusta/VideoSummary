@@ -30,7 +30,7 @@ import { checkGenerationStatus } from "../../../lib/generation-requests.service"
  * - 403 Forbidden: Channel not subscribed by user
  * - 500 Internal Server Error: Database error
  */
-export const GET: APIRoute = async ({ request, locals, url }) => {
+export const GET: APIRoute = async ({ locals, url }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

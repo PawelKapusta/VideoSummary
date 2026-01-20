@@ -25,7 +25,7 @@ import { securityLogger, errorLogger, performanceLogger, appLogger } from "../..
  * - 403 Forbidden: User is not admin
  * - 500 Internal Server Error: Database error
  */
-export const POST: APIRoute = async ({ locals, request }) => {
+export const POST: APIRoute = async ({ locals }) => {
   const startTime = performance.now();
 
   try {

@@ -1,7 +1,6 @@
 import React from "react";
 import type { VideoSummary } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface VideoCardProps {

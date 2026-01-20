@@ -51,7 +51,7 @@ export class OpenRouterService {
       if (data?.error?.message) {
         message = data.error.message;
       }
-    } catch (e) {
+    } catch {
       // Ignore JSON parse error, use statusText
     }
 
@@ -136,7 +136,7 @@ export class OpenRouterService {
 
     try {
       return JSON.parse(content) as T;
-    } catch (e) {
+    } catch {
       throw new OpenRouterError("Failed to parse JSON response");
     }
   }

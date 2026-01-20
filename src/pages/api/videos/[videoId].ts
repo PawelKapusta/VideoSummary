@@ -33,7 +33,7 @@ import { getVideoDetails } from "../../../lib/videos.service";
  * - 404 Not Found: Video not found
  * - 500 Internal Server Error: Database error
  */
-export const GET: APIRoute = async ({ request, locals, params }) => {
+export const GET: APIRoute = async ({ locals, params }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

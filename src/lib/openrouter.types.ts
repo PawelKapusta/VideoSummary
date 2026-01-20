@@ -8,7 +8,7 @@ export interface ChatMessage {
 export interface JsonSchema {
   name: string;
   strict: boolean;
-  schema: Record<string, any>;
+  schema: Record<string, unknown>;
 }
 
 export interface ResponseFormat {

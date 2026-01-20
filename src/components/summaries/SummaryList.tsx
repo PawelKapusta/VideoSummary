@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useCallback, memo } from "react";
 import SummaryCard from "./SummaryCard";
 import type { SummaryWithVideo, PaginatedResponse } from "../../types";
+import type { InfiniteData } from "@tanstack/react-query";
 import FuturisticSkeleton from "./FuturisticSkeleton";
 import AppLoader from "../ui/AppLoader";
 
 interface Props {
-  data?: any; // InfiniteData<PaginatedResponse<SummaryWithVideo>>
+  data?: InfiniteData<PaginatedResponse<SummaryWithVideo>>;
   isLoading: boolean;
   isFetching: boolean; // Add for refetch skeletons
   isFetchingNextPage: boolean;

@@ -76,8 +76,7 @@ const SettingsContent = () => {
         } else {
           toast.error(data.error?.message || "Failed to delete your account. Please try again or contact support.");
         }
-      } catch (error) {
-        console.error("Delete account error:", error);
+      } catch {
         toast.error("An unexpected error occurred while deleting your account. Please try again or contact support.");
       }
     }

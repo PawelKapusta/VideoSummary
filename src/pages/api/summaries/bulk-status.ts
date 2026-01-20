@@ -36,7 +36,7 @@ import { getBulkGenerationStatus } from "../../../lib/summaries.service";
  * - 404 Not Found: Bulk generation not found (when specific ID requested)
  * - 500 Internal Server Error: Database error
  */
-export const GET: APIRoute = async ({ request, locals, url }) => {
+export const GET: APIRoute = async ({ locals, url }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

@@ -19,7 +19,7 @@ export class ApiClientError extends Error {
   constructor(
     public readonly code: string,
     public readonly message: string,
-    public readonly details?: Record<string, any>
+    public readonly details?: Record<string, unknown>
   ) {
     super(message);
     this.name = "ApiClientError";
@@ -214,7 +214,7 @@ export async function getVideos(
 }
 
 export const apiClient = {
-  async get<T>(path: string, options?: { params?: Record<string, any> }): Promise<T> {
+  async get<T>(path: string, options?: { params?: Record<string, string | number | boolean> }): Promise<T> {
     let url = path;
     if (options?.params) {
       const searchParams = new URLSearchParams();
@@ -285,7 +285,7 @@ export const apiClient = {
 
 // Create a new client for authenticated requests
 export const authApiClient = {
-  async get<T>(path: string, options?: { params?: Record<string, any> }): Promise<T> {
+  async get<T>(path: string, options?: { params?: Record<string, string | number | boolean> }): Promise<T> {
     const session = getSession();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -322,7 +322,7 @@ export const authApiClient = {
   },
 };
 
-function pathWithParams(path: string, params?: Record<string, any>): string {
+function pathWithParams(path: string, params?: Record<string, string | number | boolean>): string {
   if (!params) return path;
 
   const searchParams = new URLSearchParams();

@@ -10,7 +10,7 @@ async function removeChannel(subscriptionId: string): Promise<void> {
 export function useRemoveChannel() {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, string>({
+  return useMutation<never, Error, string>({
     mutationFn: removeChannel,
     onSuccess: () => {
       toast.success("Successfully unsubscribed from the channel.");

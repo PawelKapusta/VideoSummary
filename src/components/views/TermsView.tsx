@@ -46,7 +46,7 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
             <CardContent>
               <div className="space-y-3">
                 <p className="text-yellow-800 font-medium text-lg">
-                  THE SERVICE IS PROVIDED "AS IS" WITHOUT ANY WARRANTIES OR GUARANTEES OF ANY KIND.
+                  THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; WITHOUT ANY WARRANTIES OR GUARANTEES OF ANY KIND.
                 </p>
                 <div className="space-y-2">
                   <p className="text-yellow-700 font-medium">⚠️ VideoSummary bears NO RESPONSIBILITY for:</p>
@@ -110,7 +110,7 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
 
               <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className="text-red-700">❌ What We Don't Provide</CardTitle>
+                  <CardTitle className="text-red-700">❌ What We Don&apos;t Provide</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 flex-1">
                   <div className="space-y-2">
@@ -128,7 +128,7 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
                   <div className="space-y-2">
                     <div className="font-semibold text-base">Copyrighted materials</div>
                     <div className="text-sm text-muted-foreground">
-                      We respect content creators' rights and do not distribute or host copyrighted video content
+                      We respect content creators&apos; rights and do not distribute or host copyrighted video content
                     </div>
                   </div>
                 </CardContent>

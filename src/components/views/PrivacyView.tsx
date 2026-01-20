@@ -250,7 +250,7 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                   </div>
 
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-red-800 mb-2">🚫 What We Don't Access</h4>
+                    <h4 className="font-semibold text-red-800 mb-2">🚫 What We Don&apos;t Access</h4>
                     <ul className="text-sm text-red-700 space-y-1">
                       <li>• Your YouTube credentials</li>
                       <li>• Your watch history</li>

@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "../db/supabase.client";
-import type { Database } from "../db/database.types";
 import type { PaginatedResponse, VideoSummary } from "../types";
 
 /**
@@ -90,37 +89,53 @@ export async function listVideos(
   }
 
   // Format videos according to VideoSummary type
-  const data: VideoSummary[] = (videos || []).map((video: any) => {
-    // Ensure all required fields are present (though DB schema guarantees most)
-    // and handle potential join nulls if relationship is optional (though here it should be present)
+  const data: VideoSummary[] = (videos || []).map(
+    (video: {
+      id: string;
+      youtube_video_id: string;
+      title: string | null;
+      thumbnail_url: string | null;
+      published_at: string | null;
+      summary_id: string | null;
+      summary_status: string | null;
+      channels: {
+        id: string;
+        youtube_channel_id: string;
+        name: string;
+        created_at: string;
+      };
+    }) => {
+      // Ensure all required fields are present (though DB schema guarantees most)
+      // and handle potential join nulls if relationship is optional (though here it should be present)
 
-    // Safety check for channel, though the join should ensure it exists if video exists
-    // (INNER JOIN behavior depends on supabase-js handling, usually it returns null if relation missing but foreign key is non-nullable)
-    // Cast video.channels to handle potential array/single object ambiguity from SelectQuery normalization if needed,
-    // but here typed as Single object usually.
-    const channel = Array.isArray(video.channels) ? video.channels[0] : video.channels;
+      // Safety check for channel, though the join should ensure it exists if video exists
+      // (INNER JOIN behavior depends on supabase-js handling, usually it returns null if relation missing but foreign key is non-nullable)
+      // Cast video.channels to handle potential array/single object ambiguity from SelectQuery normalization if needed,
+      // but here typed as Single object usually.
+      const channel = Array.isArray(video.channels) ? video.channels[0] : video.channels;
 
-    if (!channel) {
-      // Should not happen with valid data integrity
-      throw new Error(`Video ${video.id} has no channel data`);
+      if (!channel) {
+        // Should not happen with valid data integrity
+        throw new Error(`Video ${video.id} has no channel data`);
+      }
+
+      return {
+        id: video.id || "",
+        youtube_video_id: video.youtube_video_id || "",
+        title: video.title || "",
+        thumbnail_url: video.thumbnail_url,
+        published_at: video.published_at,
+        channel: {
+          id: channel.id,
+          youtube_channel_id: channel.youtube_channel_id,
+          name: channel.name,
+          created_at: channel.created_at,
+        },
+        summary_id: video.summary_id,
+        summary_status: video.summary_status,
+      };
     }
-
-    return {
-      id: video.id!,
-      youtube_video_id: video.youtube_video_id!,
-      title: video.title!,
-      thumbnail_url: video.thumbnail_url,
-      published_at: video.published_at,
-      channel: {
-        id: channel.id,
-        youtube_channel_id: channel.youtube_channel_id,
-        name: channel.name,
-        created_at: channel.created_at,
-      },
-      summary_id: video.summary_id,
-      summary_status: video.summary_status,
-    };
-  });
+  );
 
   // Return paginated response
   return {
@@ -185,13 +200,11 @@ export async function getVideoDetails(supabase: SupabaseClient, videoId: string)
       created_at: video.channels.created_at,
     },
     summary:
-      (video as any).summaries &&
-      (video as any).summaries.length > 0 &&
-      (video as any).summaries[0].status === "completed"
+      video.summary_id && video.summary_status === "completed"
         ? {
-            id: (video as any).summaries[0].id,
-            status: (video as any).summaries[0].status,
-            generated_at: (video as any).summaries[0].generated_at,
+            id: video.summary_id,
+            status: video.summary_status,
+            generated_at: null, // Not available in flat view
           }
         : null,
   };

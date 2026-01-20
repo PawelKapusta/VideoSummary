@@ -40,7 +40,7 @@ export default function ResetPasswordView() {
           <div className="text-center space-y-3">
             <h3 className="text-xl font-semibold text-white">Reset Link Sent!</h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              We've sent a password reset link to your email address. Please click it to set your new password.
+              We&apos;ve sent a password reset link to your email address. Please click it to set your new password.
             </p>
           </div>
           <Button

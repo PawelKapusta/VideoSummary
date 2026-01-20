@@ -100,14 +100,18 @@ export function useSignupForm({
   const handleInputChange = useCallback((field: keyof RegisterFormData, value: string) => {
     setState((prev) => {
       const newData = { ...prev.data, [field]: value };
-      const newErrors = { ...prev.errors };
+      let newErrors = { ...prev.errors };
 
       if (newErrors[field as keyof RegisterFormErrors]) {
-        delete newErrors[field as keyof RegisterFormErrors];
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [field as keyof RegisterFormErrors]: _, ...restErrors } = newErrors;
+        newErrors = restErrors;
       }
 
       if (newErrors.form) {
-        delete newErrors.form;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { form: _, ...restErrors } = newErrors;
+        newErrors = restErrors;
       }
 
       const isValid =
@@ -175,7 +179,7 @@ export function useSignupForm({
       const code = apiErr.error.code;
 
       if (code === "EMAIL_ALREADY_EXISTS") {
-        setFieldError("form" as any, "An account with this email already exists. Please login.");
+        setFieldError("form" as keyof RegisterFormErrors, "An account with this email already exists. Please login.");
       } else if (code === "INVALID_INPUT" || code === "VALIDATION_ERROR") {
         if (apiErr.error.details) {
           const details = apiErr.error.details;
@@ -186,7 +190,7 @@ export function useSignupForm({
             setFieldError("password", details.password as string);
           }
         } else {
-          setFieldError("form" as any, apiErr.error.message);
+          setFieldError("form" as keyof RegisterFormErrors, apiErr.error.message);
         }
       } else if (code === "RATE_LIMIT_EXCEEDED") {
         toast.error("Too many attempts. Please wait before trying again.", {
@@ -203,7 +207,7 @@ export function useSignupForm({
           });
         }, 1000);
       } else if (code === "INTERNAL_ERROR") {
-        setFieldError("form" as any, "Registration failed. Please try again later.");
+        setFieldError("form" as keyof RegisterFormErrors, "Registration failed. Please try again later.");
       } else {
         toast.error("Registration error", {
           description: apiErr.error.message,

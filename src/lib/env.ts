@@ -74,7 +74,7 @@ export function getSiteUrl(runtimeEnv?: RuntimeEnv): string {
       }
       // Ensure trailing slash
       return siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`;
-    } catch (error) {
+    } catch {
       console.error("Invalid SITE_URL format:", siteUrl);
       return "https://video-summary.pages.dev/";
     }

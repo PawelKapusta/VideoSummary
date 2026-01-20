@@ -25,13 +25,13 @@ export function useHiddenSummaries(filters: FilterOptions = {}) {
       };
 
       // Remove undefined values
-      const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined && v !== ""));
+      const cleanParams = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ""));
 
       const response = await api.get<PaginatedResponse<SummaryWithVideo>>("/api/summaries", { params: cleanParams });
       return response;
     },
     initialPageParam: { offset: 0 },
-    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+    getNextPageParam: (lastPage) => {
       if (!lastPage?.pagination) return undefined;
       const offset = lastPage.pagination.offset;
       const limit = lastPage.pagination.limit;

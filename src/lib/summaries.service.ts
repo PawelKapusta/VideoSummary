@@ -7,10 +7,8 @@ import type {
   SummaryStatus,
   SummaryWithVideo,
   BulkGenerationStatus,
-  BulkGenerationStatusEnum,
   BulkGenerationResponse,
 } from "../types";
-import type { ChatMessage } from "./openrouter.types";
 import { extractYouTubeVideoId } from "./youtube.utils";
 import { fetchYouTubeVideoMetadata, fetchLatestVideoFromChannel } from "./youtube.service";
 import { OpenRouterService } from "./openrouter.service";
@@ -144,10 +142,10 @@ export async function generateSummary(
         .select("id, channel_id")
         .eq("youtube_video_id", youtubeVideoId)
         .single();
-      videoId = retry!.id;
-      channelId = retry!.channel_id;
+      videoId = retry?.id || "";
+      channelId = retry?.channel_id || "";
     } else {
-      videoId = newVideo!.id;
+      videoId = newVideo?.id || "";
     }
   }
 
@@ -192,7 +190,7 @@ export async function generateSummary(
       p_video_id: videoId,
       p_channel_id: channelId,
       p_lock_key: lockKey,
-    } as any
+    } as Record<string, unknown>
   );
 
   if (rpcErr) {
@@ -200,7 +198,7 @@ export async function generateSummary(
     throw rpcErr;
   }
 
-  const summary = (rpcData as any[])[0];
+  const summary = (rpcData as unknown[])[0];
   if (!summary?.id) throw new Error("SUMMARY_CREATION_FAILED");
 
   // -------------------------------------------------
@@ -414,7 +412,7 @@ async function processSummaryGeneration(
       throw saveError;
     }
     appLogger.info("Summary successfully saved to database", { summaryId });
-  } catch (err: any) {
+  } catch (err: unknown) {
     const msg = err.message || String(err);
 
     // Don't log transcript errors as application errors - they're expected business cases
@@ -566,20 +564,20 @@ export async function listSummaries(
   // Sort data in memory using generated_at instead of video published_at
   if (data && data.length > 0) {
     const ascending = filters.sort === "oldest";
-    data.sort((a: any, b: any) => {
+    data.sort((a: SummaryWithVideo, b: SummaryWithVideo) => {
       const dateA = new Date(a.generated_at || 0).getTime();
       const dateB = new Date(b.generated_at || 0).getTime();
       return ascending ? dateA - dateB : dateB - dateA;
     });
     appLogger.debug("Data sorted in memory by generated_at", {
       userId,
-      firstItemDate: (data[0] as any)?.generated_at,
-      lastItemDate: (data[data.length - 1] as any)?.generated_at,
+      firstItemDate: (data[0] as SummaryWithVideo)?.generated_at,
+      lastItemDate: (data[data.length - 1] as SummaryWithVideo)?.generated_at,
     });
   }
 
   // Get user ratings for all summaries in this batch
-  const summaryIds = (data ?? []).map((row: any) => row.id).filter((id): id is string => id !== null);
+  const summaryIds = (data ?? []).map((row: SummaryWithVideo) => row.id).filter((id): id is string => id !== null);
   const { data: userRatings } = await supabase
     .from("summary_ratings")
     .select("summary_id, rating")
@@ -594,7 +592,7 @@ export async function listSummaries(
     }
   });
 
-  const result: SummaryWithVideo[] = (data ?? []).map((row: any) => ({
+  const result: SummaryWithVideo[] = (data ?? []).map((row: unknown) => ({
     id: row.id,
     video: {
       id: row.videos.id,
@@ -697,7 +695,7 @@ export async function getSummaryDetails(
       created_at: summary.videos.channels.created_at,
     },
     tldr: summary.tldr,
-    full_summary: summary.full_summary as any,
+    full_summary: summary.full_summary as unknown,
     status: summary.status,
     error_code: summary.error_code,
     generated_at: summary.generated_at,
@@ -710,7 +708,6 @@ export async function getSummaryDetails(
 // ---------------------------------------------------------------------------
 // Constants for bulk generation
 // ---------------------------------------------------------------------------
-const QUEUE_PROCESSING_CONCURRENCY = 3; // Process 3 videos in parallel
 const STALE_GENERATION_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
 const MAX_VIDEO_DURATION_SECONDS = 2700; // 45 minutes
 
@@ -756,7 +753,7 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
     } else {
       staleGenerationsCount = staleGenerations?.length || 0;
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     appLogger.warn(`Exception cleaning up stale bulk generations: ${err.message}`);
   }
 
@@ -778,7 +775,7 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
     } else {
       staleQueueItemsCount = staleQueueItems?.length || 0;
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     appLogger.warn(`Exception cleaning up stale queue items: ${err.message}`);
   }
 
@@ -883,7 +880,7 @@ async function queueVideosForGeneration(
             appLogger.info(`Channel "${channel.name}": created video "${videoMeta.title}" in database`);
           }
         }
-      } catch (ytError: any) {
+      } catch (ytError: unknown) {
         appLogger.error(`Channel "${channel.name}": YouTube API error - ${ytError.message}`);
         errors.push(`${channel.name}: ${ytError.message}`);
         continue;
@@ -957,7 +954,7 @@ async function queueVideosForGeneration(
 
       queued++;
       appLogger.info(`Channel "${channel.name}" queued: video "${latestVideo.title}"`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMsg = `Channel ${channel.name}: ${error.message}`;
       errors.push(errorMsg);
       appLogger.error("Error queueing video for channel", {
@@ -1083,7 +1080,7 @@ async function processQueueItem(
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMsg = error.message || String(error);
 
     // Determine error code for summary
@@ -1218,115 +1215,6 @@ export async function processNextQueueItem(
 }
 
 // ---------------------------------------------------------------------------
-// Process queue with parallel workers
-// ---------------------------------------------------------------------------
-async function processQueueWithWorkers(
-  supabase: SupabaseClient,
-  bulkGenerationId: string,
-  runtimeEnv?: RuntimeEnv
-): Promise<void> {
-  const workerId = `bulk-${bulkGenerationId}-${Date.now()}`;
-  let totalProcessed = 0;
-  let totalSuccessful = 0;
-  let totalFailed = 0;
-
-  appLogger.info("Starting queue processing", { bulkGenerationId, workerId });
-
-  // Update bulk generation status to in_progress
-  await supabase.from("bulk_generation_status").update({ status: "in_progress" }).eq("id", bulkGenerationId);
-
-  try {
-    while (true) {
-      // Fetch batch of pending queue items
-      const { data: queueItems, error: fetchError } = await supabase
-        .from("summary_queue")
-        .select("id, video_id, retry_count, max_retries")
-        .eq("status", "pending")
-        .order("priority", { ascending: false })
-        .order("queued_at", { ascending: true })
-        .limit(QUEUE_PROCESSING_CONCURRENCY);
-
-      if (fetchError) {
-        appLogger.error("Error fetching queue items", { error: fetchError.message });
-        break;
-      }
-
-      if (!queueItems || queueItems.length === 0) {
-        appLogger.info("No more pending queue items");
-        break;
-      }
-
-      // Process batch in parallel
-      const results = await Promise.allSettled(
-        queueItems.map((item) => processQueueItem(supabase, item, workerId, runtimeEnv))
-      );
-
-      // Count results
-      for (const result of results) {
-        totalProcessed++;
-        if (result.status === "fulfilled" && result.value.success) {
-          totalSuccessful++;
-        } else {
-          totalFailed++;
-        }
-      }
-
-      // Update bulk generation progress
-      await supabase
-        .from("bulk_generation_status")
-        .update({
-          processed_channels: totalProcessed,
-          successful_summaries: totalSuccessful,
-          failed_summaries: totalFailed,
-        })
-        .eq("id", bulkGenerationId);
-
-      appLogger.debug("Batch processed", {
-        bulkGenerationId,
-        totalProcessed,
-        totalSuccessful,
-        totalFailed,
-      });
-    }
-
-    // Mark as completed
-    await supabase
-      .from("bulk_generation_status")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        processed_channels: totalProcessed,
-        successful_summaries: totalSuccessful,
-        failed_summaries: totalFailed,
-      })
-      .eq("id", bulkGenerationId);
-
-    appLogger.info("Bulk generation completed", {
-      bulkGenerationId,
-      totalProcessed,
-      totalSuccessful,
-      totalFailed,
-    });
-  } catch (error: any) {
-    appLogger.error("Bulk generation failed", {
-      bulkGenerationId,
-      error: error.message,
-    });
-
-    await supabase
-      .from("bulk_generation_status")
-      .update({
-        status: "failed",
-        error_message: error.message,
-        completed_at: new Date().toISOString(),
-        processed_channels: totalProcessed,
-        successful_summaries: totalSuccessful,
-        failed_summaries: totalFailed,
-      })
-      .eq("id", bulkGenerationId);
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Masowa generacja podsumowań dla wszystkich kanałów (system cron job)
 // ---------------------------------------------------------------------------
@@ -1340,7 +1228,7 @@ export async function startBulkSummaryGeneration(
   try {
     await cleanupStaleGenerations(supabase);
     appLogger.debug("Stale cleanup completed");
-  } catch (cleanupErr: any) {
+  } catch (cleanupErr: unknown) {
     appLogger.warn("Stale cleanup failed (continuing anyway)", { error: cleanupErr.message });
   }
 

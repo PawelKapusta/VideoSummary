@@ -47,9 +47,8 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
       onHide(summary.id);
       setShowDialog(false);
       toast.success("Summary hidden");
-    } catch (error) {
+    } catch {
       toast.error("Failed to hide summary");
-      console.error("Hide failed:", error);
     } finally {
       setIsHiding(false);
     }

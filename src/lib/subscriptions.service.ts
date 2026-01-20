@@ -1,13 +1,7 @@
 import { createHash } from "crypto";
 import type { SupabaseClient } from "../db/supabase.client";
 import { errorLogger, appLogger, dbLogger, externalLogger } from "./logger";
-import type {
-  PaginatedResponse,
-  SubscriptionWithChannel,
-  ChannelInsert,
-  SubscriptionInsert,
-  AtomicSubscriptionResult,
-} from "../types";
+import type { PaginatedResponse, SubscriptionWithChannel, ChannelInsert, AtomicSubscriptionResult } from "../types";
 import { extractYouTubeChannelId } from "./youtube.utils";
 import { fetchYouTubeChannelMetadata } from "./youtube.service";
 import type { RuntimeEnv } from "./env";
@@ -206,7 +200,7 @@ export async function subscribeToChannel(
   const lockKey = hashStringToInt32(channelId);
 
   // Use RPC function for atomic operation with advisory lock
-  let subscription: any;
+  let subscription: unknown;
   try {
     const result = await supabase.rpc("subscribe_to_channel_atomic", {
       p_user_id: userId,
@@ -274,7 +268,7 @@ export async function unsubscribeFromChannel(
   userId: string,
   subscriptionId: string
 ): Promise<void> {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("subscriptions")
     .delete()
     .eq("id", subscriptionId)

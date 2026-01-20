@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import type { Channel, ApiError, SubscribeRequest, SubscriptionWithChannel } from "../../../types";
-import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import type { Channel, ApiError, SubscribeRequest } from "../../../types";
+import { errorLogger, performanceLogger } from "../../../lib/logger";
 import { getUserProfile } from "../../../lib/profile.service";
 import { SubscribeRequestSchema } from "../../../lib/validation/schemas";
 import { subscribeToChannel } from "../../../lib/subscriptions.service";
@@ -17,7 +17,7 @@ import type { RuntimeEnv } from "../../../lib/env";
  * Response (200 OK):
  * Channel[]
  */
-export const GET: APIRoute = async ({ request, locals }) => {
+export const GET: APIRoute = async ({ locals }) => {
   const startTime = performance.now();
   const supabase = locals.supabase;
 

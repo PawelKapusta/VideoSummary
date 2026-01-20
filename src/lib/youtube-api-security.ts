@@ -66,6 +66,7 @@ const rateLimiter = new YouTubeApiRateLimiter();
  * @param runtimeEnv - Runtime environment variables
  * @param userId - Optional user ID for rate limiting
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function createSecureYouTubeFetchOptions(runtimeEnv?: RuntimeEnv, userId?: string): RequestInit {
   // Get site URL from server-controlled env (cannot be manipulated by client)
   const referer = getSiteUrl(runtimeEnv);

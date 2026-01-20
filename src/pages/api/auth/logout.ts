@@ -18,7 +18,7 @@ import { securityLogger, errorLogger, performanceLogger } from "../../../lib/log
  * Error Responses:
  * - 500 Internal Server Error: Supabase Auth service error
  */
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ locals }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

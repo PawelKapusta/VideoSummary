@@ -27,7 +27,7 @@ export function useRating(summaryId: string) {
     },
   });
 
-  const { mutate: removeRatingMutation, isPending: isRemoving } = useMutation<{ message: string }, Error, void>({
+  const { mutate: removeRatingMutation, isPending: isRemoving } = useMutation<{ message: string }, Error>({
     mutationFn: () => removeRatingAPI(summaryId),
     onSuccess: () => {
       // Invalidate and refetch summary details to update rating stats

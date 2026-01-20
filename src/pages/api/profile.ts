@@ -27,7 +27,7 @@ import { getUserProfile } from "../../lib/profile.service";
  * - 404 Not Found: User profile not found
  * - 500 Internal Server Error: Database connection error
  */
-export const GET: APIRoute = async ({ request, locals }) => {
+export const GET: APIRoute = async ({ locals }) => {
   const startTime = performance.now();
 
   // Use Supabase client from middleware (already configured with trace ID)

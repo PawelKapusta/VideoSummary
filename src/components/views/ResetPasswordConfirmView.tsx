@@ -68,7 +68,10 @@ const ResetPasswordForm: React.FC<{
 );
 
 export const ResetPasswordConfirmView: React.FC = () => {
-  const [token, setToken] = useState<string>("");
+  const token = (() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("token") || "";
+  })();
   const [showSuccess, setShowSuccess] = useState(false);
 
   const {
@@ -79,15 +82,11 @@ export const ResetPasswordConfirmView: React.FC = () => {
   } = useConfirmResetPasswordForm(token);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenParam = urlParams.get("token");
-    if (!tokenParam) {
+    if (!token) {
       toast.error("No reset link provided. Please check your email or request a new one.");
       window.location.href = "/reset-password";
-      return;
     }
-    setToken(tokenParam);
-  }, []);
+  }, [token]);
 
   const handleFormSubmit = async (e?: React.FormEvent<HTMLFormElement>): Promise<ApiSuccess<void> | null> => {
     if (e) {

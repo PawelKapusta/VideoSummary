@@ -22,7 +22,7 @@ import type { RuntimeEnv } from "../../../lib/env";
  * - 401 Unauthorized: Missing or invalid session
  * - 500 Internal Server Error: Database or auth service error
  */
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ locals }) => {
   const startTime = performance.now();
 
   // Use regular Supabase client from middleware to get current user

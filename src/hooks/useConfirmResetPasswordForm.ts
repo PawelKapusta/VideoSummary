@@ -53,7 +53,14 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
 
       const newErrors = { ...prev.errors };
       if (newErrors[field as keyof ConfirmResetFormErrors]) {
-        delete newErrors[field as keyof ConfirmResetFormErrors];
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [field as keyof ConfirmResetFormErrors]: _, ...restErrors } = newErrors;
+        return {
+          ...prev,
+          data: newData,
+          errors: restErrors,
+          isValid,
+        };
       }
 
       return {
@@ -116,7 +123,6 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
 
         if (error instanceof ApiClientError) {
           let formError = error.message;
-          const newErrors: ConfirmResetFormErrors = { ...formState.errors };
 
           if (error.code === "INVALID_TOKEN") {
             formError = "Invalid or expired reset link. Please request a new one.";

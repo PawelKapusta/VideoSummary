@@ -180,13 +180,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const authResponse: AuthResponse = {
       user: {
         id: data.user.id,
-        email: data.user.email!,
+        email: data.user.email || "",
         created_at: data.user.created_at,
       },
       session: {
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token,
-        expires_at: Math.floor(new Date(data.session.expires_at!).getTime() / 1000),
+        expires_at: Math.floor(new Date(data.session.expires_at || Date.now()).getTime() / 1000),
       },
     };
 

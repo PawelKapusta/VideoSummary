@@ -21,7 +21,7 @@ const VideosFilterBar: React.FC<VideosFilterBarProps> = ({ channels, activeFilte
       searchQuery={activeFilters.searchQuery || ""}
       onSearchChange={(query) => onFiltersChange({ searchQuery: query })}
       statusValue={activeFilters.summaryStatus}
-      onStatusChange={(status) => onFiltersChange({ summaryStatus: status as any })}
+      onStatusChange={(status) => onFiltersChange({ summaryStatus: status as VideosFilterState["summaryStatus"] })}
       statusOptions={statusOptions}
       channelValue={activeFilters.channelId}
       onChannelChange={(channelId) => onFiltersChange({ channelId })}
