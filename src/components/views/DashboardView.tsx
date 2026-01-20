@@ -92,8 +92,9 @@ const DashboardContent = () => {
         }
 
         // Clear all caches to ensure fresh data
-        await queryClient.invalidateQueries({ queryKey: ["summaries"] });
-        await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
+        await queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] === "summaries" || query.queryKey[0] === "hiddenSummaries",
+        });
         toast.success("Summary hidden successfully");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to hide summary");

@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -43,8 +44,9 @@ const HiddenSummariesContent = () => {
     setIsUnhidingAll(true);
     try {
       await api.post("/api/summaries/unhide-all");
-      await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
-      await queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "summaries" || query.queryKey[0] === "hiddenSummaries",
+      });
       toast.success("All summaries restored to your dashboard");
     } catch {
       toast.error("Failed to restore all summaries");
@@ -62,8 +64,9 @@ const HiddenSummariesContent = () => {
       // Using DELETE based on backend API convention for unhide
       await api.delete(`/api/summaries/${summaryId}/hide`);
       // Invalidate both hidden summaries and regular summaries queries
-      await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
-      await queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === "summaries" || query.queryKey[0] === "hiddenSummaries",
+      });
       toast.success("Summary restored to your dashboard");
     } catch {
       toast.error("Failed to unhide summary");
@@ -159,15 +162,9 @@ const HiddenSummariesContent = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter className="gap-2 sm:gap-0 mt-4">
-                    <Button
-                      variant="outline"
-                      onClick={(e) => {
-                        const dialog = e.target as HTMLElement;
-                        dialog.closest("dialog")?.close();
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                    <DialogClose>
+                      <Button variant="outline">Cancel</Button>
+                    </DialogClose>
                     <Button
                       onClick={handleUnhideAll}
                       disabled={isUnhidingAll}
@@ -319,12 +316,9 @@ const HiddenSummariesContent = () => {
                             It will appear in your main dashboard again.
                           </div>
                           <DialogFooter className="gap-2 sm:gap-0 mt-2">
-                            {/* We can use DialogClose if available, or just a button that doesn't trigger action. 
-                                                            Radix UI Dialog usually handles close on button click inside. 
-                                                        */}
-                            <Button variant="outline" type="button">
-                              Cancel
-                            </Button>
+                            <DialogClose>
+                              <Button variant="outline">Cancel</Button>
+                            </DialogClose>
                             <Button
                               onClick={() => {
                                 handleUnhide(summary.id);

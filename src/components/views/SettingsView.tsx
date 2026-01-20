@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Sun, Bell, Shield, UserX, LogOut, EyeOff } from "lucide-react";
 import QueryProvider from "../providers/QueryProvider";
 import { useProfile } from "@/hooks/useProfile";
@@ -18,6 +28,7 @@ const SettingsContent = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [summaryNotifications, setSummaryNotifications] = useState(true);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   if (isLoading) {
     return (
@@ -46,39 +57,34 @@ const SettingsContent = () => {
   }
 
   const handleLogout = () => {
-    if (confirm("Are you sure you want to log out?")) {
-      logout();
-    }
+    logout();
   };
 
   const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data including summaries and subscriptions."
-    );
+    setIsDeletingAccount(true);
+    try {
+      const response = await fetch("/api/auth/delete-account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (confirmed) {
-      try {
-        const response = await fetch("/api/auth/delete-account", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+      const data = await response.json();
 
-        const data = await response.json();
-
-        if (response.ok) {
-          toast.success("Your account has been successfully deleted. You will be redirected to the login page.");
-          // Redirect to login page after a short delay
-          setTimeout(() => {
-            window.location.href = "/login";
-          }, 2000);
-        } else {
-          toast.error(data.error?.message || "Failed to delete your account. Please try again or contact support.");
-        }
-      } catch {
-        toast.error("An unexpected error occurred while deleting your account. Please try again or contact support.");
+      if (response.ok) {
+        toast.success("Your account has been successfully deleted. You will be redirected to the login page.");
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      } else {
+        toast.error(data.error?.message || "Failed to delete your account. Please try again or contact support.");
       }
+    } catch {
+      toast.error("An unexpected error occurred while deleting your account. Please try again or contact support.");
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -103,15 +109,38 @@ const SettingsContent = () => {
           <CardDescription>Manage your account session and security.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            variant="outline"
-            className="w-full sm:w-auto hover:bg-gray-100 dark:hover:bg-gray-300"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            {isLoggingOut ? "Logging out..." : "Logout"}
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                disabled={isLoggingOut}
+                variant="outline"
+                className="w-full sm:w-auto hover:bg-gray-100 dark:hover:bg-gray-300"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Logout from Account</DialogTitle>
+                <DialogDescription className="pt-2 text-base">
+                  Are you sure you want to log out? You will need to sign in again to access your account.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 sm:gap-0 mt-4">
+                <DialogClose>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 
@@ -233,13 +262,35 @@ const SettingsContent = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Permanently delete your account and all associated data. This action cannot be undone.
               </p>
-              <Button
-                onClick={handleDeleteAccount}
-                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white border-red-600"
-              >
-                <UserX className="mr-2 h-4 w-4" />
-                Delete Account
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white border-red-600">
+                    <UserX className="mr-2 h-4 w-4" />
+                    Delete Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl text-destructive">Delete Account</DialogTitle>
+                    <DialogDescription className="pt-2 text-base">
+                      Are you sure you want to delete your account? This action cannot be undone and will permanently
+                      delete all your data including summaries and subscriptions.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="gap-2 sm:gap-0 mt-4">
+                    <DialogClose>
+                      <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button
+                      onClick={handleDeleteAccount}
+                      disabled={isDeletingAccount}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {isDeletingAccount ? "Deleting..." : "Delete Account"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardContent>

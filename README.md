@@ -7,8 +7,24 @@
 
 An AI-powered web application that automatically generates concise summaries of YouTube videos from your favorite channels. Stay informed without spending hours watching - get the key insights delivered to your dashboard.
 
+## 🌐 Live Deployment
+
+**Video Summary is now live and accessible at [https://videosummary.org/](https://videosummary.org/)**
+
+The domain has been acquired specifically for this project, providing a production-ready instance with full automation and enterprise-grade infrastructure.
+
+### Production Environment Features
+
+- **Automated Processing**: Daily summary generation and background queue processing via scheduled cron jobs
+- **Enterprise Security**: Production-grade authentication with Supabase Auth and secure session management
+- **Real-time Dashboard**: Live updates and instant notifications for new video summaries
+- **Scalable Architecture**: Serverless backend infrastructure with Cloudflare Functions and Supabase database
+
+**Ready to get started?** Visit [https://videosummary.org/](https://videosummary.org/) to begin using Video Summary immediately, or follow the local development setup below.
+
 ## Table of Contents
 
+- [🌐 Live Deployment](#-live-deployment)
 - [✨ Features](#-features)
 - [🏗️ Architecture](#️-architecture)
 - [🚀 Quick Start](#-quick-start)

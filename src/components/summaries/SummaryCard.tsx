@@ -4,10 +4,8 @@ import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { ThumbsUp, ThumbsDown, EyeOff, Clock, AlertCircle, Languages, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 import type { SummaryWithVideo } from "../../types";
 import { useRating } from "../../hooks/useRating";
-import { apiClient as api } from "../../lib/api";
 
 interface Props {
   summary: SummaryWithVideo;
@@ -43,12 +41,10 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
     if (isHiding) return;
     setIsHiding(true);
     try {
-      await api.post(`/api/summaries/${summary.id}/hide`);
-      onHide(summary.id);
+      await onHide(summary.id);
       setShowDialog(false);
-      toast.success("Summary hidden");
     } catch {
-      toast.error("Failed to hide summary");
+      // Error handling is done in the parent component
     } finally {
       setIsHiding(false);
     }
