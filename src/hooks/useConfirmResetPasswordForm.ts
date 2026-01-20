@@ -1,23 +1,23 @@
-import React, { useState, useCallback } from 'react';
-import { z } from 'zod';
-import { confirmResetPassword, ApiClientError } from '@/lib/api';
+import React, { useState, useCallback } from "react";
+import { z } from "zod";
+import { confirmResetPassword, ApiClientError } from "@/lib/api";
 import type {
   ConfirmResetFormState,
   ConfirmResetFormData,
   ConfirmResetFormErrors,
   ConfirmResetPasswordRequest,
   ApiSuccess,
-} from '@/types';
-import { PasswordSchema } from '@/lib/validation/schemas';
+} from "@/types";
+import { PasswordSchema } from "@/lib/validation/schemas";
 
 const formSchema = z
   .object({
     password: PasswordSchema,
-    confirmPassword: z.string().min(1, { message: 'Please confirm your password' }),
+    confirmPassword: z.string().min(1, { message: "Please confirm your password" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
 const validateForm = (data: ConfirmResetFormData): { errors: ConfirmResetFormErrors; isValid: boolean } => {
@@ -29,7 +29,7 @@ const validateForm = (data: ConfirmResetFormData): { errors: ConfirmResetFormErr
   const fieldErrors: ConfirmResetFormErrors = {};
   result.error.errors.forEach((issue) => {
     const field = issue.path[0] as keyof ConfirmResetFormData;
-    if (field === 'password' || field === 'confirmPassword') {
+    if (field === "password" || field === "confirmPassword") {
       fieldErrors[field] = issue.message;
     }
   });
@@ -40,7 +40,7 @@ const validateForm = (data: ConfirmResetFormData): { errors: ConfirmResetFormErr
 export const useConfirmResetPasswordForm = (initialToken: string) => {
   const [token] = useState(initialToken);
   const [formState, setFormState] = useState<ConfirmResetFormState>({
-    data: { password: '', confirmPassword: '' },
+    data: { password: "", confirmPassword: "" },
     errors: {},
     isSubmitting: false,
     isValid: false,
@@ -50,7 +50,7 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
     setFormState((prev) => {
       const newData: ConfirmResetFormData = { ...prev.data, [field]: value };
       const { isValid } = validateForm(newData);
-      
+
       const newErrors = { ...prev.errors };
       if (newErrors[field as keyof ConfirmResetFormErrors]) {
         delete newErrors[field as keyof ConfirmResetFormErrors];
@@ -91,7 +91,7 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
       if (!token) {
         setFormState((prev) => ({
           ...prev,
-          errors: { ...prev.errors, form: 'No valid reset token provided' },
+          errors: { ...prev.errors, form: "No valid reset token provided" },
         }));
         return null;
       }
@@ -118,9 +118,9 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
           let formError = error.message;
           const newErrors: ConfirmResetFormErrors = { ...formState.errors };
 
-          if (error.code === 'INVALID_TOKEN') {
-            formError = 'Invalid or expired reset link. Please request a new one.';
-          } else if (error.code === 'VALIDATION_ERROR') {
+          if (error.code === "INVALID_TOKEN") {
+            formError = "Invalid or expired reset link. Please request a new one.";
+          } else if (error.code === "VALIDATION_ERROR") {
             // Preserve field errors, don't set form error for validation
             if (error.details && error.details.password) {
               const passwordError = Array.isArray(error.details.password)
@@ -144,7 +144,7 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
         } else {
           setFormState((prev) => ({
             ...prev,
-            errors: { ...prev.errors, form: 'An unexpected error occurred. Please try again.' },
+            errors: { ...prev.errors, form: "An unexpected error occurred. Please try again." },
           }));
         }
 

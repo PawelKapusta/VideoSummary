@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { motion, useAnimation, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
 
 interface EnhancedProgressBarProps {
   progress?: number; // 0-100, if not provided shows indeterminate animation
   className?: string;
   height?: string;
   showPercentage?: boolean;
-  color?: 'blue' | 'green' | 'purple' | 'red' | 'orange';
-  variant?: 'default' | 'glow' | 'striped' | 'shimmer';
+  color?: "blue" | "green" | "purple" | "red" | "orange";
+  variant?: "default" | "glow" | "striped" | "shimmer";
   duration?: number; // animation duration in seconds
 }
 
@@ -16,9 +16,9 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
   className = "",
   height = "h-2",
   showPercentage = false,
-  color = 'blue',
-  variant = 'default',
-  duration = 2
+  color = "blue",
+  variant = "default",
+  duration = 2,
 }) => {
   const [animatedProgress, setAnimatedProgress] = useState(progress || 0);
   const controls = useAnimation();
@@ -26,35 +26,35 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
   // Color configurations
   const colorConfigs = {
     blue: {
-      bg: 'bg-blue-100',
-      fill: 'bg-gradient-to-r from-blue-400 to-blue-600',
-      glow: 'shadow-blue-400/50',
-      shimmer: 'from-blue-300/50 to-blue-500/50'
+      bg: "bg-blue-100",
+      fill: "bg-gradient-to-r from-blue-400 to-blue-600",
+      glow: "shadow-blue-400/50",
+      shimmer: "from-blue-300/50 to-blue-500/50",
     },
     green: {
-      bg: 'bg-green-100',
-      fill: 'bg-gradient-to-r from-green-400 to-green-600',
-      glow: 'shadow-green-400/50',
-      shimmer: 'from-green-300/50 to-green-500/50'
+      bg: "bg-green-100",
+      fill: "bg-gradient-to-r from-green-400 to-green-600",
+      glow: "shadow-green-400/50",
+      shimmer: "from-green-300/50 to-green-500/50",
     },
     purple: {
-      bg: 'bg-purple-100',
-      fill: 'bg-gradient-to-r from-purple-400 to-purple-600',
-      glow: 'shadow-purple-400/50',
-      shimmer: 'from-purple-300/50 to-purple-500/50'
+      bg: "bg-purple-100",
+      fill: "bg-gradient-to-r from-purple-400 to-purple-600",
+      glow: "shadow-purple-400/50",
+      shimmer: "from-purple-300/50 to-purple-500/50",
     },
     red: {
-      bg: 'bg-red-100',
-      fill: 'bg-gradient-to-r from-red-400 to-red-600',
-      glow: 'shadow-red-400/50',
-      shimmer: 'from-red-300/50 to-red-500/50'
+      bg: "bg-red-100",
+      fill: "bg-gradient-to-r from-red-400 to-red-600",
+      glow: "shadow-red-400/50",
+      shimmer: "from-red-300/50 to-red-500/50",
     },
     orange: {
-      bg: 'bg-orange-100',
-      fill: 'bg-gradient-to-r from-orange-400 to-orange-600',
-      glow: 'shadow-orange-400/50',
-      shimmer: 'from-orange-300/50 to-orange-500/50'
-    }
+      bg: "bg-orange-100",
+      fill: "bg-gradient-to-r from-orange-400 to-orange-600",
+      glow: "shadow-orange-400/50",
+      shimmer: "from-orange-300/50 to-orange-500/50",
+    },
   };
 
   const currentColor = colorConfigs[color];
@@ -68,21 +68,21 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
         // Phase 1: Fast initial progress (0-20%)
         await controls.start({
           width: "20%",
-          transition: { duration: 0.8, ease: "easeOut" }
+          transition: { duration: 0.8, ease: "easeOut" },
         });
         setAnimatedProgress(20);
 
         // Phase 2: Slower middle progress (20-50%)
         await controls.start({
           width: "50%",
-          transition: { duration: 1.5, ease: "easeInOut" }
+          transition: { duration: 1.5, ease: "easeInOut" },
         });
         setAnimatedProgress(50);
 
         // Phase 3: Variable final progress (50-target%)
         await controls.start({
           width: `${progress}%`,
-          transition: { duration: duration * 0.7, ease: "easeInOut" }
+          transition: { duration: duration * 0.7, ease: "easeInOut" },
         });
         setAnimatedProgress(progress);
 
@@ -90,11 +90,11 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
         while (true) {
           await controls.start({
             scaleX: 1.02,
-            transition: { duration: 0.8, ease: "easeInOut" }
+            transition: { duration: 0.8, ease: "easeInOut" },
           });
           await controls.start({
             scaleX: 1,
-            transition: { duration: 0.8, ease: "easeInOut" }
+            transition: { duration: 0.8, ease: "easeInOut" },
           });
         }
       };
@@ -106,23 +106,23 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
         while (true) {
           await controls.start({
             width: "25%",
-            transition: { duration: 0.8, ease: "easeOut" }
+            transition: { duration: 0.8, ease: "easeOut" },
           });
           await controls.start({
             width: "60%",
-            transition: { duration: 1.2, ease: "easeInOut" }
+            transition: { duration: 1.2, ease: "easeInOut" },
           });
           await controls.start({
             width: "85%",
-            transition: { duration: 0.6, ease: "easeIn" }
+            transition: { duration: 0.6, ease: "easeIn" },
           });
           await controls.start({
             width: "95%",
-            transition: { duration: 0.4, ease: "easeOut" }
+            transition: { duration: 0.4, ease: "easeOut" },
           });
           await controls.start({
             width: "0%",
-            transition: { duration: 0, ease: "easeInOut" }
+            transition: { duration: 0, ease: "easeInOut" },
           });
         }
       };
@@ -132,7 +132,7 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
 
   const renderProgressBar = () => {
     switch (variant) {
-      case 'glow':
+      case "glow":
         return (
           <div className={`relative ${height} ${currentColor.bg} rounded-full overflow-hidden ${className}`}>
             <motion.div
@@ -140,11 +140,12 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
               animate={controls}
               initial={{ width: "0%" }}
               style={{
-                background: animatedProgress < 30
-                  ? `linear-gradient(90deg, ${color === 'blue' ? '#3b82f6' : color === 'green' ? '#10b981' : color === 'purple' ? '#8b5cf6' : color === 'red' ? '#ef4444' : '#f59e0b'} 0%, ${color === 'blue' ? '#60a5fa' : color === 'green' ? '#34d399' : color === 'purple' ? '#a78bfa' : color === 'red' ? '#f87171' : '#fbbf24'} 100%)`
-                  : animatedProgress < 70
-                  ? `linear-gradient(90deg, ${color === 'blue' ? '#2563eb' : color === 'green' ? '#059669' : color === 'purple' ? '#7c3aed' : color === 'red' ? '#dc2626' : '#d97706'} 0%, ${color === 'blue' ? '#3b82f6' : color === 'green' ? '#10b981' : color === 'purple' ? '#8b5cf6' : color === 'red' ? '#ef4444' : '#f59e0b'} 100%)`
-                  : `linear-gradient(90deg, ${color === 'blue' ? '#1d4ed8' : color === 'green' ? '#047857' : color === 'purple' ? '#6d28d9' : color === 'red' ? '#b91c1c' : '#b45309'} 0%, ${color === 'blue' ? '#2563eb' : color === 'green' ? '#059669' : color === 'purple' ? '#7c3aed' : color === 'red' ? '#dc2626' : '#d97706'} 100%)`
+                background:
+                  animatedProgress < 30
+                    ? `linear-gradient(90deg, ${color === "blue" ? "#3b82f6" : color === "green" ? "#10b981" : color === "purple" ? "#8b5cf6" : color === "red" ? "#ef4444" : "#f59e0b"} 0%, ${color === "blue" ? "#60a5fa" : color === "green" ? "#34d399" : color === "purple" ? "#a78bfa" : color === "red" ? "#f87171" : "#fbbf24"} 100%)`
+                    : animatedProgress < 70
+                      ? `linear-gradient(90deg, ${color === "blue" ? "#2563eb" : color === "green" ? "#059669" : color === "purple" ? "#7c3aed" : color === "red" ? "#dc2626" : "#d97706"} 0%, ${color === "blue" ? "#3b82f6" : color === "green" ? "#10b981" : color === "purple" ? "#8b5cf6" : color === "red" ? "#ef4444" : "#f59e0b"} 100%)`
+                      : `linear-gradient(90deg, ${color === "blue" ? "#1d4ed8" : color === "green" ? "#047857" : color === "purple" ? "#6d28d9" : color === "red" ? "#b91c1c" : "#b45309"} 0%, ${color === "blue" ? "#2563eb" : color === "green" ? "#059669" : color === "purple" ? "#7c3aed" : color === "red" ? "#dc2626" : "#d97706"} 100%)`,
               }}
             >
               {/* Enhanced glow effect */}
@@ -156,14 +157,15 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
                 transition={{
                   duration: 2,
                   repeat: Infinity,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
                 }}
                 style={{
-                  background: animatedProgress < 30
-                    ? `linear-gradient(90deg, ${color === 'blue' ? '#3b82f6' : color === 'green' ? '#10b981' : color === 'purple' ? '#8b5cf6' : color === 'red' ? '#ef4444' : '#f59e0b'} 0%, ${color === 'blue' ? '#60a5fa' : color === 'green' ? '#34d399' : color === 'purple' ? '#a78bfa' : color === 'red' ? '#f87171' : '#fbbf24'} 100%)`
-                    : animatedProgress < 70
-                    ? `linear-gradient(90deg, ${color === 'blue' ? '#2563eb' : color === 'green' ? '#059669' : color === 'purple' ? '#7c3aed' : color === 'red' ? '#dc2626' : '#d97706'} 0%, ${color === 'blue' ? '#3b82f6' : color === 'green' ? '#10b981' : color === 'purple' ? '#8b5cf6' : color === 'red' ? '#ef4444' : '#f59e0b'} 100%)`
-                    : `linear-gradient(90deg, ${color === 'blue' ? '#1d4ed8' : color === 'green' ? '#047857' : color === 'purple' ? '#6d28d9' : color === 'red' ? '#b91c1c' : '#b45309'} 0%, ${color === 'blue' ? '#2563eb' : color === 'green' ? '#059669' : color === 'purple' ? '#7c3aed' : color === 'red' ? '#dc2626' : '#d97706'} 100%)`
+                  background:
+                    animatedProgress < 30
+                      ? `linear-gradient(90deg, ${color === "blue" ? "#3b82f6" : color === "green" ? "#10b981" : color === "purple" ? "#8b5cf6" : color === "red" ? "#ef4444" : "#f59e0b"} 0%, ${color === "blue" ? "#60a5fa" : color === "green" ? "#34d399" : color === "purple" ? "#a78bfa" : color === "red" ? "#f87171" : "#fbbf24"} 100%)`
+                      : animatedProgress < 70
+                        ? `linear-gradient(90deg, ${color === "blue" ? "#2563eb" : color === "green" ? "#059669" : color === "purple" ? "#7c3aed" : color === "red" ? "#dc2626" : "#d97706"} 0%, ${color === "blue" ? "#3b82f6" : color === "green" ? "#10b981" : color === "purple" ? "#8b5cf6" : color === "red" ? "#ef4444" : "#f59e0b"} 100%)`
+                        : `linear-gradient(90deg, ${color === "blue" ? "#1d4ed8" : color === "green" ? "#047857" : color === "purple" ? "#6d28d9" : color === "red" ? "#b91c1c" : "#b45309"} 0%, ${color === "blue" ? "#2563eb" : color === "green" ? "#059669" : color === "purple" ? "#7c3aed" : color === "red" ? "#dc2626" : "#d97706"} 100%)`,
                 }}
               />
               {/* Inner highlight */}
@@ -184,7 +186,7 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
           </div>
         );
 
-      case 'striped':
+      case "striped":
         return (
           <div className={`relative ${height} ${currentColor.bg} rounded-full overflow-hidden ${className}`}>
             <motion.div
@@ -196,7 +198,7 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
                 style={{
-                  backgroundSize: '20px 100%',
+                  backgroundSize: "20px 100%",
                 }}
                 animate={{
                   backgroundPosition: ["0% 0%", "20px 0%"],
@@ -211,7 +213,7 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
           </div>
         );
 
-      case 'shimmer':
+      case "shimmer":
         return (
           <div className={`relative ${height} ${currentColor.bg} rounded-full overflow-hidden ${className}`}>
             <motion.div
@@ -256,7 +258,7 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
       <div className="relative">
         {renderProgressBar()}
         <AnimatePresence>
-          {progress !== undefined && variant === 'glow' && (
+          {progress !== undefined && variant === "glow" && (
             <motion.div
               className="absolute -top-1 left-0 w-2 h-2 bg-white rounded-full shadow-lg"
               style={{

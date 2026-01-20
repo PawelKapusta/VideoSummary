@@ -1,44 +1,40 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
 interface BouncingDotsProps {
-  size?: 'sm' | 'md' | 'lg';
-  color?: 'blue' | 'purple' | 'green' | 'rainbow';
+  size?: "sm" | "md" | "lg";
+  color?: "blue" | "purple" | "green" | "rainbow";
   className?: string;
 }
 
-const BouncingDots: React.FC<BouncingDotsProps> = ({
-  size = 'md',
-  color = 'blue',
-  className = ""
-}) => {
+const BouncingDots: React.FC<BouncingDotsProps> = ({ size = "md", color = "blue", className = "" }) => {
   const sizeClasses = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5'
+    sm: "w-3 h-3",
+    md: "w-4 h-4",
+    lg: "w-5 h-5",
   };
 
   const colors = {
     blue: [
-      'bg-gradient-to-br from-blue-400 to-blue-600',
-      'bg-gradient-to-br from-blue-500 to-blue-700',
-      'bg-gradient-to-br from-blue-600 to-blue-800'
+      "bg-gradient-to-br from-blue-400 to-blue-600",
+      "bg-gradient-to-br from-blue-500 to-blue-700",
+      "bg-gradient-to-br from-blue-600 to-blue-800",
     ],
     purple: [
-      'bg-gradient-to-br from-purple-400 to-purple-600',
-      'bg-gradient-to-br from-purple-500 to-purple-700',
-      'bg-gradient-to-br from-purple-600 to-purple-800'
+      "bg-gradient-to-br from-purple-400 to-purple-600",
+      "bg-gradient-to-br from-purple-500 to-purple-700",
+      "bg-gradient-to-br from-purple-600 to-purple-800",
     ],
     green: [
-      'bg-gradient-to-br from-green-400 to-green-600',
-      'bg-gradient-to-br from-green-500 to-green-700',
-      'bg-gradient-to-br from-green-600 to-green-800'
+      "bg-gradient-to-br from-green-400 to-green-600",
+      "bg-gradient-to-br from-green-500 to-green-700",
+      "bg-gradient-to-br from-green-600 to-green-800",
     ],
     rainbow: [
-      'bg-gradient-to-br from-red-400 to-red-600',
-      'bg-gradient-to-br from-blue-400 to-blue-600',
-      'bg-gradient-to-br from-green-400 to-green-600'
-    ]
+      "bg-gradient-to-br from-red-400 to-red-600",
+      "bg-gradient-to-br from-blue-400 to-blue-600",
+      "bg-gradient-to-br from-green-400 to-green-600",
+    ],
   };
 
   const currentSize = sizeClasses[size];

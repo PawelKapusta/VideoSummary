@@ -1,10 +1,7 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Trash2, MoreHorizontal, Youtube, ExternalLink } from 'lucide-react';
-import {
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Trash2, MoreHorizontal, Youtube, ExternalLink } from "lucide-react";
+import { TableCell, TableRow } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import type { SubscriptionWithChannel } from '@/types';
-import { constructYouTubeChannelUrl } from '@/lib/youtube.utils';
+} from "@/components/ui/dialog";
+import type { SubscriptionWithChannel } from "@/types";
+import { constructYouTubeChannelUrl } from "@/lib/youtube.utils";
 
 interface ChannelRowProps {
   channel: SubscriptionWithChannel;
@@ -29,7 +26,11 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
   const youtubeUrl = constructYouTubeChannelUrl(channel.channel.youtube_channel_id || channel.channel.name);
 
   const handleRemove = () => {
-    if (confirm(`Are you sure you want to unsubscribe from ${channel.channel.name}? This will stop generating summaries for this channel.`)) {
+    if (
+      confirm(
+        `Are you sure you want to unsubscribe from ${channel.channel.name}? This will stop generating summaries for this channel.`
+      )
+    ) {
       onRemove(channel.subscription_id);
     }
   };
@@ -116,11 +117,7 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
                 )}
               </div>
               <DialogFooter className="flex-col gap-2 sm:flex-row">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDetailsOpen(false)}
-                  className="w-full sm:w-auto"
-                >
+                <Button variant="outline" onClick={() => setIsDetailsOpen(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
                 <Button

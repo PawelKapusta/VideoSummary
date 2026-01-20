@@ -1,11 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { apiClient, ApiClientError } from '@/lib/api';
-import type { SubscribeRequest, SubscriptionWithChannel } from '@/types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { apiClient, ApiClientError } from "@/lib/api";
+import type { SubscribeRequest, SubscriptionWithChannel } from "@/types";
 
 async function addChannel(subscribeRequest: SubscribeRequest): Promise<SubscriptionWithChannel> {
   // Assuming the API returns the newly created subscription with channel info
-  return apiClient.post<SubscriptionWithChannel>('/api/profile/channels', subscribeRequest);
+  return apiClient.post<SubscriptionWithChannel>("/api/profile/channels", subscribeRequest);
 }
 
 export function useAddChannel() {
@@ -16,14 +16,14 @@ export function useAddChannel() {
     onSuccess: (data) => {
       toast.success(`Successfully subscribed to ${data.channel.name}!`);
       // Invalidate queries to refetch and update the stats
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['userChannels'] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["userChannels"] });
     },
     onError: (error) => {
       if (error instanceof ApiClientError) {
         toast.error(`Subscription failed: ${error.message}`);
       } else {
-        toast.error('An unexpected error occurred while subscribing.');
+        toast.error("An unexpected error occurred while subscribing.");
       }
     },
   });

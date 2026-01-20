@@ -1,8 +1,8 @@
-import React from 'react';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
-import { AlertTriangle, RefreshCw, Server, Home } from 'lucide-react';
-import type { ApiClientError } from '../../lib/api';
+import React from "react";
+import { Button } from "../ui/button";
+import { Card, CardContent } from "../ui/card";
+import { AlertTriangle, RefreshCw, Server, Home } from "lucide-react";
+import type { ApiClientError } from "../../lib/api";
 
 interface ErrorStateProps {
   error?: Error | ApiClientError | null;
@@ -13,47 +13,43 @@ interface ErrorStateProps {
 const getErrorConfig = (error: Error | ApiClientError | null | undefined) => {
   if (!error) {
     return {
-      title: 'Something went wrong',
-      message: 'An unexpected error occurred. Please try again.',
+      title: "Something went wrong",
+      message: "An unexpected error occurred. Please try again.",
       icon: AlertTriangle,
-      bgColor: 'bg-red-500',
-      lightBgColor: 'bg-red-50',
-      textColor: 'text-red-700',
-      borderColor: 'border-red-200'
+      bgColor: "bg-red-500",
+      lightBgColor: "bg-red-50",
+      textColor: "text-red-700",
+      borderColor: "border-red-200",
     };
   }
 
   // Handle ApiClientError - only server errors now
-  if ('code' in error) {
+  if ("code" in error) {
     const apiError = error as ApiClientError;
     return {
-      title: 'Server Error',
-      message: apiError.message || 'Our servers are experiencing issues. Please try again later.',
+      title: "Server Error",
+      message: apiError.message || "Our servers are experiencing issues. Please try again later.",
       icon: Server,
-      bgColor: 'bg-red-500',
-      lightBgColor: 'bg-red-50',
-      textColor: 'text-red-700',
-      borderColor: 'border-red-200'
+      bgColor: "bg-red-500",
+      lightBgColor: "bg-red-50",
+      textColor: "text-red-700",
+      borderColor: "border-red-200",
     };
   }
 
   // Handle generic Error
   return {
-    title: 'Error',
-    message: error.message || 'An unexpected error occurred.',
+    title: "Error",
+    message: error.message || "An unexpected error occurred.",
     icon: AlertTriangle,
-    bgColor: 'bg-red-500',
-    lightBgColor: 'bg-red-50',
-    textColor: 'text-red-700',
-    borderColor: 'border-red-200'
+    bgColor: "bg-red-500",
+    lightBgColor: "bg-red-50",
+    textColor: "text-red-700",
+    borderColor: "border-red-200",
   };
 };
 
-const ErrorState: React.FC<ErrorStateProps> = ({
-  error,
-  onRetry,
-  compact = false
-}) => {
+const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, compact = false }) => {
   const config = getErrorConfig(error);
   const Icon = config.icon;
 
@@ -92,7 +88,9 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       <div className="relative z-10 max-w-2xl mx-auto text-center">
         {/* Icon container */}
         <div className="relative mb-8">
-          <div className={`w-24 h-24 ${config.bgColor} bg-opacity-10 rounded-2xl flex items-center justify-center mx-auto shadow-2xl border border-white/20 backdrop-blur-sm`}>
+          <div
+            className={`w-24 h-24 ${config.bgColor} bg-opacity-10 rounded-2xl flex items-center justify-center mx-auto shadow-2xl border border-white/20 backdrop-blur-sm`}
+          >
             <Icon className={`w-12 h-12 ${config.textColor}`} />
           </div>
         </div>
@@ -103,9 +101,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
         </h1>
 
         {/* Message */}
-        <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-lg mx-auto">
-          {config.message}
-        </p>
+        <p className="text-xl text-gray-600 mb-12 leading-relaxed max-w-lg mx-auto">{config.message}</p>
 
         {/* Action buttons with enhanced styling */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -136,7 +132,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
         {/* Additional help text */}
         <div className="mt-12 pt-8 border-t border-gray-200">
           <p className="text-sm text-gray-500">
-            If this problem persists, please{' '}
+            If this problem persists, please{" "}
             <a href="mailto:support@ytinsights.app" className="text-red-600 hover:text-red-700 font-medium underline">
               contact support
             </a>

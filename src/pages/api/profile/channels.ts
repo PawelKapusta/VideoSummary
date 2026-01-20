@@ -1,10 +1,10 @@
-import type { APIRoute } from 'astro';
-import type { Channel, ApiError, SubscribeRequest, SubscriptionWithChannel } from '../../../types';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { getUserProfile } from '../../../lib/profile.service';
-import { SubscribeRequestSchema } from '../../../lib/validation/schemas';
-import { subscribeToChannel } from '../../../lib/subscriptions.service';
-import type { RuntimeEnv } from '../../../lib/env';
+import type { APIRoute } from "astro";
+import type { Channel, ApiError, SubscribeRequest, SubscriptionWithChannel } from "../../../types";
+import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import { getUserProfile } from "../../../lib/profile.service";
+import { SubscribeRequestSchema } from "../../../lib/validation/schemas";
+import { subscribeToChannel } from "../../../lib/subscriptions.service";
+import type { RuntimeEnv } from "../../../lib/env";
 
 /**
  * GET /api/profile/channels
@@ -23,47 +23,54 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const errorResponse: ApiError = {
-        error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        error: { code: "UNAUTHORIZED", message: "Authentication required" },
       };
-      return new Response(JSON.stringify(errorResponse), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const userId = user.id;
 
     // Get user profile which includes subscriptions
     const profile = await getUserProfile(supabase, userId);
-    
+
     // Extract just the channel information from subscriptions
-    const channels: Channel[] = profile.subscribed_channels.map(sub => sub.channel);
+    const channels: Channel[] = profile.subscribed_channels.map((sub) => sub.channel);
 
     // Log API access and performance
     const duration = performance.now() - startTime;
-    performanceLogger.apiResponseTime('GET', '/api/profile/channels', duration, 200);
+    performanceLogger.apiResponseTime("GET", "/api/profile/channels", duration, 200);
 
     return new Response(JSON.stringify(channels), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
-
   } catch (error) {
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/profile/channels',
-      method: 'GET',
+      endpoint: "/api/profile/channels",
+      method: "GET",
     });
 
     const errorResponse: ApiError = {
-      error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' },
+      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
     };
-    return new Response(JSON.stringify(errorResponse), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(errorResponse), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };
-
 
 /**
  * POST /api/profile/channels
@@ -84,51 +91,60 @@ export const GET: APIRoute = async ({ request, locals }) => {
  * - 500 Internal Server Error
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-    const startTime = performance.now();
-    const supabase = locals.supabase;
-  
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-      if (authError || !user) {
-        return new Response(JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }), { status: 401 });
-      }
-  
-      const body: SubscribeRequest = await request.json();
-      const validation = SubscribeRequestSchema.safeParse(body);
-  
-      if (!validation.success) {
-        return new Response(JSON.stringify({ error: { code: 'INVALID_INPUT', message: 'Invalid channel URL', details: validation.error.flatten() } }), { status: 400 });
-      }
-  
-      const { channel_url } = validation.data;
-  
-      const runtimeEnv = locals.runtime?.env as RuntimeEnv;
-      const newSubscription = await subscribeToChannel(supabase, user.id, channel_url, runtimeEnv);
-  
-      const duration = performance.now() - startTime;
-      performanceLogger.apiResponseTime('POST', '/api/profile/channels', duration, 201);
-  
-      return new Response(JSON.stringify(newSubscription), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' },
+  const startTime = performance.now();
+  const supabase = locals.supabase;
+
+  try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }), {
+        status: 401,
       });
-  
-    } catch (error) {
-      const err = error as Error;
-      let statusCode = 500;
-      let errorCode = 'INTERNAL_ERROR';
-  
-      if (err.message.includes('limit')) {
-        statusCode = 403;
-        errorCode = 'LIMIT_REACHED';
-      } else if (err.message.includes('already subscribed')) {
-        statusCode = 409;
-        errorCode = 'CONFLICT';
-      }
-  
-      errorLogger.appError(err, { endpoint: '/api/profile/channels', method: 'POST' });
-  
-      return new Response(JSON.stringify({ error: { code: errorCode, message: err.message } }), { status: statusCode });
     }
-  };
+
+    const body: SubscribeRequest = await request.json();
+    const validation = SubscribeRequestSchema.safeParse(body);
+
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({
+          error: { code: "INVALID_INPUT", message: "Invalid channel URL", details: validation.error.flatten() },
+        }),
+        { status: 400 }
+      );
+    }
+
+    const { channel_url } = validation.data;
+
+    const runtimeEnv = locals.runtime?.env as RuntimeEnv;
+    const newSubscription = await subscribeToChannel(supabase, user.id, channel_url, runtimeEnv);
+
+    const duration = performance.now() - startTime;
+    performanceLogger.apiResponseTime("POST", "/api/profile/channels", duration, 201);
+
+    return new Response(JSON.stringify(newSubscription), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    const err = error as Error;
+    let statusCode = 500;
+    let errorCode = "INTERNAL_ERROR";
+
+    if (err.message.includes("limit")) {
+      statusCode = 403;
+      errorCode = "LIMIT_REACHED";
+    } else if (err.message.includes("already subscribed")) {
+      statusCode = 409;
+      errorCode = "CONFLICT";
+    }
+
+    errorLogger.appError(err, { endpoint: "/api/profile/channels", method: "POST" });
+
+    return new Response(JSON.stringify({ error: { code: errorCode, message: err.message } }), { status: statusCode });
+  }
+};

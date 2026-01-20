@@ -1,6 +1,6 @@
-import type { APIRoute } from 'astro';
-import type { ApiError, ApiSuccess } from '../../../types';
-import { securityLogger, errorLogger, performanceLogger, appLogger } from '../../../lib/logger';
+import type { APIRoute } from "astro";
+import type { ApiError, ApiSuccess } from "../../../types";
+import { securityLogger, errorLogger, performanceLogger, appLogger } from "../../../lib/logger";
 
 /**
  * POST /api/admin/reset-bulk-status
@@ -31,28 +31,31 @@ export const POST: APIRoute = async ({ locals, request }) => {
   try {
     // Get user from session
     const supabase = locals.supabase;
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized reset bulk status attempt - no valid session');
+      securityLogger.auth("Unauthorized reset bulk status attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/admin/reset-bulk-status',
+        method: "POST",
+        path: "/api/admin/reset-bulk-status",
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('POST', '/api/admin/reset-bulk-status', duration, 401);
+      performanceLogger.apiResponseTime("POST", "/api/admin/reset-bulk-status", duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -60,10 +63,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
     // For now, allow any authenticated user (in development)
     // In production, you might want to check for admin role
-    appLogger.info('Resetting stuck bulk generations', { userId });
+    appLogger.info("Resetting stuck bulk generations", { userId });
 
     // Call the database function
-    const { data: result, error: rpcError } = await supabase.rpc('reset_stuck_bulk_generations');
+    const { data: result, error: rpcError } = await supabase.rpc("reset_stuck_bulk_generations");
 
     if (rpcError) {
       throw rpcError;
@@ -72,7 +75,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     const resetCount = result?.reset_count || 0;
     const updatedIds = result?.updated_ids || [];
 
-    appLogger.info('Bulk generations reset completed', {
+    appLogger.info("Bulk generations reset completed", {
       userId,
       resetCount,
       updatedIds,
@@ -90,48 +93,47 @@ export const POST: APIRoute = async ({ locals, request }) => {
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/admin/reset-bulk-status',
+      method: "POST",
+      path: "/api/admin/reset-bulk-status",
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('POST', '/api/admin/reset-bulk-status', duration, 200);
+    performanceLogger.apiResponseTime("POST", "/api/admin/reset-bulk-status", duration, 200);
 
     return new Response(JSON.stringify(successResponse), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "Content-Type": "application/json",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     const duration = performance.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     errorLogger.appError(error instanceof Error ? error : new Error(errorMessage), {
-      endpoint: '/api/admin/reset-bulk-status',
-      method: 'POST',
+      endpoint: "/api/admin/reset-bulk-status",
+      method: "POST",
     });
 
     securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/admin/reset-bulk-status',
+      method: "POST",
+      path: "/api/admin/reset-bulk-status",
       statusCode: 500,
     });
-    performanceLogger.apiResponseTime('POST', '/api/admin/reset-bulk-status', duration, 500);
+    performanceLogger.apiResponseTime("POST", "/api/admin/reset-bulk-status", duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Failed to reset bulk generation status',
+        code: "INTERNAL_ERROR",
+        message: "Failed to reset bulk generation status",
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

@@ -10,15 +10,23 @@ import cloudflare from "@astrojs/cloudflare";
 export default defineConfig({
   output: "server",
   integrations: [react(), sitemap()],
+  image: {
+    service: {
+      entrypoint: "astro/assets/services/compile",
+    },
+  },
   server: { port: 3000 },
   vite: {
     plugins: [tailwindcss()],
     resolve: {
       // Use react-dom/server.edge for Cloudflare (production only)
       // In development, use default react-dom/server
-      alias: process.env.CF_PAGES === '1' || process.env.NODE_ENV === 'production' ? {
-        "react-dom/server": "react-dom/server.edge",
-      } : {},
+      alias:
+        process.env.CF_PAGES === "1" || process.env.NODE_ENV === "production"
+          ? {
+              "react-dom/server": "react-dom/server.edge",
+            }
+          : {},
     },
   },
   env: {
@@ -52,26 +60,26 @@ export default defineConfig({
         context: "server",
         access: "public",
         optional: true,
-        default: "https://video-summary.pages.dev"
+        default: "https://video-summary.pages.dev",
       }),
 
       // Gradio (optional)
       GRADIO_TRANSCRIPT_MODEL: envField.string({
         context: "server",
         access: "secret",
-        optional: true
+        optional: true,
       }),
 
       // LogTape (optional)
       LOGTAPE_API_KEY: envField.string({
         context: "server",
         access: "secret",
-        optional: true
+        optional: true,
       }),
       LOGTAPE_PROJECT_ID: envField.string({
         context: "server",
         access: "secret",
-        optional: true
+        optional: true,
       }),
 
       // Cron Secret for automated tasks

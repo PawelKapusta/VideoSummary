@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { Eye, EyeOff, Clock, AlertCircle, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { useHiddenSummaries } from '../../hooks/useHiddenSummaries';
-import { useQueryClient } from '@tanstack/react-query';
-import { apiClient as api } from '../../lib/api';
-import type { SummaryWithVideo } from '../../types';
-import AppLoader from '../ui/AppLoader';
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import { Eye, EyeOff, Clock, AlertCircle, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { useHiddenSummaries } from "../../hooks/useHiddenSummaries";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiClient as api } from "../../lib/api";
+import type { SummaryWithVideo } from "../../types";
+import AppLoader from "../ui/AppLoader";
 
 const HiddenSummariesSection = () => {
   const { data, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage } = useHiddenSummaries();
@@ -22,19 +30,19 @@ const HiddenSummariesSection = () => {
   const handleUnhide = async (summaryId: string) => {
     if (unhidingIds.has(summaryId)) return;
 
-    setUnhidingIds(prev => new Set(prev).add(summaryId));
+    setUnhidingIds((prev) => new Set(prev).add(summaryId));
 
     try {
       await api.delete(`/api/summaries/${summaryId}/hide`);
       // Invalidate both hidden summaries and regular summaries queries
-      await queryClient.invalidateQueries({ queryKey: ['hiddenSummaries'] });
-      await queryClient.invalidateQueries({ queryKey: ['summaries'] });
-      toast.success('Summary restored to your dashboard');
+      await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
+      await queryClient.invalidateQueries({ queryKey: ["summaries"] });
+      toast.success("Summary restored to your dashboard");
     } catch (error) {
-      toast.error('Failed to unhide summary');
-      console.error('Unhide failed:', error);
+      toast.error("Failed to unhide summary");
+      console.error("Unhide failed:", error);
     } finally {
-      setUnhidingIds(prev => {
+      setUnhidingIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(summaryId);
         return newSet;
@@ -44,30 +52,30 @@ const HiddenSummariesSection = () => {
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return {
-          color: 'bg-emerald-100 text-emerald-800',
-          label: 'Completed'
+          color: "bg-emerald-100 text-emerald-800",
+          label: "Completed",
         };
-      case 'failed':
+      case "failed":
         return {
-          color: 'bg-rose-100 text-rose-800',
-          label: 'Failed'
+          color: "bg-rose-100 text-rose-800",
+          label: "Failed",
         };
-      case 'in_progress':
+      case "in_progress":
         return {
-          color: 'bg-blue-100 text-blue-800',
-          label: 'Processing'
+          color: "bg-blue-100 text-blue-800",
+          label: "Processing",
         };
-      case 'pending':
+      case "pending":
         return {
-          color: 'bg-amber-100 text-amber-800',
-          label: 'Pending'
+          color: "bg-amber-100 text-amber-800",
+          label: "Pending",
         };
       default:
         return {
-          color: 'bg-slate-100 text-slate-800',
-          label: status
+          color: "bg-slate-100 text-slate-800",
+          label: status,
         };
     }
   };
@@ -80,9 +88,7 @@ const HiddenSummariesSection = () => {
             <EyeOff className="h-5 w-5" />
             Hidden Summaries
           </CardTitle>
-          <CardDescription>
-            View and manage summaries you've hidden from your dashboard.
-          </CardDescription>
+          <CardDescription>View and manage summaries you&apos;ve hidden from your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <AppLoader loadingText="Loading hidden summaries..." />
@@ -99,9 +105,7 @@ const HiddenSummariesSection = () => {
             <EyeOff className="h-5 w-5" />
             Hidden Summaries
           </CardTitle>
-          <CardDescription>
-            View and manage summaries you've hidden from your dashboard.
-          </CardDescription>
+          <CardDescription>View and manage summaries you&apos;ve hidden from your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -111,7 +115,7 @@ const HiddenSummariesSection = () => {
               variant="outline"
               size="sm"
               className="mt-4"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['hidden-summaries'] })}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["hidden-summaries"] })}
             >
               Try Again
             </Button>
@@ -134,7 +138,7 @@ const HiddenSummariesSection = () => {
           )}
         </CardTitle>
         <CardDescription>
-          View and manage summaries you've hidden from your dashboard. You can restore them anytime.
+          View and manage summaries you&apos;ve hidden from your dashboard. You can restore them anytime.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -168,14 +172,14 @@ const HiddenSummariesSection = () => {
                       <span>{summary.channel.name}</span>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        <span>{summary.video.published_at ? format(new Date(summary.video.published_at), 'MMM dd, yyyy') : 'Unknown date'}</span>
+                        <span>
+                          {summary.video.published_at
+                            ? format(new Date(summary.video.published_at), "MMM dd, yyyy")
+                            : "Unknown date"}
+                        </span>
                       </div>
                     </div>
-                    {summary.tldr && (
-                      <p className="text-sm text-foreground/80 mt-2 line-clamp-2">
-                        {summary.tldr}
-                      </p>
-                    )}
+                    {summary.tldr && <p className="text-sm text-foreground/80 mt-2 line-clamp-2">{summary.tldr}</p>}
                   </div>
                   <div className="flex items-center gap-2 ml-4">
                     <Dialog>
@@ -202,11 +206,22 @@ const HiddenSummariesSection = () => {
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
-                          <Button variant="outline" onClick={(e) => { e.stopPropagation(); }}>
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
                             Cancel
                           </Button>
-                          <Button onClick={(e) => { e.stopPropagation(); handleUnhide(summary.id); }} disabled={isUnhiding}>
-                            {isUnhiding ? 'Restoring...' : 'Restore'}
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnhide(summary.id);
+                            }}
+                            disabled={isUnhiding}
+                          >
+                            {isUnhiding ? "Restoring..." : "Restore"}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -218,18 +233,14 @@ const HiddenSummariesSection = () => {
 
             {hasNextPage && (
               <div className="text-center pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                >
+                <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
                   {isFetchingNextPage ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Loading more...
                     </>
                   ) : (
-                    'Load more'
+                    "Load more"
                   )}
                 </Button>
               </div>

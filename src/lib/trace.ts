@@ -1,6 +1,6 @@
 /**
  * Browser-safe tracing utilities for distributed request tracking
- * 
+ *
  * This module provides AWS X-Ray style trace IDs that work in both
  * browser and Node.js environments without requiring Node.js-specific modules.
  */
@@ -14,7 +14,7 @@
  */
 export function createAwsTraceId(): string {
   const timestamp = Math.floor(Date.now() / 1000).toString(16);
-  const randomPart = crypto.randomUUID().replace(/-/g, '').substring(0, 24);
+  const randomPart = crypto.randomUUID().replace(/-/g, "").substring(0, 24);
   return `1-${timestamp}-${randomPart}`;
 }
 
@@ -31,7 +31,7 @@ export function isValidAwsTraceId(traceId: string): boolean {
  * Checks for x-amzn-trace-id header, creates new one if not present
  */
 export function getAwsTraceId(headers?: Record<string, string>): string {
-  const existingTraceId = headers?.['x-amzn-trace-id'];
+  const existingTraceId = headers?.["x-amzn-trace-id"];
   if (existingTraceId && isValidAwsTraceId(existingTraceId)) {
     return existingTraceId;
   }
@@ -45,7 +45,7 @@ export function getAwsTraceId(headers?: Record<string, string>): string {
 export function createTraceHeaders(traceId?: string): Record<string, string> {
   const currentTraceId = traceId || createAwsTraceId();
   return {
-    'x-amzn-trace-id': currentTraceId,
+    "x-amzn-trace-id": currentTraceId,
   };
 }
 
@@ -58,4 +58,3 @@ export function addTraceIdToHeaders(headers: Record<string, string>, traceId?: s
     ...createTraceHeaders(traceId),
   };
 }
-

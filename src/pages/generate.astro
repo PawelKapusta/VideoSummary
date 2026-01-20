@@ -1,9 +1,8 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import GenerateSummaryView from '../components/views/GenerateSummaryView';
+import Layout from "../layouts/Layout.astro";
+import GenerateSummaryView from "../components/views/GenerateSummaryView";
 ---
 
 <Layout title="Video Summary" showNavigation={true}>
-	<GenerateSummaryView client:only="react" />
+  <GenerateSummaryView client:only="react" />
 </Layout>
-

@@ -1,10 +1,10 @@
-import React from 'react';
-import { useVideos } from '@/hooks/useVideos';
-import VideosFilterBar from './VideosFilterBar';
-import VideosGrid from './VideosGrid';
-import GenerateSummaryDialog from './GenerateSummaryDialog';
-import QueryProvider from '@/components/providers/QueryProvider';
-import ErrorState from '@/components/shared/ErrorState';
+import React from "react";
+import { useVideos } from "@/hooks/useVideos";
+import VideosFilterBar from "./VideosFilterBar";
+import VideosGrid from "./VideosGrid";
+import GenerateSummaryDialog from "./GenerateSummaryDialog";
+import QueryProvider from "@/components/providers/QueryProvider";
+import ErrorState from "@/components/shared/ErrorState";
 
 const VideosContent = () => {
   const {
@@ -26,16 +26,16 @@ const VideosContent = () => {
   } = useVideos();
 
   // Check if any filters are active
-  const hasActiveFilters = filters.channelId !== 'all' || filters.summaryStatus !== 'all' || !!(filters.searchQuery && filters.searchQuery.trim());
+  const hasActiveFilters =
+    filters.channelId !== "all" ||
+    filters.summaryStatus !== "all" ||
+    !!(filters.searchQuery && filters.searchQuery.trim());
 
   // Show error state if there's an error
   if (isError) {
     return (
       <div className="container mx-auto p-4 pt-12 pb-12">
-        <ErrorState
-          error={error}
-          onRetry={() => window.location.reload()}
-        />
+        <ErrorState error={error} onRetry={() => window.location.reload()} />
       </div>
     );
   }
@@ -48,17 +48,13 @@ const VideosContent = () => {
           Available Videos
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Discover videos from your subscribed channels and generate AI-powered summaries to enhance your learning. Currently displaying {videos.length} videos.
+          Discover videos from your subscribed channels and generate AI-powered summaries to enhance your learning.
+          Currently displaying {videos.length} videos.
         </p>
       </div>
 
       {/* Filters - always visible */}
-      <VideosFilterBar
-        channels={channels}
-        activeFilters={filters}
-        onFiltersChange={setFilters}
-        disabled={isLoading}
-      />
+      <VideosFilterBar channels={channels} activeFilters={filters} onFiltersChange={setFilters} disabled={isLoading} />
 
       <VideosGrid
         videos={videos}
@@ -76,7 +72,7 @@ const VideosContent = () => {
         onClose={closeDialog}
         onConfirm={generateSummary}
       />
-    </div >
+    </div>
   );
 };
 

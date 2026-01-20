@@ -1,24 +1,25 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Email validation schema - RFC 5322 compliant format
  */
 export const EmailSchema = z
   .string()
-  .email({ message: 'Invalid email format' })
-  .min(1, { message: 'Email is required' })
-  .max(254, { message: 'Email is too long' }); // RFC 5321 limit
+  .email({ message: "Invalid email format" })
+  .min(1, { message: "Email is required" })
+  .max(254, { message: "Email is too long" }); // RFC 5321 limit
 
 /**
  * Password validation schema - minimum 8 characters with complexity requirements
  */
 export const PasswordSchema = z
   .string()
-  .min(8, { message: 'Password must be at least 8 characters long' })
+  .min(8, { message: "Password must be at least 8 characters long" })
   .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    message:
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
   })
-  .max(128, { message: 'Password is too long' }); // Reasonable limit for security
+  .max(128, { message: "Password is too long" }); // Reasonable limit for security
 
 /**
  * User registration request validation schema
@@ -33,7 +34,7 @@ export const RegisterRequestSchema = z.object({
  */
 export const LoginRequestSchema = z.object({
   email: EmailSchema,
-  password: z.string().min(1, { message: 'Password is required' }),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 /**
@@ -47,7 +48,7 @@ export const ResetPasswordRequestSchema = z.object({
  * Password reset confirmation request validation schema
  */
 export const ConfirmResetPasswordRequestSchema = z.object({
-  token: z.string().min(1, { message: 'Reset token is required' }),
+  token: z.string().min(1, { message: "Reset token is required" }),
   password: PasswordSchema,
 });
 
@@ -57,9 +58,9 @@ export const ConfirmResetPasswordRequestSchema = z.object({
 export const SubscribeRequestSchema = z.object({
   channel_url: z
     .string()
-    .url({ message: 'Invalid URL format' })
+    .url({ message: "Invalid URL format" })
     .regex(/^https?:\/\/(www\.)?(youtube\.com\/(channel\/|user\/|@|c\/)|youtu\.be\/)/, {
-      message: 'URL must be a valid YouTube channel URL'
+      message: "URL must be a valid YouTube channel URL",
     }),
 });
 
@@ -69,9 +70,9 @@ export const SubscribeRequestSchema = z.object({
 export const GenerateSummaryRequestSchema = z.object({
   video_url: z
     .string()
-    .url({ message: 'Invalid URL format' })
+    .url({ message: "Invalid URL format" })
     .regex(/^https?:\/\/(www\.)?(youtube\.com\/watch\?|youtu\.be\/)/, {
-      message: 'URL must be a valid YouTube video URL'
+      message: "URL must be a valid YouTube video URL",
     }),
 });
 
@@ -79,13 +80,13 @@ export const GenerateSummaryRequestSchema = z.object({
  * Summary rating request validation schema
  */
 export const RateSummaryRequestSchema = z.object({
-  rating: z.boolean({ message: 'Rating must be true (upvote) or false (downvote)' }),
+  rating: z.boolean({ message: "Rating must be true (upvote) or false (downvote)" }),
 });
 
 /**
  * UUID validation schema for path parameters
  */
-export const UUIDSchema = z.string().uuid({ message: 'Invalid UUID format' });
+export const UUIDSchema = z.string().uuid({ message: "Invalid UUID format" });
 
 /**
  * Pagination query parameters validation schema
@@ -102,17 +103,17 @@ export const SummaryListFiltersSchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
   offset: z.coerce.number().min(0).default(0),
   channel_id: z.string().uuid().optional(),
-  status: z.enum(['pending', 'in_progress', 'completed', 'failed']).optional(),
-  sort: z.enum(['published_at_desc', 'published_at_asc', 'generated_at_desc']).default('published_at_desc'),
+  status: z.enum(["pending", "in_progress", "completed", "failed"]).optional(),
+  sort: z.enum(["published_at_desc", "published_at_asc", "generated_at_desc"]).default("published_at_desc"),
   // Fix: z.coerce.boolean() treats "false" string as true! Use custom transform
   include_hidden: z.preprocess((val) => {
-    if (val === 'false' || val === '0' || val === '' || val === null || val === undefined) return false;
-    if (val === 'true' || val === '1') return true;
+    if (val === "false" || val === "0" || val === "" || val === null || val === undefined) return false;
+    if (val === "true" || val === "1") return true;
     return Boolean(val);
   }, z.boolean().default(false)),
   hidden_only: z.preprocess((val) => {
-    if (val === 'false' || val === '0' || val === '' || val === null || val === undefined) return false;
-    if (val === 'true' || val === '1') return true;
+    if (val === "false" || val === "0" || val === "" || val === null || val === undefined) return false;
+    if (val === "true" || val === "1") return true;
     return Boolean(val);
   }, z.boolean().default(false)),
   search: z.string().min(3).optional(), // New: for title/channel search
@@ -123,7 +124,7 @@ export const SummaryListFiltersSchema = z.object({
  */
 export const VideoListFiltersSchema = PaginationSchema.extend({
   channel_id: UUIDSchema.optional(),
-  status: z.enum(['all', 'with', 'without']).optional(),
+  status: z.enum(["all", "with", "without"]).optional(),
   search: z.string().optional(),
-  sort: z.enum(['published_at_desc', 'published_at_asc']).default('published_at_desc'),
+  sort: z.enum(["published_at_desc", "published_at_asc"]).default("published_at_desc"),
 });

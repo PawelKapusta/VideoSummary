@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '../db/supabase.client';
-import { errorLogger, appLogger } from './logger';
+import type { SupabaseClient } from "../db/supabase.client";
+import { errorLogger, appLogger } from "./logger";
 import type {
   DetailedSummary,
   PaginatedResponse,
@@ -9,14 +9,14 @@ import type {
   BulkGenerationStatus,
   BulkGenerationStatusEnum,
   BulkGenerationResponse,
-} from '../types';
-import type { ChatMessage } from './openrouter.types';
-import { extractYouTubeVideoId } from './youtube.utils';
-import { fetchYouTubeVideoMetadata, fetchLatestVideoFromChannel } from './youtube.service';
-import { OpenRouterService } from './openrouter.service';
-import { fetchTranscript, transcriptToString } from './transcript.service';
-import { requireEnv, getEnv, type RuntimeEnv } from './env';
-
+} from "../types";
+import type { ChatMessage } from "./openrouter.types";
+import { extractYouTubeVideoId } from "./youtube.utils";
+import { fetchYouTubeVideoMetadata, fetchLatestVideoFromChannel } from "./youtube.service";
+import { OpenRouterService } from "./openrouter.service";
+import { fetchTranscript, transcriptToString } from "./transcript.service";
+import { requireEnv, getEnv, type RuntimeEnv } from "./env";
+import { createVideoSummaryPrompt } from "./prompts/video-summary.prompt";
 
 // ---------------------------------------------------------------------------
 // Szybki i równomierny 32-bitowy hash (FNV-1a) – idealny do advisory locków
@@ -39,32 +39,32 @@ function formatDurationInPolish(seconds: number): string {
   const secs = seconds % 60;
 
   const parts: string[] = [];
-  
+
   if (hours > 0) {
     if (hours === 1) {
-      parts.push('1 hour');
+      parts.push("1 hour");
     } else {
       parts.push(`${hours} godzin`);
     }
   }
-  
+
   if (minutes > 0) {
     if (minutes === 1) {
-      parts.push('1 minute');
+      parts.push("1 minute");
     } else {
       parts.push(`${minutes} minutes`);
     }
   }
-  
+
   if (secs > 0 && hours === 0) {
     if (secs === 1) {
-      parts.push('1 second');
+      parts.push("1 second");
     } else {
       parts.push(`${secs} seconds`);
     }
   }
-  
-  return parts.length > 0 ? parts.join(' ') : '0 seconds';
+
+  return parts.length > 0 ? parts.join(" ") : "0 seconds";
 }
 
 // ---------------------------------------------------------------------------
@@ -76,10 +76,10 @@ export async function generateSummary(
   videoUrl: string,
   runtimeEnv?: RuntimeEnv
 ): Promise<SummaryBasic & { message: string }> {
-  appLogger.debug('Starting generateSummary', { userId, videoUrl });
+  appLogger.debug("Starting generateSummary", { userId, videoUrl });
 
   const youtubeVideoId = extractYouTubeVideoId(videoUrl);
-  if (!youtubeVideoId) throw new Error('INVALID_YOUTUBE_URL');
+  if (!youtubeVideoId) throw new Error("INVALID_YOUTUBE_URL");
 
   // -------------------------------------------------
   // 1. Znajdź lub utwórz video + channel
@@ -88,9 +88,9 @@ export async function generateSummary(
   let channelId: string;
 
   const { data: existingVideo } = await supabase
-    .from('videos')
-    .select('id, channel_id')
-    .eq('youtube_video_id', youtubeVideoId)
+    .from("videos")
+    .select("id, channel_id")
+    .eq("youtube_video_id", youtubeVideoId)
     .maybeSingle();
 
   if (existingVideo) {
@@ -99,25 +99,25 @@ export async function generateSummary(
   } else {
     const meta = await fetchYouTubeVideoMetadata(youtubeVideoId, runtimeEnv);
 
-    if (meta.duration > 2700) throw new Error('VIDEO_TOO_LONG');
+    if (meta.duration > 2700) throw new Error("VIDEO_TOO_LONG");
 
     // channel
     const { data: channel } = await supabase
-      .from('channels')
-      .select('id')
-      .eq('youtube_channel_id', meta.channelId)
+      .from("channels")
+      .select("id")
+      .eq("youtube_channel_id", meta.channelId)
       .maybeSingle();
 
     if (channel) {
       channelId = channel.id;
     } else {
       const { data: newChannel, error } = await supabase
-        .from('channels')
+        .from("channels")
         .insert({
           youtube_channel_id: meta.channelId,
           name: meta.channelTitle,
         })
-        .select('id')
+        .select("id")
         .single();
 
       if (error) throw error;
@@ -126,7 +126,7 @@ export async function generateSummary(
 
     // video (z obsługą race-condition)
     const { data: newVideo, error: videoErr } = await supabase
-      .from('videos')
+      .from("videos")
       .insert({
         youtube_video_id: youtubeVideoId,
         channel_id: channelId,
@@ -134,15 +134,15 @@ export async function generateSummary(
         published_at: meta.publishedAt,
         thumbnail_url: meta.thumbnailUrl,
       })
-      .select('id')
+      .select("id")
       .single();
 
-    if (videoErr && videoErr.code !== '23505') throw videoErr;
-    if (videoErr?.code === '23505') {
+    if (videoErr && videoErr.code !== "23505") throw videoErr;
+    if (videoErr?.code === "23505") {
       const { data: retry } = await supabase
-        .from('videos')
-        .select('id, channel_id')
-        .eq('youtube_video_id', youtubeVideoId)
+        .from("videos")
+        .select("id, channel_id")
+        .eq("youtube_video_id", youtubeVideoId)
         .single();
       videoId = retry!.id;
       channelId = retry!.channel_id;
@@ -155,33 +155,29 @@ export async function generateSummary(
   // 2. Sprawdź subskrypcję
   // -------------------------------------------------
   const { count: subCount } = await supabase
-    .from('subscriptions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('channel_id', channelId);
+    .from("subscriptions")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("channel_id", channelId);
 
-  if (!subCount) throw new Error('CHANNEL_NOT_SUBSCRIBED');
+  if (!subCount) throw new Error("CHANNEL_NOT_SUBSCRIBED");
 
   // -------------------------------------------------
   // 3. Sprawdź istniejące podsumowanie
   // -------------------------------------------------
   const { data: existingSummary } = await supabase
-    .from('summaries')
-    .select('id, status')
-    .eq('video_id', videoId)
+    .from("summaries")
+    .select("id, status")
+    .eq("video_id", videoId)
     .maybeSingle();
 
   if (existingSummary) {
-    if (existingSummary.status === 'completed') throw new Error('SUMMARY_ALREADY_EXISTS');
-    if (['pending', 'in_progress'].includes(existingSummary.status))
-      throw new Error('GENERATION_IN_PROGRESS');
+    if (existingSummary.status === "completed") throw new Error("SUMMARY_ALREADY_EXISTS");
+    if (["pending", "in_progress"].includes(existingSummary.status)) throw new Error("GENERATION_IN_PROGRESS");
 
     // For failed summaries, update status back to pending for retry
-    if (existingSummary.status === 'failed') {
-      await supabase
-        .from('summaries')
-        .update({ status: 'pending', error_code: null })
-        .eq('id', existingSummary.id);
+    if (existingSummary.status === "failed") {
+      await supabase.from("summaries").update({ status: "pending", error_code: null }).eq("id", existingSummary.id);
     }
   }
 
@@ -189,45 +185,45 @@ export async function generateSummary(
   // 4. Atomowe utworzenie podsumowania (rate-limit + lock)
   // -------------------------------------------------
   const lockKey = hashStringToInt32(channelId);
-  const { data: rpcData, error: rpcErr } = await supabase.rpc('generate_summary_atomic' as 'subscribe_to_channel_atomic', {
-    p_user_id: userId,
-    p_video_id: videoId,
-    p_channel_id: channelId,
-    p_lock_key: lockKey,
-  } as any);
+  const { data: rpcData, error: rpcErr } = await supabase.rpc(
+    "generate_summary_atomic" as "subscribe_to_channel_atomic",
+    {
+      p_user_id: userId,
+      p_video_id: videoId,
+      p_channel_id: channelId,
+      p_lock_key: lockKey,
+    } as any
+  );
 
   if (rpcErr) {
-    if (rpcErr.message.includes('GENERATION_LIMIT_REACHED'))
-      throw new Error('GENERATION_LIMIT_REACHED');
+    if (rpcErr.message.includes("GENERATION_LIMIT_REACHED")) throw new Error("GENERATION_LIMIT_REACHED");
     throw rpcErr;
   }
 
   const summary = (rpcData as any[])[0];
-  if (!summary?.id) throw new Error('SUMMARY_CREATION_FAILED');
+  if (!summary?.id) throw new Error("SUMMARY_CREATION_FAILED");
 
   // -------------------------------------------------
   // 5. Add to queue for async processing (bypasses 30s waitUntil limit)
   // -------------------------------------------------
   // Queue-based processing allows Gradio (5-10 min) to complete without timeout
-  const { error: queueError } = await supabase
-    .from('summary_queue')
-    .insert({
-      video_id: videoId,
-      priority: 10, // High priority for individual user requests
-      status: 'pending',
-      max_retries: 3,
-    });
+  const { error: queueError } = await supabase.from("summary_queue").insert({
+    video_id: videoId,
+    priority: 10, // High priority for individual user requests
+    status: "pending",
+    max_retries: 3,
+  });
 
   if (queueError) {
     // If queue insert fails (e.g., duplicate), log but continue
     // The summary was already created with pending status
-    appLogger.warn('Failed to add to summary_queue (may already exist)', {
+    appLogger.warn("Failed to add to summary_queue (may already exist)", {
       summaryId: summary.id,
       videoId,
       error: queueError.message,
     });
   } else {
-    appLogger.info('Summary added to processing queue', {
+    appLogger.info("Summary added to processing queue", {
       summaryId: summary.id,
       videoId,
       priority: 10,
@@ -236,9 +232,9 @@ export async function generateSummary(
 
   return {
     id: summary.id,
-    status: 'pending' as SummaryStatus,
+    status: "pending" as SummaryStatus,
     generated_at: null,
-    message: 'Summary queued for generation. This may take 5-10 minutes. Refresh the page to check status.',
+    message: "Summary queued for generation. This may take 5-10 minutes. Refresh the page to check status.",
   };
 }
 
@@ -250,169 +246,139 @@ async function processSummaryGeneration(
   youtubeVideoId: string,
   runtimeEnv?: RuntimeEnv
 ): Promise<void> {
-  appLogger.debug('Starting summary generation process', { summaryId, youtubeVideoId });
+  appLogger.debug("Starting summary generation process", { summaryId, youtubeVideoId });
 
-  const { createSupabaseServiceClient } = await import('../db/supabase.client');
+  const { createSupabaseServiceClient } = await import("../db/supabase.client");
   const service = createSupabaseServiceClient(undefined, runtimeEnv);
-  appLogger.debug('Supabase service client created for summary generation');
+  appLogger.debug("Supabase service client created for summary generation");
 
   try {
     // 1. Fetch video metadata for accurate duration
-    appLogger.debug('Fetching video metadata for summary generation');
+    appLogger.debug("Fetching video metadata for summary generation");
     const videoMeta = await fetchYouTubeVideoMetadata(youtubeVideoId, runtimeEnv);
     const actualDuration = formatDurationInPolish(videoMeta.duration);
-    appLogger.debug('Video metadata fetched', { duration: actualDuration, durationSeconds: videoMeta.duration });
+    appLogger.debug("Video metadata fetched", { duration: actualDuration, durationSeconds: videoMeta.duration });
 
     // 2. Transkrypt
-    appLogger.debug('Fetching transcript for summary generation');
+    appLogger.debug("Fetching transcript for summary generation");
     const transcript = await fetchTranscript(youtubeVideoId, runtimeEnv);
-    appLogger.debug('Transcript fetched', { segments: transcript.length });
+    appLogger.debug("Transcript fetched", { segments: transcript.length });
 
     const text = transcriptToString(transcript);
-    appLogger.debug('Transcript converted to text', { textLength: text.length });
+    appLogger.debug("Transcript converted to text", { textLength: text.length });
 
     if (!text.trim()) {
-      appLogger.warning('Empty transcript detected', { summaryId, youtubeVideoId });
-      throw new Error('TRANSCRIPT_EMPTY');
+      appLogger.warning("Empty transcript detected", { summaryId, youtubeVideoId });
+      throw new Error("TRANSCRIPT_EMPTY");
     }
 
     // 3. Status → in_progress
-    appLogger.debug('Updating summary status to in_progress');
-    const { error: updateError } = await service.from('summaries').update({ status: 'in_progress' }).eq('id', summaryId);
+    appLogger.debug("Updating summary status to in_progress");
+    const { error: updateError } = await service
+      .from("summaries")
+      .update({ status: "in_progress" })
+      .eq("id", summaryId);
     if (updateError) {
-      errorLogger.dbError(updateError, 'update_summary_status', { summaryId });
+      errorLogger.dbError(updateError, "update_summary_status", { summaryId });
     } else {
-      appLogger.debug('Summary status updated to in_progress', { summaryId });
+      appLogger.debug("Summary status updated to in_progress", { summaryId });
     }
 
     // 3. OpenRouter
-    appLogger.debug('Calling OpenRouter for summary generation');
-    const apiKey = requireEnv('OPENROUTER_API_KEY', runtimeEnv);
-    appLogger.debug('OpenRouter API key validated');
+    appLogger.debug("Calling OpenRouter for summary generation");
+    const apiKey = requireEnv("OPENROUTER_API_KEY", runtimeEnv);
+    appLogger.debug("OpenRouter API key validated");
 
     const openRouter = new OpenRouterService({
       apiKey,
-      defaultModel: getEnv('OPENROUTER_MODEL', runtimeEnv) || 'x-ai/grok-4.1-fast',
+      defaultModel: getEnv("OPENROUTER_MODEL", runtimeEnv) || "x-ai/grok-4.1-fast",
     });
 
     const schema = {
-      name: 'youtube_video_summary',
+      name: "youtube_video_summary",
       strict: true,
       schema: {
-        type: 'object',
+        type: "object",
         properties: {
-          tldr: { type: 'string' },
+          tldr: { type: "string" },
           full_summary: {
-            type: 'object',
+            type: "object",
             properties: {
               genre: {
-                type: 'string',
+                type: "string",
                 enum: [
-                  'Geopolitics',
-                  'Finance & Investing',
-                  'Personal Finance',
-                  'Economics',
-                  'Technology',
-                  'AI & Machine Learning',
-                  'Science',
-                  'History',
-                  'Philosophy',
-                  'Self-Improvement',
-                  'Productivity',
-                  'Health & Fitness',
-                  'Psychology',
-                  'Business & Entrepreneurship',
-                  'Startups',
-                  'Crypto & Blockchain',
-                  'Programming & Coding',
-                  'Book Summary',
-                  'Documentary',
-                  'News & Current Events',
-                  'Comedy',
-                  'Lifestyle',
-                  'Travel',
-                  'Gaming',
-                  'Movie Review',
-                  'Reaction',
-                  'Education',
-                  'Tutorial / How-to',
-                  'Vlog',
-                  'Interview',
-                  'Podcast Clip',
-                  'Conspiracy / Alternative',
-                  'Spirituality',
-                  'Other',
+                  "Geopolitics",
+                  "Finance & Investing",
+                  "Personal Finance",
+                  "Economics",
+                  "Technology",
+                  "AI & Machine Learning",
+                  "Science",
+                  "History",
+                  "Philosophy",
+                  "Self-Improvement",
+                  "Productivity",
+                  "Health & Fitness",
+                  "Psychology",
+                  "Business & Entrepreneurship",
+                  "Startups",
+                  "Crypto & Blockchain",
+                  "Programming & Coding",
+                  "Book Summary",
+                  "Documentary",
+                  "News & Current Events",
+                  "Comedy",
+                  "Lifestyle",
+                  "Travel",
+                  "Gaming",
+                  "Movie Review",
+                  "Reaction",
+                  "Education",
+                  "Tutorial / How-to",
+                  "Vlog",
+                  "Interview",
+                  "Podcast Clip",
+                  "Conspiracy / Alternative",
+                  "Spirituality",
+                  "Other",
                 ],
               },
-              key_points: { type: 'array', items: { type: 'string' } },
-              detailed_summary: { type: 'string' },
-              conclusions: { type: 'array', items: { type: 'string' } },
-              memorable_quotes: { type: 'array', items: { type: 'string' } },
-              duration: { type: 'string' },
-              language: { type: 'string' },
+              key_points: { type: "array", items: { type: "string" } },
+              detailed_summary: { type: "string" },
+              conclusions: { type: "array", items: { type: "string" } },
+              memorable_quotes: { type: "array", items: { type: "string" } },
+              duration: { type: "string" },
+              language: { type: "string" },
               worth_watching: {
-                type: 'string',
-                enum: ['Must watch', 'Worth watching', 'Watch only if you have time', 'Skip – not worth it'],
+                type: "string",
+                enum: ["highly_recommended", "recommended", "neutral", "not_recommended"],
               },
             },
             required: [
-              'genre',
-              'key_points',
-              'detailed_summary',
-              'conclusions',
-              'memorable_quotes',
-              'duration',
-              'language',
-              'worth_watching',
+              "genre",
+              "key_points",
+              "detailed_summary",
+              "conclusions",
+              "memorable_quotes",
+              "duration",
+              "language",
+              "worth_watching",
             ],
             additionalProperties: false,
           },
         },
-        required: ['tldr', 'full_summary'],
+        required: ["tldr", "full_summary"],
         additionalProperties: false,
       },
     } as const;
 
-    const messages: ChatMessage[] = [
-      {
-        role: 'system',
-        content: `You are an expert YouTube video summarizer. 
-Return ONLY valid JSON matching the schema.
-IMPORTANT: All text content (tldr, key_points, detailed_summary, conclusions, memorable_quotes) MUST be written in Polish language.
-Only enum values (genre, worth_watching) should remain in English as defined in the schema.`,
-      },
-      {
-        role: 'user',
-        content: `Analyze the following YouTube video transcript and create a detailed summary.
+    const messages = createVideoSummaryPrompt({
+      youtubeVideoId,
+      actualDuration,
+      text,
+    });
 
-IMPORTANT INSTRUCTIONS:
-- Write ALL text content in POLISH language (tldr, key_points, detailed_summary, conclusions, memorable_quotes)
-- Use English ONLY for enum values (genre, worth_watching) - select from the provided options
-- For the language field, write in Polish (e.g., "polski", "angielski")
-- The video duration is: ${actualDuration}
-
-Transcript:
-=== TRANSCRIPT START ===
-${text}
-=== TRANSCRIPT END ===
-
-YouTube ID: ${youtubeVideoId}
-
-Return JSON with the following structure:
-- tldr: brief summary in Polish (max 400 characters)
-- full_summary: object containing:
-  - genre: select from enum (keep in English)
-  - key_points: array of main points (in Polish)
-  - detailed_summary: comprehensive summary (in Polish)
-  - conclusions: array of conclusions (in Polish)
-  - memorable_quotes: array of notable quotes (in Polish, if present in transcript)
-  - duration: use the provided duration "${actualDuration}"
-  - language: video language (in Polish, e.g., "polski", "angielski")
-  - worth_watching: recommendation (select from enum, keep in English)`,
-      },
-    ];
-
-    appLogger.debug('Calling OpenRouter completeJson API');
+    appLogger.debug("Calling OpenRouter completeJson API");
     const result = await openRouter.completeJson<{
       tldr: string;
       full_summary: {
@@ -426,71 +392,75 @@ Return JSON with the following structure:
         worth_watching: string;
       };
     }>(messages, schema);
-    appLogger.debug('OpenRouter response received', {
+    appLogger.debug("OpenRouter response received", {
       tldrLength: result.tldr?.length,
-      fullSummaryKeys: Object.keys(result.full_summary || {})
+      fullSummaryKeys: Object.keys(result.full_summary || {}),
     });
 
     // 4. Zapisz wynik
-    appLogger.debug('Saving summary result to database');
+    appLogger.debug("Saving summary result to database");
     const { error: saveError } = await service
-      .from('summaries')
+      .from("summaries")
       .update({
         tldr: result.tldr,
         full_summary: result.full_summary,
-        status: 'completed',
+        status: "completed",
         generated_at: new Date().toISOString(),
       })
-      .eq('id', summaryId);
+      .eq("id", summaryId);
 
     if (saveError) {
-      errorLogger.dbError(saveError, 'save_summary_result', { summaryId });
+      errorLogger.dbError(saveError, "save_summary_result", { summaryId });
       throw saveError;
     }
-    appLogger.info('Summary successfully saved to database', { summaryId });
-
+    appLogger.info("Summary successfully saved to database", { summaryId });
   } catch (err: any) {
     const msg = err.message || String(err);
 
     // Don't log transcript errors as application errors - they're expected business cases
-    const isTranscriptError = msg.includes('transcript') || msg.includes('subtitle') || msg.includes('TRANSCRIPT') ||
-                             msg === 'NO_SUBTITLES' || msg === 'TRANSCRIPT_NOT_AVAILABLE' || msg === 'TRANSCRIPT_EMPTY';
+    const isTranscriptError =
+      msg.includes("transcript") ||
+      msg.includes("subtitle") ||
+      msg.includes("TRANSCRIPT") ||
+      msg === "NO_SUBTITLES" ||
+      msg === "TRANSCRIPT_NOT_AVAILABLE" ||
+      msg === "TRANSCRIPT_EMPTY";
 
     if (!isTranscriptError) {
       errorLogger.appError(err, {
-        component: 'processSummaryGeneration',
-        operation: 'summary_generation',
-        summaryId,
-        youtubeVideoId
-      });
-    } else {
-      appLogger.warn('Summary generation failed due to transcript issues', {
+        component: "processSummaryGeneration",
+        operation: "summary_generation",
         summaryId,
         youtubeVideoId,
-        error: msg
+      });
+    } else {
+      appLogger.warn("Summary generation failed due to transcript issues", {
+        summaryId,
+        youtubeVideoId,
+        error: msg,
       });
     }
-    let code: 'NO_SUBTITLES' | 'VIDEO_PRIVATE' | 'VIDEO_TOO_LONG' | null = null;
-    if (msg.includes('transcript') || msg.includes('subtitle') || msg.includes('TRANSCRIPT')) code = 'NO_SUBTITLES';
-    else if (msg.includes('private = true') || msg.includes('unavailable')) code = 'VIDEO_PRIVATE';
-    else if (msg.includes('too long')) code = 'VIDEO_TOO_LONG';
+    let code: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG" | null = null;
+    if (msg.includes("transcript") || msg.includes("subtitle") || msg.includes("TRANSCRIPT")) code = "NO_SUBTITLES";
+    else if (msg.includes("private = true") || msg.includes("unavailable")) code = "VIDEO_PRIVATE";
+    else if (msg.includes("too long")) code = "VIDEO_TOO_LONG";
 
-    appLogger.debug('Determined error code for summary failure', { summaryId, errorCode: code });
+    appLogger.debug("Determined error code for summary failure", { summaryId, errorCode: code });
 
     const { error: failError } = await service
-      .from('summaries')
-      .update({ status: 'failed', error_code: code })
-      .eq('id', summaryId);
-    
+      .from("summaries")
+      .update({ status: "failed", error_code: code })
+      .eq("id", summaryId);
+
     if (failError) {
-      errorLogger.dbError(failError, 'update_failed_status', { summaryId, errorCode: code });
+      errorLogger.dbError(failError, "update_failed_status", { summaryId, errorCode: code });
     } else {
-      appLogger.debug('Summary status updated to failed', { summaryId, errorCode: code });
+      appLogger.debug("Summary status updated to failed", { summaryId, errorCode: code });
     }
 
     errorLogger.appError(err, {
-      service: 'summaries_service',
-      operation: 'process_summary_generation',
+      service: "summaries_service",
+      operation: "process_summary_generation",
       summary_id: summaryId,
       youtube_video_id: youtubeVideoId,
     });
@@ -509,23 +479,20 @@ export async function listSummaries(
     offset: number;
     channel_id?: string;
     status?: SummaryStatus;
-    sort?: 'newest' | 'oldest';
+    sort?: "newest" | "oldest";
     include_hidden?: boolean;
     hidden_only?: boolean;
     search?: string;
   }
 ): Promise<PaginatedResponse<SummaryWithVideo>> {
-  const { data: subs } = await supabase
-    .from('subscriptions')
-    .select('channel_id')
-    .eq('user_id', userId);
+  const { data: subs } = await supabase.from("subscriptions").select("channel_id").eq("user_id", userId);
 
   const channelIds = subs?.map((s) => s.channel_id) ?? [];
   if (channelIds.length === 0) {
     return { data: [], pagination: { total: 0, limit: filters.limit, offset: filters.offset } };
   }
 
-  let selectQuery = `
+  const selectQuery = `
     id,
     tldr,
     status,
@@ -547,77 +514,77 @@ export async function listSummaries(
     )
   `;
 
-  let q = supabase
-    .from('summaries')
-    .select(selectQuery, { count: 'exact' })
-    .in('videos.channel_id', channelIds);
+  let q = supabase.from("summaries").select(selectQuery, { count: "exact" }).in("videos.channel_id", channelIds);
 
-  appLogger.debug('Query before filters applied', { userId, channelCount: channelIds.length });
+  appLogger.debug("Query before filters applied", { userId, channelCount: channelIds.length });
 
   // Handle hidden summaries filtering with subqueries
   if (filters.hidden_only) {
     // Show only hidden summaries - check if summary exists in hidden_summaries for this user
     const { data: hiddenSummaryIds } = await supabase
-      .from('hidden_summaries')
-      .select('summary_id')
-      .eq('user_id', userId);
+      .from("hidden_summaries")
+      .select("summary_id")
+      .eq("user_id", userId);
 
     if (hiddenSummaryIds && hiddenSummaryIds.length > 0) {
-      q = q.in('id', hiddenSummaryIds.map(h => h.summary_id));
+      q = q.in(
+        "id",
+        hiddenSummaryIds.map((h) => h.summary_id)
+      );
     } else {
       // No hidden summaries, return empty result
-      q = q.eq('id', '00000000-0000-0000-0000-000000000000'); // Impossible ID
+      q = q.eq("id", "00000000-0000-0000-0000-000000000000"); // Impossible ID
     }
   } else if (!filters.include_hidden) {
     // Exclude hidden summaries (default behavior) - ensure summary is NOT in hidden_summaries for this user
     const { data: hiddenSummaryIds } = await supabase
-      .from('hidden_summaries')
-      .select('summary_id')
-      .eq('user_id', userId);
-    
+      .from("hidden_summaries")
+      .select("summary_id")
+      .eq("user_id", userId);
+
     if (hiddenSummaryIds && hiddenSummaryIds.length > 0) {
-      const hiddenIds = hiddenSummaryIds.map(h => h.summary_id);
+      const hiddenIds = hiddenSummaryIds.map((h) => h.summary_id);
       // Use multiple .neq() calls for each hidden ID - more reliable than .not('in')
       for (const hiddenId of hiddenIds) {
-        q = q.neq('id', hiddenId);
+        q = q.neq("id", hiddenId);
       }
     }
     // If no hidden summaries, no filtering needed (default behavior)
   }
 
-  if (filters.channel_id) q = q.eq('videos.channel_id', filters.channel_id);
-  if (filters.status) q = q.eq('status', filters.status);
-  if (filters.search) q = q.ilike('videos.title', `%${filters.search}%`);
+  if (filters.channel_id) q = q.eq("videos.channel_id", filters.channel_id);
+  if (filters.status) q = q.eq("status", filters.status);
+  if (filters.search) q = q.ilike("videos.title", `%${filters.search}%`);
 
-  appLogger.debug('Query before sorting and range applied', { userId, offset: filters.offset, limit: filters.limit });
+  appLogger.debug("Query before sorting and range applied", { userId, offset: filters.offset, limit: filters.limit });
 
   // Apply pagination first (required for complex joins)
   const { data, count, error } = await q.range(filters.offset, filters.offset + filters.limit - 1);
-  appLogger.debug('Query executed', { userId, count, dataLength: data?.length, hasError: !!error });
+  appLogger.debug("Query executed", { userId, count, dataLength: data?.length, hasError: !!error });
   if (error) throw error;
 
   // Sort data in memory using generated_at instead of video published_at
   if (data && data.length > 0) {
-    const ascending = filters.sort === 'oldest';
+    const ascending = filters.sort === "oldest";
     data.sort((a: any, b: any) => {
       const dateA = new Date(a.generated_at || 0).getTime();
       const dateB = new Date(b.generated_at || 0).getTime();
       return ascending ? dateA - dateB : dateB - dateA;
     });
-    appLogger.debug('Data sorted in memory by generated_at', {
+    appLogger.debug("Data sorted in memory by generated_at", {
       userId,
       firstItemDate: (data[0] as any)?.generated_at,
-      lastItemDate: (data[data.length - 1] as any)?.generated_at
+      lastItemDate: (data[data.length - 1] as any)?.generated_at,
     });
   }
 
   // Get user ratings for all summaries in this batch
   const summaryIds = (data ?? []).map((row: any) => row.id).filter((id): id is string => id !== null);
   const { data: userRatings } = await supabase
-    .from('summary_ratings')
-    .select('summary_id, rating')
-    .eq('user_id', userId)
-    .in('summary_id', summaryIds);
+    .from("summary_ratings")
+    .select("summary_id, rating")
+    .eq("user_id", userId)
+    .in("summary_id", summaryIds);
 
   // Create a map for quick lookup
   const userRatingMap = new Map<string, boolean>();
@@ -664,8 +631,9 @@ export async function getSummaryDetails(
   summaryId: string
 ): Promise<DetailedSummary> {
   const { data: summary, error } = await supabase
-    .from('summaries')
-    .select(`
+    .from("summaries")
+    .select(
+      `
       id,
       tldr,
       full_summary,
@@ -685,33 +653,31 @@ export async function getSummaryDetails(
           created_at
         )
       )
-    `)
-    .eq('id', summaryId)
+    `
+    )
+    .eq("id", summaryId)
     .single();
 
-  if (error || !summary) throw new Error('SUMMARY_NOT_FOUND');
+  if (error || !summary) throw new Error("SUMMARY_NOT_FOUND");
 
-  const { data: ratings } = await supabase
-    .from('summary_ratings')
-    .select('rating')
-    .eq('summary_id', summaryId);
+  const { data: ratings } = await supabase.from("summary_ratings").select("rating").eq("summary_id", summaryId);
 
   const upvotes = ratings?.filter((r) => r.rating === true).length ?? 0;
   const downvotes = ratings?.filter((r) => r.rating === false).length ?? 0;
 
   const { data: userRating } = await supabase
-    .from('summary_ratings')
-    .select('rating')
-    .eq('summary_id', summaryId)
-    .eq('user_id', userId)
+    .from("summary_ratings")
+    .select("rating")
+    .eq("summary_id", summaryId)
+    .eq("user_id", userId)
     .maybeSingle();
 
   // Check if summary is hidden for the user
   const { data: hiddenData } = await supabase
-    .from('hidden_summaries')
-    .select('id')
-    .eq('summary_id', summaryId)
-    .eq('user_id', userId)
+    .from("hidden_summaries")
+    .select("id")
+    .eq("summary_id", summaryId)
+    .eq("user_id", userId)
     .maybeSingle();
 
   return {
@@ -756,7 +722,7 @@ function getUTCDayBoundaries(): { todayStart: string; tomorrowStart: string } {
   const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const tomorrowStart = new Date(todayStart);
   tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
-  
+
   return {
     todayStart: todayStart.toISOString(),
     tomorrowStart: tomorrowStart.toISOString(),
@@ -768,22 +734,22 @@ function getUTCDayBoundaries(): { todayStart: string; tomorrowStart: string } {
 // ---------------------------------------------------------------------------
 async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number> {
   const staleThreshold = new Date(Date.now() - STALE_GENERATION_TIMEOUT_MS).toISOString();
-  
+
   let staleGenerationsCount = 0;
   let staleQueueItemsCount = 0;
 
   // Mark stale bulk generations as failed
   try {
     const { data: staleGenerations, error: genError } = await supabase
-      .from('bulk_generation_status')
+      .from("bulk_generation_status")
       .update({
-        status: 'failed',
-        error_message: 'Generation timed out (stale cleanup)',
+        status: "failed",
+        error_message: "Generation timed out (stale cleanup)",
         completed_at: new Date().toISOString(),
       })
-      .in('status', ['pending', 'in_progress'])
-      .lt('started_at', staleThreshold)
-      .select('id');
+      .in("status", ["pending", "in_progress"])
+      .lt("started_at", staleThreshold)
+      .select("id");
 
     if (genError) {
       appLogger.warn(`Failed to cleanup stale bulk generations: ${genError.message} (code: ${genError.code})`);
@@ -797,15 +763,15 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
   // Mark stale queue items as failed (table may not have any items yet)
   try {
     const { data: staleQueueItems, error: queueError } = await supabase
-      .from('summary_queue')
+      .from("summary_queue")
       .update({
-        status: 'failed',
-        error_message: 'Queue item timed out (stale cleanup)',
+        status: "failed",
+        error_message: "Queue item timed out (stale cleanup)",
         completed_at: new Date().toISOString(),
       })
-      .in('status', ['pending', 'in_progress'])
-      .lt('queued_at', staleThreshold)
-      .select('id');
+      .in("status", ["pending", "in_progress"])
+      .lt("queued_at", staleThreshold)
+      .select("id");
 
     if (queueError) {
       appLogger.warn(`Failed to cleanup stale queue items: ${queueError.message} (code: ${queueError.code})`);
@@ -817,14 +783,14 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
   }
 
   const cleanedCount = staleGenerationsCount + staleQueueItemsCount;
-  
+
   if (cleanedCount > 0) {
-    appLogger.info('Cleaned up stale generations', {
+    appLogger.info("Cleaned up stale generations", {
       staleGenerations: staleGenerationsCount,
       staleQueueItems: staleQueueItemsCount,
     });
   }
-  
+
   return cleanedCount;
 }
 
@@ -833,7 +799,7 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
 // ---------------------------------------------------------------------------
 async function queueVideosForGeneration(
   supabase: SupabaseClient,
-  channels: Array<{ id: string; youtube_channel_id: string; name: string }>,
+  channels: { id: string; youtube_channel_id: string; name: string }[],
   bulkGenerationId: string,
   runtimeEnv?: RuntimeEnv
 ): Promise<{ queued: number; skipped: number; errors: string[] }> {
@@ -846,10 +812,10 @@ async function queueVideosForGeneration(
     try {
       // 1. Fetch latest video from YouTube API (always check for new content)
       let latestVideo: { id: string; youtube_video_id: string; title: string } | null = null;
-      
+
       try {
         const ytVideo = await fetchLatestVideoFromChannel(channel.youtube_channel_id, runtimeEnv);
-        
+
         if (!ytVideo) {
           appLogger.info(`Channel "${channel.name}" skipped: no videos found on YouTube`);
           skipped++;
@@ -858,9 +824,9 @@ async function queueVideosForGeneration(
 
         // 2. Check if this video already exists in database
         const { data: existingVideo } = await supabase
-          .from('videos')
-          .select('id, youtube_video_id, title')
-          .eq('youtube_video_id', ytVideo.videoId)
+          .from("videos")
+          .select("id, youtube_video_id, title")
+          .eq("youtube_video_id", ytVideo.videoId)
           .maybeSingle();
 
         if (existingVideo) {
@@ -870,19 +836,21 @@ async function queueVideosForGeneration(
         } else {
           // New video from YouTube - fetch metadata and create in DB
           appLogger.info(`Channel "${channel.name}": new video found on YouTube, creating in DB...`);
-          
+
           const videoMeta = await fetchYouTubeVideoMetadata(ytVideo.videoId, runtimeEnv);
 
           // Check video duration before creating
           if (videoMeta.duration > MAX_VIDEO_DURATION_SECONDS) {
-            appLogger.info(`Channel "${channel.name}" skipped: latest video too long (${Math.floor(videoMeta.duration / 60)} min)`);
+            appLogger.info(
+              `Channel "${channel.name}" skipped: latest video too long (${Math.floor(videoMeta.duration / 60)} min)`
+            );
             skipped++;
             continue;
           }
 
           // Create video record in database
           const { data: newVideo, error: insertError } = await supabase
-            .from('videos')
+            .from("videos")
             .insert({
               youtube_video_id: ytVideo.videoId,
               channel_id: channel.id,
@@ -890,18 +858,18 @@ async function queueVideosForGeneration(
               published_at: videoMeta.publishedAt,
               thumbnail_url: videoMeta.thumbnailUrl,
             })
-            .select('id, youtube_video_id, title')
+            .select("id, youtube_video_id, title")
             .single();
 
           if (insertError) {
             // Handle race condition - video might have been created by another process
-            if (insertError.code === '23505') {
+            if (insertError.code === "23505") {
               const { data: raceVideo } = await supabase
-                .from('videos')
-                .select('id, youtube_video_id, title')
-                .eq('youtube_video_id', ytVideo.videoId)
+                .from("videos")
+                .select("id, youtube_video_id, title")
+                .eq("youtube_video_id", ytVideo.videoId)
                 .single();
-              
+
               if (raceVideo) {
                 latestVideo = raceVideo;
               } else {
@@ -929,14 +897,14 @@ async function queueVideosForGeneration(
 
       // 2. Check if this channel already has a summary generated today (UTC)
       const { data: existingSummaryToday } = await supabase
-        .from('summaries')
-        .select('id, status')
-        .eq('video_id', latestVideo.id)
-        .gte('generated_at', todayStart)
-        .lt('generated_at', tomorrowStart)
+        .from("summaries")
+        .select("id, status")
+        .eq("video_id", latestVideo.id)
+        .gte("generated_at", todayStart)
+        .lt("generated_at", tomorrowStart)
         .maybeSingle();
 
-      if (existingSummaryToday && existingSummaryToday.status === 'completed') {
+      if (existingSummaryToday && existingSummaryToday.status === "completed") {
         appLogger.info(`Channel "${channel.name}" skipped: summary already generated today`);
         skipped++;
         continue;
@@ -944,10 +912,10 @@ async function queueVideosForGeneration(
 
       // 3. Check if video is already in queue (pending or processing)
       const { data: existingQueueItem } = await supabase
-        .from('summary_queue')
-        .select('id')
-        .eq('video_id', latestVideo.id)
-        .in('status', ['pending', 'in_progress'])
+        .from("summary_queue")
+        .select("id")
+        .eq("video_id", latestVideo.id)
+        .in("status", ["pending", "in_progress"])
         .maybeSingle();
 
       if (existingQueueItem) {
@@ -958,10 +926,10 @@ async function queueVideosForGeneration(
 
       // 4. Check if completed summary already exists for this video (any day)
       const { data: existingSummary } = await supabase
-        .from('summaries')
-        .select('id, status')
-        .eq('video_id', latestVideo.id)
-        .eq('status', 'completed')
+        .from("summaries")
+        .select("id, status")
+        .eq("video_id", latestVideo.id)
+        .eq("status", "completed")
         .maybeSingle();
 
       if (existingSummary) {
@@ -971,18 +939,16 @@ async function queueVideosForGeneration(
       }
 
       // 5. Add to queue
-      const { error: queueError } = await supabase
-        .from('summary_queue')
-        .insert({
-          video_id: latestVideo.id,
-          priority: 1, // Normal priority for daily generation
-          status: 'pending',
-        });
+      const { error: queueError } = await supabase.from("summary_queue").insert({
+        video_id: latestVideo.id,
+        priority: 1, // Normal priority for daily generation
+        status: "pending",
+      });
 
       if (queueError) {
         // Handle unique constraint violation (video already in queue)
-        if (queueError.code === '23505') {
-          appLogger.debug('Video already in queue (race condition)', { videoId: latestVideo.id });
+        if (queueError.code === "23505") {
+          appLogger.debug("Video already in queue (race condition)", { videoId: latestVideo.id });
           skipped++;
           continue;
         }
@@ -991,11 +957,10 @@ async function queueVideosForGeneration(
 
       queued++;
       appLogger.info(`Channel "${channel.name}" queued: video "${latestVideo.title}"`);
-
     } catch (error: any) {
       const errorMsg = `Channel ${channel.name}: ${error.message}`;
       errors.push(errorMsg);
-      appLogger.error('Error queueing video for channel', {
+      appLogger.error("Error queueing video for channel", {
         channelId: channel.id,
         error: error.message,
       });
@@ -1020,74 +985,70 @@ async function processQueueItem(
   runtimeEnv?: RuntimeEnv
 ): Promise<{ success: boolean; error?: string }> {
   let summaryId: string | null = null; // Track summaryId for error handling
-  
+
   try {
     // Mark as in_progress
     await supabase
-      .from('summary_queue')
+      .from("summary_queue")
       .update({
-        status: 'in_progress',
+        status: "in_progress",
         started_at: new Date().toISOString(),
         worker_id: workerId,
       })
-      .eq('id', queueItem.id);
+      .eq("id", queueItem.id);
 
     // Get video details
     const { data: video } = await supabase
-      .from('videos')
-      .select('id, youtube_video_id, title, channel_id')
-      .eq('id', queueItem.video_id)
+      .from("videos")
+      .select("id, youtube_video_id, title, channel_id")
+      .eq("id", queueItem.video_id)
       .single();
 
     if (!video) {
-      throw new Error('VIDEO_NOT_FOUND');
+      throw new Error("VIDEO_NOT_FOUND");
     }
 
     // Check video duration
     const videoMeta = await fetchYouTubeVideoMetadata(video.youtube_video_id, runtimeEnv);
     if (videoMeta.duration > MAX_VIDEO_DURATION_SECONDS) {
-      throw new Error('VIDEO_TOO_LONG');
+      throw new Error("VIDEO_TOO_LONG");
     }
 
     // Check/create summary record
     const { data: existingSummary } = await supabase
-      .from('summaries')
-      .select('id, status')
-      .eq('video_id', video.id)
+      .from("summaries")
+      .select("id, status")
+      .eq("video_id", video.id)
       .maybeSingle();
 
     if (existingSummary) {
-      if (existingSummary.status === 'completed') {
+      if (existingSummary.status === "completed") {
         // Already completed, mark queue item as completed
         await supabase
-          .from('summary_queue')
+          .from("summary_queue")
           .update({
-            status: 'completed',
+            status: "completed",
             completed_at: new Date().toISOString(),
           })
-          .eq('id', queueItem.id);
+          .eq("id", queueItem.id);
         return { success: true };
       }
       summaryId = existingSummary.id;
     } else {
       // Create new summary record
       const { data: newSummary, error: createError } = await supabase
-        .from('summaries')
+        .from("summaries")
         .insert({
           video_id: video.id,
-          status: 'pending',
+          status: "pending",
         })
-        .select('id')
+        .select("id")
         .single();
 
       if (createError) {
         // Handle race condition
-        if (createError.code === '23505') {
-          const { data: retry } = await supabase
-            .from('summaries')
-            .select('id')
-            .eq('video_id', video.id)
-            .single();
+        if (createError.code === "23505") {
+          const { data: retry } = await supabase.from("summaries").select("id").eq("video_id", video.id).single();
           if (retry) {
             summaryId = retry.id;
           }
@@ -1098,9 +1059,9 @@ async function processQueueItem(
         summaryId = newSummary.id;
       }
     }
-    
+
     if (!summaryId) {
-      throw new Error('SUMMARY_CREATION_FAILED');
+      throw new Error("SUMMARY_CREATION_FAILED");
     }
 
     // Generate summary using existing processSummaryGeneration
@@ -1108,71 +1069,70 @@ async function processQueueItem(
 
     // Mark queue item as completed
     await supabase
-      .from('summary_queue')
+      .from("summary_queue")
       .update({
-        status: 'completed',
+        status: "completed",
         completed_at: new Date().toISOString(),
       })
-      .eq('id', queueItem.id);
+      .eq("id", queueItem.id);
 
-    appLogger.info('Queue item processed successfully', {
+    appLogger.info("Queue item processed successfully", {
       queueItemId: queueItem.id,
       videoId: video.id,
       summaryId,
     });
 
     return { success: true };
-
   } catch (error: any) {
     const errorMsg = error.message || String(error);
-    
+
     // Determine error code for summary
-    let errorCode: 'NO_SUBTITLES' | 'VIDEO_PRIVATE' | 'VIDEO_TOO_LONG' | null = null;
-    if (errorMsg.includes('transcript') || errorMsg.includes('subtitle') || errorMsg.includes('TRANSCRIPT')) {
-      errorCode = 'NO_SUBTITLES';
-    } else if (errorMsg.includes('private') || errorMsg.includes('unavailable')) {
-      errorCode = 'VIDEO_PRIVATE';
-    } else if (errorMsg.includes('TOO_LONG')) {
-      errorCode = 'VIDEO_TOO_LONG';
+    let errorCode: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG" | null = null;
+    if (errorMsg.includes("transcript") || errorMsg.includes("subtitle") || errorMsg.includes("TRANSCRIPT")) {
+      errorCode = "NO_SUBTITLES";
+    } else if (errorMsg.includes("private") || errorMsg.includes("unavailable")) {
+      errorCode = "VIDEO_PRIVATE";
+    } else if (errorMsg.includes("TOO_LONG")) {
+      errorCode = "VIDEO_TOO_LONG";
     }
-    
+
     // Check if should retry
     const newRetryCount = queueItem.retry_count + 1;
     if (newRetryCount < queueItem.max_retries) {
       // Reset to pending for retry
       await supabase
-        .from('summary_queue')
+        .from("summary_queue")
         .update({
-          status: 'pending',
+          status: "pending",
           retry_count: newRetryCount,
           error_message: errorMsg,
           worker_id: null,
           started_at: null,
         })
-        .eq('id', queueItem.id);
+        .eq("id", queueItem.id);
 
       appLogger.warn(`Queue item failed, will retry (attempt ${newRetryCount}/${queueItem.max_retries}): ${errorMsg}`);
     } else {
       // Mark queue item as failed
       await supabase
-        .from('summary_queue')
+        .from("summary_queue")
         .update({
-          status: 'failed',
+          status: "failed",
           error_message: errorMsg,
           completed_at: new Date().toISOString(),
         })
-        .eq('id', queueItem.id);
+        .eq("id", queueItem.id);
 
       // Also mark the summary as failed if we have a summaryId
       if (summaryId) {
         await supabase
-          .from('summaries')
+          .from("summaries")
           .update({
-            status: 'failed',
+            status: "failed",
             error_code: errorCode,
           })
-          .eq('id', summaryId);
-        
+          .eq("id", summaryId);
+
         appLogger.error(`Summary ${summaryId} failed permanently: ${errorMsg}`);
       } else {
         appLogger.error(`Queue item failed permanently (no summaryId): ${errorMsg}`);
@@ -1201,21 +1161,21 @@ export async function processNextQueueItem(
   runtimeEnv?: RuntimeEnv
 ): Promise<ProcessNextQueueResult> {
   const workerId = `single-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  
-  appLogger.info('Processing next queue item', { workerId });
+
+  appLogger.info("Processing next queue item", { workerId });
 
   // Fetch the next pending queue item (highest priority first, oldest first)
   const { data: queueItem, error: fetchError } = await supabase
-    .from('summary_queue')
-    .select('id, video_id, retry_count, max_retries')
-    .eq('status', 'pending')
-    .order('priority', { ascending: false })
-    .order('queued_at', { ascending: true })
+    .from("summary_queue")
+    .select("id, video_id, retry_count, max_retries")
+    .eq("status", "pending")
+    .order("priority", { ascending: false })
+    .order("queued_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
   if (fetchError) {
-    appLogger.error('Error fetching queue item', { error: fetchError.message });
+    appLogger.error("Error fetching queue item", { error: fetchError.message });
     return {
       processed: false,
       message: `Error fetching queue: ${fetchError.message}`,
@@ -1223,14 +1183,14 @@ export async function processNextQueueItem(
   }
 
   if (!queueItem) {
-    appLogger.info('No pending queue items to process');
+    appLogger.info("No pending queue items to process");
     return {
       processed: false,
-      message: 'No pending queue items',
+      message: "No pending queue items",
     };
   }
 
-  appLogger.info('Found queue item to process', {
+  appLogger.info("Found queue item to process", {
     queueItemId: queueItem.id,
     videoId: queueItem.video_id,
     retryCount: queueItem.retry_count,
@@ -1238,9 +1198,9 @@ export async function processNextQueueItem(
 
   // Get summary ID for this video
   const { data: summary } = await supabase
-    .from('summaries')
-    .select('id')
-    .eq('video_id', queueItem.video_id)
+    .from("summaries")
+    .select("id")
+    .eq("video_id", queueItem.video_id)
     .maybeSingle();
 
   // Process the queue item (this can take several minutes for Gradio)
@@ -1253,9 +1213,7 @@ export async function processNextQueueItem(
     summaryId: summary?.id,
     success: result.success,
     error: result.error,
-    message: result.success 
-      ? `Queue item processed successfully`
-      : `Queue item failed: ${result.error}`,
+    message: result.success ? `Queue item processed successfully` : `Queue item failed: ${result.error}`,
   };
 }
 
@@ -1272,44 +1230,41 @@ async function processQueueWithWorkers(
   let totalSuccessful = 0;
   let totalFailed = 0;
 
-  appLogger.info('Starting queue processing', { bulkGenerationId, workerId });
+  appLogger.info("Starting queue processing", { bulkGenerationId, workerId });
 
   // Update bulk generation status to in_progress
-  await supabase
-    .from('bulk_generation_status')
-    .update({ status: 'in_progress' })
-    .eq('id', bulkGenerationId);
+  await supabase.from("bulk_generation_status").update({ status: "in_progress" }).eq("id", bulkGenerationId);
 
   try {
     while (true) {
       // Fetch batch of pending queue items
       const { data: queueItems, error: fetchError } = await supabase
-        .from('summary_queue')
-        .select('id, video_id, retry_count, max_retries')
-        .eq('status', 'pending')
-        .order('priority', { ascending: false })
-        .order('queued_at', { ascending: true })
+        .from("summary_queue")
+        .select("id, video_id, retry_count, max_retries")
+        .eq("status", "pending")
+        .order("priority", { ascending: false })
+        .order("queued_at", { ascending: true })
         .limit(QUEUE_PROCESSING_CONCURRENCY);
 
       if (fetchError) {
-        appLogger.error('Error fetching queue items', { error: fetchError.message });
+        appLogger.error("Error fetching queue items", { error: fetchError.message });
         break;
       }
 
       if (!queueItems || queueItems.length === 0) {
-        appLogger.info('No more pending queue items');
+        appLogger.info("No more pending queue items");
         break;
       }
 
       // Process batch in parallel
       const results = await Promise.allSettled(
-        queueItems.map(item => processQueueItem(supabase, item, workerId, runtimeEnv))
+        queueItems.map((item) => processQueueItem(supabase, item, workerId, runtimeEnv))
       );
 
       // Count results
       for (const result of results) {
         totalProcessed++;
-        if (result.status === 'fulfilled' && result.value.success) {
+        if (result.status === "fulfilled" && result.value.success) {
           totalSuccessful++;
         } else {
           totalFailed++;
@@ -1318,15 +1273,15 @@ async function processQueueWithWorkers(
 
       // Update bulk generation progress
       await supabase
-        .from('bulk_generation_status')
+        .from("bulk_generation_status")
         .update({
           processed_channels: totalProcessed,
           successful_summaries: totalSuccessful,
           failed_summaries: totalFailed,
         })
-        .eq('id', bulkGenerationId);
+        .eq("id", bulkGenerationId);
 
-      appLogger.debug('Batch processed', {
+      appLogger.debug("Batch processed", {
         bulkGenerationId,
         totalProcessed,
         totalSuccessful,
@@ -1336,40 +1291,39 @@ async function processQueueWithWorkers(
 
     // Mark as completed
     await supabase
-      .from('bulk_generation_status')
+      .from("bulk_generation_status")
       .update({
-        status: 'completed',
+        status: "completed",
         completed_at: new Date().toISOString(),
         processed_channels: totalProcessed,
         successful_summaries: totalSuccessful,
         failed_summaries: totalFailed,
       })
-      .eq('id', bulkGenerationId);
+      .eq("id", bulkGenerationId);
 
-    appLogger.info('Bulk generation completed', {
+    appLogger.info("Bulk generation completed", {
       bulkGenerationId,
       totalProcessed,
       totalSuccessful,
       totalFailed,
     });
-
   } catch (error: any) {
-    appLogger.error('Bulk generation failed', {
+    appLogger.error("Bulk generation failed", {
       bulkGenerationId,
       error: error.message,
     });
 
     await supabase
-      .from('bulk_generation_status')
+      .from("bulk_generation_status")
       .update({
-        status: 'failed',
+        status: "failed",
         error_message: error.message,
         completed_at: new Date().toISOString(),
         processed_channels: totalProcessed,
         successful_summaries: totalSuccessful,
         failed_summaries: totalFailed,
       })
-      .eq('id', bulkGenerationId);
+      .eq("id", bulkGenerationId);
   }
 }
 
@@ -1380,108 +1334,111 @@ export async function startBulkSummaryGeneration(
   supabase: SupabaseClient,
   runtimeEnv?: RuntimeEnv
 ): Promise<BulkGenerationResponse> {
-  appLogger.info('Starting system bulk summary generation');
+  appLogger.info("Starting system bulk summary generation");
 
   // 1. Cleanup stale generations first (non-blocking)
   try {
     await cleanupStaleGenerations(supabase);
-    appLogger.debug('Stale cleanup completed');
+    appLogger.debug("Stale cleanup completed");
   } catch (cleanupErr: any) {
-    appLogger.warn('Stale cleanup failed (continuing anyway)', { error: cleanupErr.message });
+    appLogger.warn("Stale cleanup failed (continuing anyway)", { error: cleanupErr.message });
   }
 
   // 2. Check if bulk generation is already in progress
-  appLogger.debug('Checking for active generation...');
+  appLogger.debug("Checking for active generation...");
   const { data: activeGeneration, error: activeError } = await supabase
-    .from('bulk_generation_status')
-    .select('id, status')
-    .in('status', ['pending', 'in_progress'])
+    .from("bulk_generation_status")
+    .select("id, status")
+    .in("status", ["pending", "in_progress"])
     .maybeSingle();
 
   if (activeError) {
-    appLogger.error(`Failed to check active generation: ${activeError.message} (code: ${activeError.code}, hint: ${activeError.hint || 'none'})`);
-    errorLogger.dbError(activeError, 'check_active_generation');
+    appLogger.error(
+      `Failed to check active generation: ${activeError.message} (code: ${activeError.code}, hint: ${activeError.hint || "none"})`
+    );
+    errorLogger.dbError(activeError, "check_active_generation");
     throw activeError;
   }
 
   if (activeGeneration) {
-    appLogger.warn('Bulk generation already in progress', { activeGenerationId: activeGeneration.id });
-    throw new Error('BULK_GENERATION_IN_PROGRESS');
+    appLogger.warn("Bulk generation already in progress", { activeGenerationId: activeGeneration.id });
+    throw new Error("BULK_GENERATION_IN_PROGRESS");
   }
 
   // 3. Fetch all channels
-  appLogger.debug('Fetching all channels...');
+  appLogger.debug("Fetching all channels...");
   const { data: channels, error: channelsError } = await supabase
-    .from('channels')
-    .select('id, youtube_channel_id, name')
-    .order('created_at', { ascending: false });
+    .from("channels")
+    .select("id, youtube_channel_id, name")
+    .order("created_at", { ascending: false });
 
   if (channelsError) {
     appLogger.error(`Failed to fetch channels: ${channelsError.message} (code: ${channelsError.code})`);
-    errorLogger.dbError(channelsError, 'fetch_all_channels');
+    errorLogger.dbError(channelsError, "fetch_all_channels");
     throw channelsError;
   }
 
   if (!channels || channels.length === 0) {
-    throw new Error('NO_CHANNELS_FOUND');
+    throw new Error("NO_CHANNELS_FOUND");
   }
 
   appLogger.info(`Found ${channels.length} channels to process`);
 
   // 4. Create bulk generation record
-  appLogger.debug('Creating bulk generation record...');
+  appLogger.debug("Creating bulk generation record...");
   const { data: bulkGeneration, error: insertError } = await supabase
-    .from('bulk_generation_status')
+    .from("bulk_generation_status")
     .insert({
       user_id: null, // System generation (no user)
-      status: 'pending',
+      status: "pending",
       total_channels: channels.length,
     })
-    .select('id, status')
+    .select("id, status")
     .single();
 
   if (insertError) {
-    appLogger.error(`Failed to create bulk generation: ${insertError.message} (code: ${insertError.code}, hint: ${insertError.hint || 'none'})`);
-    errorLogger.dbError(insertError, 'create_bulk_generation');
+    appLogger.error(
+      `Failed to create bulk generation: ${insertError.message} (code: ${insertError.code}, hint: ${insertError.hint || "none"})`
+    );
+    errorLogger.dbError(insertError, "create_bulk_generation");
     throw insertError;
   }
 
   // 5. Queue videos for generation
   const queueResult = await queueVideosForGeneration(supabase, channels, bulkGeneration.id, runtimeEnv);
 
-  appLogger.info(`Videos queued: ${queueResult.queued} queued, ${queueResult.skipped} skipped, ${queueResult.errors.length} errors`);
+  appLogger.info(
+    `Videos queued: ${queueResult.queued} queued, ${queueResult.skipped} skipped, ${queueResult.errors.length} errors`
+  );
 
   // 6. If nothing to process, mark as completed
   if (queueResult.queued === 0) {
     await supabase
-      .from('bulk_generation_status')
+      .from("bulk_generation_status")
       .update({
-        status: 'completed',
+        status: "completed",
         completed_at: new Date().toISOString(),
         processed_channels: 0,
         successful_summaries: 0,
         failed_summaries: 0,
       })
-      .eq('id', bulkGeneration.id);
+      .eq("id", bulkGeneration.id);
 
     return {
       id: bulkGeneration.id,
-      status: 'completed',
+      status: "completed",
       message: `No new summaries to generate. ${queueResult.skipped} channels skipped (already have summaries).`,
-      estimated_completion_time: '0',
+      estimated_completion_time: "0",
     };
   }
 
   // 7. Queue processing is handled by GitHub Actions workflow calling /api/summaries/process-next
   // Don't start background processing here - it causes "stuck" items due to waitUntil limits
-  
-  // Mark bulk generation as in_progress (workflow will update to completed when done)
-  await supabase
-    .from('bulk_generation_status')
-    .update({ status: 'in_progress' })
-    .eq('id', bulkGeneration.id);
 
-  appLogger.info('System bulk summary generation - videos queued', {
+  // Mark bulk generation as in_progress (workflow will update to completed when done)
+  await supabase.from("bulk_generation_status").update({ status: "in_progress" }).eq("id", bulkGeneration.id);
+
+  appLogger.info("System bulk summary generation - videos queued", {
     bulkGenerationId: bulkGeneration.id,
     totalChannels: channels.length,
     queuedVideos: queueResult.queued,
@@ -1489,12 +1446,11 @@ export async function startBulkSummaryGeneration(
 
   return {
     id: bulkGeneration.id,
-    status: 'in_progress' as const,
+    status: "in_progress" as const,
     message: `${queueResult.queued} videos queued for processing. ${queueResult.skipped} skipped. Processing via cron.`,
     estimated_completion_time: Math.ceil(queueResult.queued * 1.5).toString(),
   };
 }
-
 
 // ---------------------------------------------------------------------------
 // Sprawdź status masowej generacji
@@ -1505,20 +1461,20 @@ export async function getBulkGenerationStatus(
   generationId?: string
 ): Promise<BulkGenerationStatus[]> {
   let query = supabase
-    .from('bulk_generation_status')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("bulk_generation_status")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(10);
 
   if (generationId) {
-    query = query.eq('id', generationId);
+    query = query.eq("id", generationId);
   }
 
   const { data, error } = await query;
 
   if (error) {
-    errorLogger.dbError(error, 'get_bulk_generation_status', { userId });
+    errorLogger.dbError(error, "get_bulk_generation_status", { userId });
     throw error;
   }
 
@@ -1528,15 +1484,12 @@ export async function getBulkGenerationStatus(
 // ---------------------------------------------------------------------------
 // Sprawdź czy masowa generacja jest w trakcie
 // ---------------------------------------------------------------------------
-export async function isBulkGenerationInProgress(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<boolean> {
+export async function isBulkGenerationInProgress(supabase: SupabaseClient, userId: string): Promise<boolean> {
   const { count } = await supabase
-    .from('bulk_generation_status')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .in('status', ['pending', 'in_progress']);
+    .from("bulk_generation_status")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .in("status", ["pending", "in_progress"]);
 
   return (count || 0) > 0;
 }

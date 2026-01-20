@@ -1,23 +1,50 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSummaryDetails } from '@/hooks/useSummaryDetails';
-import { useRating } from '@/hooks/useRating';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import AppLoader from '@/components/ui/AppLoader';
-import TypewriterAnimation from '@/components/ui/typewriter-animation';
-import EnhancedProgressBar from '@/components/ui/EnhancedProgressBar';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { generateSummary } from '@/lib/api';
-import GenerateSummaryDialog from '@/components/views/videos/GenerateSummaryDialog';
-import type { VideoSummary, DetailedSummary } from '@/types';
-import { toast } from 'sonner';
-import QueryProvider from '@/components/providers/QueryProvider';
-import { motion, useScroll, useTransform, useSpring, useInView, useMotionValueEvent } from 'framer-motion';
-import { ArrowUpRight, AlertCircle, Clock, Loader2, CheckCircle, ThumbsUp, ThumbsDown, Calendar, User, Play, Star, TrendingUp, BarChart3, Share2, Copy, MessageSquare, FileText, Link, Film, Timer, Globe, Award, Sparkles, Maximize2, EyeOff, RefreshCw } from 'lucide-react';
-import NotFound from '@/components/shared/NotFound';
+import React, { useState, useEffect, useRef } from "react";
+import { useSummaryDetails } from "@/hooks/useSummaryDetails";
+import { useRating } from "@/hooks/useRating";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import AppLoader from "@/components/ui/AppLoader";
+import TypewriterAnimation from "@/components/ui/typewriter-animation";
+import EnhancedProgressBar from "@/components/ui/EnhancedProgressBar";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { generateSummary } from "@/lib/api";
+import GenerateSummaryDialog from "@/components/views/videos/GenerateSummaryDialog";
+import type { VideoSummary, DetailedSummary, SummaryData, ApiError } from "@/types";
+import { toast } from "sonner";
+import QueryProvider from "@/components/providers/QueryProvider";
+import { motion, useScroll, useTransform, useSpring, useInView, useMotionValueEvent } from "framer-motion";
+import {
+  ArrowUpRight,
+  AlertCircle,
+  Clock,
+  Loader2,
+  CheckCircle,
+  ThumbsUp,
+  ThumbsDown,
+  Calendar,
+  User,
+  Play,
+  Star,
+  TrendingUp,
+  BarChart3,
+  Share2,
+  Copy,
+  MessageSquare,
+  FileText,
+  Link,
+  Film,
+  Timer,
+  Globe,
+  Award,
+  Sparkles,
+  Maximize2,
+  EyeOff,
+  RefreshCw,
+} from "lucide-react";
+import NotFound from "@/components/shared/NotFound";
 
 interface SummaryDetailsContentProps {
   summaryId: string;
@@ -27,12 +54,11 @@ interface SummaryDetailsContentProps {
 const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard!');
+    toast.success("Copied to clipboard!");
   } catch (err) {
-    toast.error('Failed to copy to clipboard');
+    toast.error("Failed to copy to clipboard");
   }
 };
-
 
 // Scroll Progress Indicator Component with Direction Detection
 const ScrollProgress: React.FC = () => {
@@ -43,7 +69,7 @@ const ScrollProgress: React.FC = () => {
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
-    restDelta: 0.001
+    restDelta: 0.001,
   });
 
   useMotionValueEvent(scrollY, "change", (current) => {
@@ -68,12 +94,13 @@ const ScrollProgress: React.FC = () => {
       style={{
         scaleX,
         y: isVisible ? 0 : -4,
-        opacity: isVisible ? 1 : 0
+        opacity: isVisible ? 1 : 0,
       }}
       animate={{
-        background: scrollDirection === "down"
-          ? "linear-gradient(to right, #3b82f6, #8b5cf6)"
-          : "linear-gradient(to right, #10b981, #06b6d4)"
+        background:
+          scrollDirection === "down"
+            ? "linear-gradient(to right, #3b82f6, #8b5cf6)"
+            : "linear-gradient(to right, #10b981, #06b6d4)",
       }}
       transition={{ duration: 0.3 }}
     />
@@ -94,7 +121,7 @@ const VideoHeader: React.FC<{
   // Parallax effect for background elements
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
   });
 
   const backgroundY = useTransform(scrollYProgress, [0, 1], [0, -50]);
@@ -142,14 +169,27 @@ const VideoHeader: React.FC<{
                   <div className="flex items-center gap-1.5 sm:gap-2 bg-white/10 px-2 sm:px-3 py-1 rounded-full backdrop-blur-sm animate-in fade-in-0 duration-300 delay-500">
                     <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">{new Date(video.published_at).toLocaleDateString()}</span>
-                    <span className="sm:hidden">{new Date(video.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}</span>
+                    <span className="sm:hidden">
+                      {new Date(video.published_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "2-digit",
+                      })}
+                    </span>
                   </div>
                 )}
-                {generated_at && status === 'completed' && (
+                {generated_at && status === "completed" && (
                   <div className="flex items-center gap-1.5 sm:gap-2 bg-white/10 px-2 sm:px-3 py-1 rounded-full backdrop-blur-sm animate-in fade-in-0 duration-300 delay-600">
                     <Star className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Generated {new Date(generated_at).toLocaleDateString()}</span>
-                    <span className="sm:hidden">Gen {new Date(generated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}</span>
+                    <span className="sm:hidden">
+                      Gen{" "}
+                      {new Date(generated_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "2-digit",
+                      })}
+                    </span>
                   </div>
                 )}
                 {is_hidden && (
@@ -186,7 +226,7 @@ const VideoHeader: React.FC<{
 // Compact Status Indicator
 const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
-    case 'pending':
+    case "pending":
       return (
         <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-800">
           <Clock className="h-4 w-4" />
@@ -197,7 +237,7 @@ const StatusIndicator: React.FC<{ status: string }> = ({ status }) => {
         </div>
       );
 
-    case 'in_progress':
+    case "in_progress":
       return (
         <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -219,7 +259,7 @@ const SummarySidebar: React.FC<{
   status: string;
   rating_stats: { upvotes: number; downvotes: number };
   user_rating: boolean | null;
-  full_summary: any;
+  full_summary: SummaryData | null;
   error_code: string | null;
   tldr?: string | null;
 }> = ({ summaryId, status, rating_stats, user_rating, full_summary, error_code, tldr }) => {
@@ -252,10 +292,12 @@ const SummarySidebar: React.FC<{
   return (
     <div className="space-y-6">
       {/* Processing Status - Clean & Intuitive */}
-      <div className={`${status === 'completed' ? 'md:block hidden' : ''} bg-white rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow duration-300`}>
+      <div
+        className={`${status === "completed" ? "md:block hidden" : ""} bg-white rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow duration-300`}
+      >
         <div className="p-6">
           <div className="flex items-center gap-4">
-            {status === 'completed' ? (
+            {status === "completed" ? (
               <>
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
                   <CheckCircle className="h-5 w-5 text-emerald-600" />
@@ -265,7 +307,7 @@ const SummarySidebar: React.FC<{
                   <p className="text-sm text-slate-600">Summary available</p>
                 </div>
               </>
-            ) : status === 'failed' ? (
+            ) : status === "failed" ? (
               <>
                 <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                   <AlertCircle className="h-5 w-5 text-red-600" />
@@ -273,13 +315,15 @@ const SummarySidebar: React.FC<{
                 <div>
                   <p className="font-medium text-red-900">Failed</p>
                   <p className="text-sm text-slate-600">
-                    {error_code === 'NO_SUBTITLES' ? 'No captions available' :
-                      error_code === 'VIDEO_TOO_LONG' ? 'Video too long' :
-                        'Processing error'}
+                    {error_code === "NO_SUBTITLES"
+                      ? "No captions available"
+                      : error_code === "VIDEO_TOO_LONG"
+                        ? "Video too long"
+                        : "Processing error"}
                   </p>
                 </div>
               </>
-            ) : status === 'pending' ? (
+            ) : status === "pending" ? (
               <>
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                   <Clock className="h-5 w-5 text-blue-600" />
@@ -296,7 +340,7 @@ const SummarySidebar: React.FC<{
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-blue-900">Processing</p>
-                  <p className="text-sm text-slate-600">~2-4 minutes remaining</p>
+                  <p className="text-sm text-slate-600">~5-10 minutes remaining</p>
                   <div className="mt-3">
                     <EnhancedProgressBar
                       progress={65}
@@ -315,7 +359,7 @@ const SummarySidebar: React.FC<{
       </div>
 
       {/* Community Rating - Premium Design */}
-      {status === 'completed' && (
+      {status === "completed" && (
         <div className="bg-white rounded-2xl border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden relative">
           {/* Animated background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 via-white to-slate-50/30 opacity-0 hover:opacity-100 transition-opacity duration-700" />
@@ -370,7 +414,7 @@ const SummarySidebar: React.FC<{
                     <div
                       className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000 ease-out group-hover:from-emerald-500 group-hover:to-emerald-600"
                       style={{
-                        width: `${Math.min((rating_stats.upvotes / (rating_stats.upvotes + rating_stats.downvotes || 1)) * 100, 100)}%`
+                        width: `${Math.min((rating_stats.upvotes / (rating_stats.upvotes + rating_stats.downvotes || 1)) * 100, 100)}%`,
                       }}
                     />
                   </div>
@@ -417,7 +461,7 @@ const SummarySidebar: React.FC<{
                     <div
                       className="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full transition-all duration-1000 ease-out group-hover:from-red-500 group-hover:to-red-600"
                       style={{
-                        width: `${Math.min((rating_stats.downvotes / (rating_stats.upvotes + rating_stats.downvotes || 1)) * 100, 100)}%`
+                        width: `${Math.min((rating_stats.downvotes / (rating_stats.upvotes + rating_stats.downvotes || 1)) * 100, 100)}%`,
                       }}
                     />
                   </div>
@@ -438,12 +482,15 @@ const SummarySidebar: React.FC<{
                   size="lg"
                   onClick={() => handleRating(true)}
                   disabled={isRating}
-                  className={`flex-1 gap-2 h-9 text-sm font-semibold transition-all duration-300 rounded-xl ${user_rating === true
-                    ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 hover:from-emerald-500 hover:via-emerald-600 hover:to-emerald-700 text-white border-emerald-400 shadow-xl hover:shadow-emerald-400/40 hover:shadow-2xl hover:scale-105'
-                    : 'border-2 border-slate-300 hover:bg-gradient-to-r hover:from-emerald-50 hover:via-emerald-100/50 hover:to-emerald-50 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-400/20 hover:scale-102'
-                    }`}
+                  className={`flex-1 gap-2 h-9 text-sm font-semibold transition-all duration-300 rounded-xl ${
+                    user_rating === true
+                      ? "bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 hover:from-emerald-500 hover:via-emerald-600 hover:to-emerald-700 text-white border-emerald-400 shadow-xl hover:shadow-emerald-400/40 hover:shadow-2xl hover:scale-105"
+                      : "border-2 border-slate-300 hover:bg-gradient-to-r hover:from-emerald-50 hover:via-emerald-100/50 hover:to-emerald-50 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-400/20 hover:scale-102"
+                  }`}
                 >
-                  <ThumbsUp className={`h-4 w-4 transition-transform duration-300 ${user_rating === true ? 'scale-110' : ''}`} />
+                  <ThumbsUp
+                    className={`h-4 w-4 transition-transform duration-300 ${user_rating === true ? "scale-110" : ""}`}
+                  />
                   Like
                 </Button>
                 <Button
@@ -451,29 +498,41 @@ const SummarySidebar: React.FC<{
                   size="lg"
                   onClick={() => handleRating(false)}
                   disabled={isRating}
-                  className={`flex-1 gap-2 h-9 text-sm font-semibold transition-all duration-300 rounded-xl ${user_rating === false
-                    ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-red-500 shadow-xl hover:shadow-red-500/40 hover:shadow-2xl hover:scale-105'
-                    : 'border-2 border-slate-300 hover:bg-gradient-to-r hover:from-red-50 hover:via-red-100/50 hover:to-red-50 hover:border-red-300 hover:shadow-lg hover:shadow-red-500/20 hover:scale-102'
-                    }`}
+                  className={`flex-1 gap-2 h-9 text-sm font-semibold transition-all duration-300 rounded-xl ${
+                    user_rating === false
+                      ? "bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white border-red-500 shadow-xl hover:shadow-red-500/40 hover:shadow-2xl hover:scale-105"
+                      : "border-2 border-slate-300 hover:bg-gradient-to-r hover:from-red-50 hover:via-red-100/50 hover:to-red-50 hover:border-red-300 hover:shadow-lg hover:shadow-red-500/20 hover:scale-102"
+                  }`}
                 >
-                  <ThumbsDown className={`h-4 w-4 transition-transform duration-300 ${user_rating === false ? 'scale-110' : ''}`} />
+                  <ThumbsDown
+                    className={`h-4 w-4 transition-transform duration-300 ${user_rating === false ? "scale-110" : ""}`}
+                  />
                   Dislike
                 </Button>
               </div>
 
               {showConfirmation && user_rating !== null && (
                 <div className="text-center animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold shadow-md hover:shadow-lg transition-all duration-300 ${user_rating
-                    ? 'bg-gradient-to-r from-emerald-100 via-emerald-50 to-emerald-100 text-emerald-800 border-2 border-emerald-300/50'
-                    : 'bg-gradient-to-r from-red-100 via-red-50 to-red-100 text-red-800 border-2 border-red-300/50'
-                    }`}>
-                    <div className={`w-3 h-3 rounded-full ${user_rating ? 'bg-emerald-500' : 'bg-red-500'
-                      } animate-pulse shadow-sm`} />
+                  <div
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold shadow-md hover:shadow-lg transition-all duration-300 ${
+                      user_rating
+                        ? "bg-gradient-to-r from-emerald-100 via-emerald-50 to-emerald-100 text-emerald-800 border-2 border-emerald-300/50"
+                        : "bg-gradient-to-r from-red-100 via-red-50 to-red-100 text-red-800 border-2 border-red-300/50"
+                    }`}
+                  >
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        user_rating ? "bg-emerald-500" : "bg-red-500"
+                      } animate-pulse shadow-sm`}
+                    />
                     <span className="animate-in fade-in-0 duration-300 delay-100">
-                      {user_rating ? 'Thanks for the positive feedback!' : 'Thanks for your feedback'}
+                      {user_rating ? "Thanks for the positive feedback!" : "Thanks for your feedback"}
                     </span>
-                    <div className={`w-1.5 h-1.5 rounded-full ${user_rating ? 'bg-emerald-400' : 'bg-red-400'
-                      } animate-ping`} />
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        user_rating ? "bg-emerald-400" : "bg-red-400"
+                      } animate-ping`}
+                    />
                   </div>
                 </div>
               )}
@@ -483,7 +542,7 @@ const SummarySidebar: React.FC<{
       )}
 
       {/* Video Details - Clean / Editorial */}
-      {status === 'completed' && full_summary && (
+      {status === "completed" && full_summary && (
         <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
           <div className="p-6">
             <div className="flex items-center gap-4 mb-5">
@@ -507,7 +566,9 @@ const SummarySidebar: React.FC<{
 
                     <div className="min-w-0 flex-1 grid gap-2 sm:grid-cols-[minmax(0,1fr),auto] sm:items-start">
                       <div className="min-w-0">
-                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-purple-900 transition-colors duration-200">Genre</dt>
+                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-purple-900 transition-colors duration-200">
+                          Genre
+                        </dt>
                         <p className="mt-1 text-sm text-slate-500 leading-tight">Category classification</p>
                       </div>
                       <dd className="sm:text-right">
@@ -528,7 +589,9 @@ const SummarySidebar: React.FC<{
 
                     <div className="min-w-0 flex-1 grid gap-2 sm:grid-cols-[minmax(0,1fr),auto] sm:items-start">
                       <div className="min-w-0">
-                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-blue-900 transition-colors duration-200">Duration</dt>
+                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-blue-900 transition-colors duration-200">
+                          Duration
+                        </dt>
                         <p className="mt-1 text-sm text-slate-500 leading-tight">Length & runtime</p>
                       </div>
                       <dd className="sm:text-right">
@@ -549,7 +612,9 @@ const SummarySidebar: React.FC<{
 
                     <div className="min-w-0 flex-1 grid gap-2 sm:grid-cols-[minmax(0,1fr),auto] sm:items-start">
                       <div className="min-w-0">
-                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-green-900 transition-colors duration-200">Language</dt>
+                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-green-900 transition-colors duration-200">
+                          Language
+                        </dt>
                         <p className="mt-1 text-sm text-slate-500 leading-tight">Audio & subtitles</p>
                       </div>
                       <dd className="sm:text-right">
@@ -570,19 +635,22 @@ const SummarySidebar: React.FC<{
 
                     <div className="min-w-0 flex-1 grid gap-2 sm:grid-cols-[minmax(0,1fr),auto] sm:items-start">
                       <div className="min-w-0">
-                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-orange-900 transition-colors duration-200">Recommendation</dt>
+                        <dt className="text-base font-semibold text-slate-900 leading-tight group-hover:text-orange-900 transition-colors duration-200">
+                          Recommendation
+                        </dt>
                         <p className="mt-1 text-sm text-slate-500 leading-tight">Watch verdict</p>
                       </div>
                       <dd className="sm:text-right">
                         <span
-                          className={`mt-1 inline-flex max-w-full whitespace-normal rounded-lg border px-3 py-1.5 text-sm font-semibold shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300 ${full_summary.worth_watching === 'Must watch'
-                            ? 'bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-800 border-emerald-200'
-                            : full_summary.worth_watching === 'Worth watching'
-                              ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-800 border-blue-200'
-                              : full_summary.worth_watching === 'Watch only if you have time'
-                                ? 'bg-gradient-to-r from-amber-50 to-amber-100 text-amber-800 border-amber-200'
-                                : 'bg-gradient-to-r from-red-50 to-red-100 text-red-800 border-red-200'
-                            }`}
+                          className={`mt-1 inline-flex max-w-full whitespace-normal rounded-lg border px-3 py-1.5 text-sm font-semibold shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300 ${
+                            full_summary.worth_watching === "highly_recommended"
+                              ? "bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-800 border-emerald-200"
+                              : full_summary.worth_watching === "recommended"
+                                ? "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-800 border-blue-200"
+                                : full_summary.worth_watching === "neutral"
+                                  ? "bg-gradient-to-r from-amber-50 to-amber-100 text-amber-800 border-amber-200"
+                                  : "bg-gradient-to-r from-red-50 to-red-100 text-red-800 border-red-200"
+                          }`}
                         >
                           {full_summary.worth_watching}
                         </span>
@@ -597,7 +665,7 @@ const SummarySidebar: React.FC<{
       )}
 
       {/* Key Metrics - Enhanced Content Overview */}
-      {status === 'completed' && full_summary && (
+      {status === "completed" && full_summary && (
         <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
           <div className="p-6">
             <div className="flex items-center gap-4 mb-6">
@@ -621,15 +689,21 @@ const SummarySidebar: React.FC<{
                       <CheckCircle className="h-6 w-6 text-emerald-700 group-hover:scale-110 transition-transform duration-300" />
                     </div>
                     <div className="transition-transform duration-400 ease-out group-hover:translate-x-1">
-                      <span className="text-base font-semibold text-slate-900 group-hover:text-emerald-900 transition-colors duration-300">Key Points</span>
-                      <p className="text-xs text-slate-600 group-hover:text-emerald-700 transition-colors duration-300">Essential takeaways</p>
+                      <span className="text-base font-semibold text-slate-900 group-hover:text-emerald-900 transition-colors duration-300">
+                        Key Points
+                      </span>
+                      <p className="text-xs text-slate-600 group-hover:text-emerald-700 transition-colors duration-300">
+                        Essential takeaways
+                      </p>
                     </div>
                   </div>
                   <div className="text-right transition-transform duration-400 ease-out group-hover:-translate-x-1">
                     <div className="text-3xl font-bold text-emerald-600 group-hover:text-emerald-800 group-hover:scale-110 transition-all duration-300 animate-pulse group-hover:animate-bounce">
                       {full_summary.key_points.length}
                     </div>
-                    <div className="text-xs text-slate-500 uppercase tracking-wide group-hover:text-emerald-600 transition-colors duration-300">points</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-wide group-hover:text-emerald-600 transition-colors duration-300">
+                      points
+                    </div>
                   </div>
                 </div>
               </div>
@@ -644,15 +718,21 @@ const SummarySidebar: React.FC<{
                       <MessageSquare className="h-6 w-6 text-amber-700 group-hover:scale-110 transition-transform duration-300" />
                     </div>
                     <div className="transition-transform duration-400 ease-out group-hover:translate-x-1">
-                      <span className="text-base font-semibold text-slate-900 group-hover:text-amber-900 transition-colors duration-300">Memorable Quotes</span>
-                      <p className="text-xs text-slate-600 group-hover:text-amber-700 transition-colors duration-300">Notable statements</p>
+                      <span className="text-base font-semibold text-slate-900 group-hover:text-amber-900 transition-colors duration-300">
+                        Memorable Quotes
+                      </span>
+                      <p className="text-xs text-slate-600 group-hover:text-amber-700 transition-colors duration-300">
+                        Notable statements
+                      </p>
                     </div>
                   </div>
                   <div className="text-right transition-transform duration-400 ease-out group-hover:-translate-x-1">
                     <div className="text-3xl font-bold text-amber-600 group-hover:text-amber-800 group-hover:scale-110 transition-all duration-300 animate-pulse group-hover:animate-bounce">
                       {full_summary.memorable_quotes.length}
                     </div>
-                    <div className="text-xs text-slate-500 uppercase tracking-wide group-hover:text-amber-600 transition-colors duration-300">quotes</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-wide group-hover:text-amber-600 transition-colors duration-300">
+                      quotes
+                    </div>
                   </div>
                 </div>
               </div>
@@ -667,15 +747,21 @@ const SummarySidebar: React.FC<{
                       <TrendingUp className="h-6 w-6 text-blue-700 group-hover:scale-110 transition-transform duration-300" />
                     </div>
                     <div className="transition-transform duration-400 ease-out group-hover:translate-x-1">
-                      <span className="text-base font-semibold text-slate-900 group-hover:text-blue-900 transition-colors duration-300">Conclusions</span>
-                      <p className="text-xs text-slate-600 group-hover:text-blue-700 transition-colors duration-300">Key insights & takeaways</p>
+                      <span className="text-base font-semibold text-slate-900 group-hover:text-blue-900 transition-colors duration-300">
+                        Conclusions
+                      </span>
+                      <p className="text-xs text-slate-600 group-hover:text-blue-700 transition-colors duration-300">
+                        Key insights & takeaways
+                      </p>
                     </div>
                   </div>
                   <div className="text-right transition-transform duration-400 ease-out group-hover:-translate-x-1">
                     <div className="text-3xl font-bold text-blue-600 group-hover:text-blue-800 group-hover:scale-110 transition-all duration-300 animate-pulse group-hover:animate-bounce">
                       {full_summary.conclusions.length}
                     </div>
-                    <div className="text-xs text-slate-500 uppercase tracking-wide group-hover:text-blue-600 transition-colors duration-300">insights</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-wide group-hover:text-blue-600 transition-colors duration-300">
+                      insights
+                    </div>
                   </div>
                 </div>
               </div>
@@ -685,7 +771,7 @@ const SummarySidebar: React.FC<{
       )}
 
       {/* Quick Actions */}
-      {status === 'completed' && (
+      {status === "completed" && (
         <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow duration-300">
           <div className="p-6">
             <div className="flex items-center gap-4 mb-6">
@@ -714,7 +800,10 @@ const SummarySidebar: React.FC<{
                 variant="outline"
                 size="sm"
                 className="w-full justify-start gap-3 hover:bg-slate-50 border-slate-300"
-                onClick={() => full_summary?.detailed_summary && copyToClipboard(full_summary.detailed_summary.replace(/<[^>]*>/g, ''))}
+                onClick={() =>
+                  full_summary?.detailed_summary &&
+                  copyToClipboard(full_summary.detailed_summary.replace(/<[^>]*>/g, ""))
+                }
                 disabled={!full_summary?.detailed_summary}
                 aria-label="Copy full summary to clipboard"
               >
@@ -754,12 +843,12 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
       return generateSummary({ video_url: videoUrl });
     },
     onSuccess: () => {
-      toast.success('Summary generation started!');
-      queryClient.invalidateQueries({ queryKey: ['summaryDetails', summaryId] });
+      toast.success("Summary generation started!");
+      queryClient.invalidateQueries({ queryKey: ["summaryDetails", summaryId] });
       setIsGenerateDialogOpen(false);
     },
-    onError: (error: any) => {
-      const errorMessage = error?.error?.message || 'An unknown error occurred.';
+    onError: (error: ApiError) => {
+      const errorMessage = error?.error?.message || "An unknown error occurred.";
       toast.error(`Failed to generate summary: ${errorMessage}`);
     },
   });
@@ -779,7 +868,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
   }
 
   if (isError) {
-    const is404 = error?.message?.includes('404') || error?.message?.includes('not found');
+    const is404 = error?.message?.includes("404") || error?.message?.includes("not found");
     if (is404) {
       return (
         <NotFound
@@ -794,7 +883,9 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
           <AlertCircle className="w-10 h-10 text-red-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to load summary</h2>
-        <p className="text-gray-600 mb-8 max-w-md">{error?.message || 'An unexpected error occurred while fetching summary details.'}</p>
+        <p className="text-gray-600 mb-8 max-w-md">
+          {error?.message || "An unexpected error occurred while fetching summary details."}
+        </p>
         <Button onClick={() => window.location.reload()} size="lg" className="rounded-xl px-8">
           <RefreshCw className="w-4 h-4 mr-2" />
           Retry Loading
@@ -804,12 +895,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
   }
 
   if (!summary) {
-    return (
-      <NotFound
-        title="Summary Not Found"
-        message="The requested summary could not be located in our database."
-      />
-    );
+    return <NotFound title="Summary Not Found" message="The requested summary could not be located in our database." />;
   }
 
   return (
@@ -826,7 +912,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
             status={summary.status}
           />
           {/* Auto-refresh indicator */}
-          {(summary.status === 'pending' || summary.status === 'in_progress') && (
+          {(summary.status === "pending" || summary.status === "in_progress") && (
             <div className="mt-4 flex items-center justify-center">
               <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full px-4 py-2 shadow-sm">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
@@ -840,20 +926,22 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Status indicator for non-completed states */}
-            {(summary.status === 'pending' || summary.status === 'in_progress') && (
+            {(summary.status === "pending" || summary.status === "in_progress") && (
               <div className="mb-6">
                 <StatusIndicator status={summary.status} />
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-2 text-blue-800">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium">This page updates automatically every 3 seconds - no need to refresh!</span>
+                    <span className="text-sm font-medium">
+                      This page updates automatically every 3 seconds - no need to refresh!
+                    </span>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Error state */}
-            {summary.status === 'failed' && (
+            {summary.status === "failed" && (
               <Card className="mb-6 border-red-200 bg-red-50 overflow-hidden relative">
                 <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
                 <CardContent className="p-6">
@@ -866,11 +954,11 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                         <div>
                           <h3 className="font-bold text-red-900 text-lg">Generation Failed</h3>
                           <p className="mt-1 text-sm text-red-700 leading-relaxed font-medium">
-                            {summary.error_code === 'NO_SUBTITLES'
-                              ? 'Unable to generate summary: No subtitles available for this video.'
-                              : summary.error_code === 'VIDEO_TOO_LONG'
-                                ? 'Video is too long to process.'
-                                : `Error: ${summary.error_code || 'Unknown error'}`}
+                            {summary.error_code === "NO_SUBTITLES"
+                              ? "Unable to generate summary: No subtitles available for this video."
+                              : summary.error_code === "VIDEO_TOO_LONG"
+                                ? "Video is too long to process."
+                                : `Error: ${summary.error_code || "Unknown error"}`}
                           </p>
                         </div>
                         <Button
@@ -879,7 +967,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                           className="bg-white border-red-200 text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-300 gap-2 font-bold shadow-sm hover:shadow-md shrink-0 sm:self-center"
                           onClick={handleReGenerate}
                         >
-                          <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                          <RefreshCw className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
                           Try Again
                         </Button>
                       </div>
@@ -890,7 +978,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
             )}
 
             {/* AI Disclaimer */}
-            {summary.status === 'completed' && summary.full_summary && (
+            {summary.status === "completed" && summary.full_summary && (
               <div className="relative mx-3 sm:mx-4 lg:mx-0 mb-6 sm:mb-8 overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 border border-emerald-200/50 shadow-lg shadow-emerald-100/50">
                 {/* Decorative background elements */}
                 <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-gradient-to-bl from-emerald-200/30 to-transparent rounded-full -translate-y-10 sm:-translate-y-16 translate-x-10 sm:translate-x-16"></div>
@@ -900,8 +988,18 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                   <div className="flex items-start gap-3 sm:gap-4">
                     <div className="flex-shrink-0">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        <svg
+                          className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
                         </svg>
                       </div>
                     </div>
@@ -909,7 +1007,9 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                     <div className="flex-1 min-w-0">
                       <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                         🤖 Understanding AI Summaries
-                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">Educational Tool</span>
+                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                          Educational Tool
+                        </span>
                       </h3>
 
                       <div className="space-y-3">
@@ -938,9 +1038,14 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100/50">
                           <p className="text-sm text-blue-800 font-medium flex items-center gap-2">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clipRule="evenodd"
+                              />
                             </svg>
-                            Best practice: Read the summary first, then watch key sections of the original video for deeper insights.
+                            Best practice: Read the summary first, then watch key sections of the original video for
+                            deeper insights.
                           </p>
                         </div>
                       </div>
@@ -951,7 +1056,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
             )}
 
             {/* Summary Content */}
-            {summary.status === 'completed' && summary.full_summary && (
+            {summary.status === "completed" && summary.full_summary && (
               <div className="space-y-8">
                 {/* TL;DR Section - Blue Theme */}
                 {summary.tldr && (
@@ -1001,9 +1106,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                       <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-3">
                           <CheckCircle className="h-5 w-5 text-blue-600" />
-                          <span className="font-bold text-blue-900">
-                            Key Points
-                          </span>
+                          <span className="font-bold text-blue-900">Key Points</span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -1017,7 +1120,10 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                               transition={{ duration: 0.4, delay: index * 0.1 }}
                               className="flex items-start gap-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100 hover:bg-blue-100 hover:shadow-md transition-all duration-300 hover:scale-[1.02]"
                             >
-                              <Badge variant="secondary" className="mt-0.5 h-7 w-7 rounded-full p-0 text-sm font-bold bg-blue-100 text-blue-800 shrink-0 hover:bg-blue-200 transition-colors">
+                              <Badge
+                                variant="secondary"
+                                className="mt-0.5 h-7 w-7 rounded-full p-0 text-sm font-bold bg-blue-100 text-blue-800 shrink-0 hover:bg-blue-200 transition-colors"
+                              >
                                 {index + 1}
                               </Badge>
                               <span className="text-base leading-relaxed">{point}</span>
@@ -1038,9 +1144,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                       <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-3">
                           <MessageSquare className="h-5 w-5 text-gray-600" />
-                          <span className="font-bold text-gray-900">
-                            Memorable Quotes
-                          </span>
+                          <span className="font-bold text-gray-900">Memorable Quotes</span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -1079,9 +1183,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <MessageSquare className="h-5 w-5 text-blue-600" />
-                        <span className="font-bold text-blue-900">
-                          Full Summary
-                        </span>
+                        <span className="font-bold text-blue-900">Full Summary</span>
                       </div>
                       <Dialog open={isSummaryPreviewOpen} onOpenChange={setIsSummaryPreviewOpen}>
                         <DialogTrigger asChild>
@@ -1103,7 +1205,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                           </DialogHeader>
                           <div className="mt-4">
                             <div className="prose prose-blue prose-lg max-w-none bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-8 border border-blue-200/50 shadow-inner">
-                              <div dangerouslySetInnerHTML={{ __html: summary.full_summary.detailed_summary || '' }} />
+                              <div dangerouslySetInnerHTML={{ __html: summary.full_summary.detailed_summary || "" }} />
                             </div>
                           </div>
                         </DialogContent>
@@ -1112,7 +1214,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                   </CardHeader>
                   <CardContent>
                     <div className="prose prose-blue prose-lg max-w-none bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-6 border border-blue-200/50">
-                      <div dangerouslySetInnerHTML={{ __html: summary.full_summary.detailed_summary || '' }} />
+                      <div dangerouslySetInnerHTML={{ __html: summary.full_summary.detailed_summary || "" }} />
                     </div>
                   </CardContent>
                 </Card>
@@ -1155,7 +1257,6 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
                     </CardContent>
                   </Card>
                 </motion.div>
-
               </div>
             )}
           </div>
@@ -1195,8 +1296,6 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
     </div>
   );
 };
-
-
 
 interface SummaryDetailsViewProps {
   summaryId: string;

@@ -1,8 +1,8 @@
-import type { APIRoute } from 'astro';
-import type { ApiSuccess, ApiError } from '../../../types';
-import { UUIDSchema } from '../../../lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { unsubscribeFromChannel } from '../../../lib/subscriptions.service';
+import type { APIRoute } from "astro";
+import type { ApiSuccess, ApiError } from "../../../types";
+import { UUIDSchema } from "../../../lib/validation/schemas";
+import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import { unsubscribeFromChannel } from "../../../lib/subscriptions.service";
 
 /**
  * DELETE /api/subscriptions/:subscriptionId
@@ -34,28 +34,31 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unsubscribe attempt - no valid session');
+      securityLogger.auth("Unauthorized unsubscribe attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'DELETE',
+        method: "DELETE",
         path: `/api/subscriptions/${params.subscriptionId}`,
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 401);
+      performanceLogger.apiResponseTime("DELETE", `/api/subscriptions/${params.subscriptionId}`, duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -68,54 +71,52 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'DELETE',
+        method: "DELETE",
         path: `/api/subscriptions/${params.subscriptionId}`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 400);
+      performanceLogger.apiResponseTime("DELETE", `/api/subscriptions/${params.subscriptionId}`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Subscription ID is required',
+          code: "INVALID_INPUT",
+          message: "Subscription ID is required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const validationResult = UUIDSchema.safeParse(subscriptionId);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Path parameter validation failed'),
-        undefined,
-        undefined,
-        { endpoint: `/api/subscriptions/${params.subscriptionId}`, method: 'DELETE' }
-      );
+      errorLogger.validationError(new Error("Path parameter validation failed"), undefined, undefined, {
+        endpoint: `/api/subscriptions/${params.subscriptionId}`,
+        method: "DELETE",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'DELETE',
+        method: "DELETE",
         path: `/api/subscriptions/${params.subscriptionId}`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 400);
+      performanceLogger.apiResponseTime("DELETE", `/api/subscriptions/${params.subscriptionId}`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid subscription ID format',
+          code: "INVALID_INPUT",
+          message: "Invalid subscription ID format",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -123,62 +124,61 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
     await unsubscribeFromChannel(supabase, userId, subscriptionId);
 
     // Log successful unsubscription
-    securityLogger.auth('Channel unsubscription successful', {
+    securityLogger.auth("Channel unsubscription successful", {
       user_id: userId,
       subscription_id: subscriptionId,
     });
 
     // Format successful response
     const successResponse: ApiSuccess<void> = {
-      message: 'Successfully unsubscribed from channel',
+      message: "Successfully unsubscribed from channel",
     };
 
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'DELETE',
+      method: "DELETE",
       path: `/api/subscriptions/${params.subscriptionId}`,
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 200);
+    performanceLogger.apiResponseTime("DELETE", `/api/subscriptions/${params.subscriptionId}`, duration, 200);
 
     return new Response(JSON.stringify(successResponse), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle unexpected errors
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: `/api/subscriptions/${params.subscriptionId}`,
-      method: 'DELETE',
+      method: "DELETE",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'DELETE',
+      method: "DELETE",
       path: `/api/subscriptions/${params.subscriptionId}`,
       statusCode: 500,
     });
-    performanceLogger.apiResponseTime('DELETE', `/api/subscriptions/${params.subscriptionId}`, duration, 500);
+    performanceLogger.apiResponseTime("DELETE", `/api/subscriptions/${params.subscriptionId}`, duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

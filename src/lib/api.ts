@@ -12,17 +12,17 @@ import type {
   PaginatedResponse,
   VideoSummary,
   VideosFilterState,
-} from '@/types';
-import { getSession } from './auth';
+} from "@/types";
+import { getSession } from "./auth";
 
 export class ApiClientError extends Error {
   constructor(
     public readonly code: string,
     public readonly message: string,
-    public readonly details?: Record<string, any>,
+    public readonly details?: Record<string, any>
   ) {
     super(message);
-    this.name = 'ApiClientError';
+    this.name = "ApiClientError";
   }
 }
 
@@ -32,13 +32,11 @@ export class ApiClientError extends Error {
  * @returns AuthResponse with user and session data
  * @throws ApiError on failure
  */
-export async function loginUser(
-  credentials: LoginRequest
-): Promise<AuthResponse> {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
+export async function loginUser(credentials: LoginRequest): Promise<AuthResponse> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(credentials),
   });
@@ -60,13 +58,11 @@ export async function loginUser(
  * @returns AuthResponse with user and session data
  * @throws ApiError on failure
  */
-export async function registerUser(
-  credentials: RegisterRequest
-): Promise<AuthResponse> {
-  const response = await fetch('/api/auth/register', {
-    method: 'POST',
+export async function registerUser(credentials: RegisterRequest): Promise<AuthResponse> {
+  const response = await fetch("/api/auth/register", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(credentials),
   });
@@ -87,13 +83,11 @@ export async function registerUser(
  * @param request - Email address for reset link
  * @throws ApiClientError on failure (400, 429, 500)
  */
-export async function resetPassword(
-  request: { email: string }
-): Promise<void> {
-  const response = await fetch('/api/auth/reset-password', {
-    method: 'POST',
+export async function resetPassword(request: { email: string }): Promise<void> {
+  const response = await fetch("/api/auth/reset-password", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(request),
   });
@@ -112,13 +106,11 @@ export async function resetPassword(
  * @returns ApiSuccess<void> on success
  * @throws ApiClientError on failure (400, 422, 500)
  */
-export async function confirmResetPassword(
-  request: ConfirmResetPasswordRequest
-): Promise<ApiSuccess<void>> {
-  const response = await fetch('/api/auth/reset-password/confirm', {
-    method: 'POST',
+export async function confirmResetPassword(request: ConfirmResetPasswordRequest): Promise<ApiSuccess<void>> {
+  const response = await fetch("/api/auth/reset-password/confirm", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(request),
   });
@@ -135,15 +127,17 @@ export async function confirmResetPassword(
   return data as ApiSuccess<void>;
 }
 
-export async function generateSummary(data: GenerateSummaryRequest): Promise<ApiSuccess<SummaryBasic & { message: string }>> {
+export async function generateSummary(
+  data: GenerateSummaryRequest
+): Promise<ApiSuccess<SummaryBasic & { message: string }>> {
   const session = getSession();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
+    headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
-  const response = await fetch('/api/summaries', {
-    method: 'POST',
+  const response = await fetch("/api/summaries", {
+    method: "POST",
     headers,
     body: JSON.stringify(data),
   });
@@ -151,20 +145,20 @@ export async function generateSummary(data: GenerateSummaryRequest): Promise<Api
     const errorData: ApiError = await response.json();
     throw errorData;
   }
-  
+
   const result = await response.json();
-  
+
   // Queue processing is handled by GitHub Actions cron (every 10 min)
   // Don't trigger from frontend - it causes "stuck" items when browser closes
-  
+
   return result;
 }
 
 export async function fetchVideoMeta(videoUrl: string): Promise<VideoMetaResponse> {
   const session = getSession();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
+    headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
   const response = await fetch(`/api/videos/meta?url=${encodeURIComponent(videoUrl)}`, { headers });
@@ -177,9 +171,9 @@ export async function fetchVideoMeta(videoUrl: string): Promise<VideoMetaRespons
 
 export async function fetchGenerationStatus(channelId: string): Promise<GenerationStatusResponse> {
   const session = getSession();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
+    headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
   const response = await fetch(`/api/generation-requests/status?channel_id=${channelId}`, { headers });
@@ -193,14 +187,14 @@ export async function fetchGenerationStatus(channelId: string): Promise<Generati
 export async function getVideos(
   filters: VideosFilterState,
   pageParam: number,
-  limit = 10,
+  limit = 10
 ): Promise<PaginatedResponse<VideoSummary>> {
   const params: Record<string, string | number> = {
     offset: pageParam,
     limit,
   };
 
-  if (filters.channelId && filters.channelId !== 'all') {
+  if (filters.channelId && filters.channelId !== "all") {
     params.channel_id = filters.channelId;
   }
 
@@ -208,7 +202,7 @@ export async function getVideos(
     params.search = filters.searchQuery;
   }
 
-  if (filters.summaryStatus && filters.summaryStatus !== 'all') {
+  if (filters.summaryStatus && filters.summaryStatus !== "all") {
     params.status = filters.summaryStatus;
   }
 
@@ -216,7 +210,7 @@ export async function getVideos(
     params.sort = filters.sort;
   }
 
-  return authApiClient.get<PaginatedResponse<VideoSummary>>('/api/videos', { params });
+  return authApiClient.get<PaginatedResponse<VideoSummary>>("/api/videos", { params });
 }
 
 export const apiClient = {
@@ -235,17 +229,15 @@ export const apiClient = {
       }
     }
 
-
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
-
     if (!response.ok) {
       const errorData: ApiError = await response.json();
-      console.error('API Error:', errorData);
+      console.error("API Error:", errorData);
       throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
     }
 
@@ -253,20 +245,18 @@ export const apiClient = {
     return data as T;
   },
 
-  async post<T>(path: string, body?: any): Promise<T> {
-
+  async post<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch(path, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: body ? JSON.stringify(body) : undefined,
     });
 
-
     if (!response.ok) {
       const errorData: ApiError = await response.json();
-      console.error('API Error:', errorData);
+      console.error("API Error:", errorData);
       throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
     }
 
@@ -276,9 +266,9 @@ export const apiClient = {
 
   async delete<T>(path: string): Promise<T> {
     const response = await fetch(path, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -298,11 +288,11 @@ export const authApiClient = {
   async get<T>(path: string, options?: { params?: Record<string, any> }): Promise<T> {
     const session = getSession();
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
+      headers["Authorization"] = `Bearer ${session.access_token}`;
     }
 
     const response = await fetch(pathWithParams(path, options?.params), {
@@ -312,18 +302,18 @@ export const authApiClient = {
     return handleResponse<T>(response);
   },
 
-  async post<T>(path: string, body?: any): Promise<T> {
+  async post<T>(path: string, body?: unknown): Promise<T> {
     const session = getSession();
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
+      headers["Authorization"] = `Bearer ${session.access_token}`;
     }
 
     const response = await fetch(path, {
-      method: 'POST',
+      method: "POST",
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -349,7 +339,7 @@ function pathWithParams(path: string, params?: Record<string, any>): string {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData: ApiError = await response.json();
-    console.error('API Error:', errorData);
+    console.error("API Error:", errorData);
     throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
   }
 
@@ -358,6 +348,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
   if (!text) {
     return {} as T;
   }
-  
+
   return JSON.parse(text) as T;
 }

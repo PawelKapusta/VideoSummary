@@ -1,11 +1,5 @@
-import {
-  CircleCheckIcon,
-  InfoIcon,
-  Loader2Icon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-} from "lucide-react"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon } from "lucide-react";
+import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
@@ -31,14 +25,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
         }
         toastOptions={{
           style: {
-            fontSize: '16px',
-            fontWeight: '600',
+            fontSize: "16px",
+            fontWeight: "600",
           },
         }}
         {...props}
       />
     </div>
-  )
-}
+  );
+};
 
-export { Toaster }
+export { Toaster };

@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Trash2, Moon, Sun, Bell, Shield, UserX, LogOut, EyeOff } from 'lucide-react';
-import QueryProvider from '../providers/QueryProvider';
-import { useProfile } from '@/hooks/useProfile';
-import { useLogout } from '@/hooks/useLogout';
-import { ApiClientError } from '@/lib/api';
-import { toast } from 'sonner';
-import AppLoader from '@/components/ui/AppLoader';
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Sun, Bell, Shield, UserX, LogOut, EyeOff } from "lucide-react";
+import QueryProvider from "../providers/QueryProvider";
+import { useProfile } from "@/hooks/useProfile";
+import { useLogout } from "@/hooks/useLogout";
+import { ApiClientError } from "@/lib/api";
+import { toast } from "sonner";
+import AppLoader from "@/components/ui/AppLoader";
 
 const SettingsContent = () => {
-  const { profile, isLoading, error } = useProfile();
+  const { isLoading, error } = useProfile();
   const { logout, isLoading: isLoggingOut } = useLogout();
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -28,7 +28,7 @@ const SettingsContent = () => {
   }
 
   if (error) {
-    let errorMessage = 'An unexpected error occurred.';
+    let errorMessage = "An unexpected error occurred.";
     if (error instanceof ApiClientError) {
       errorMessage = error.message;
     } else if (error instanceof Error) {
@@ -46,39 +46,39 @@ const SettingsContent = () => {
   }
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to log out?')) {
+    if (confirm("Are you sure you want to log out?")) {
       logout();
     }
   };
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      'Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data including summaries and subscriptions.'
+      "Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data including summaries and subscriptions."
     );
 
     if (confirmed) {
       try {
-        const response = await fetch('/api/auth/delete-account', {
-          method: 'POST',
+        const response = await fetch("/api/auth/delete-account", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
         const data = await response.json();
 
         if (response.ok) {
-          toast.success('Your account has been successfully deleted. You will be redirected to the login page.');
+          toast.success("Your account has been successfully deleted. You will be redirected to the login page.");
           // Redirect to login page after a short delay
           setTimeout(() => {
-            window.location.href = '/login';
+            window.location.href = "/login";
           }, 2000);
         } else {
-          toast.error(data.error?.message || 'Failed to delete your account. Please try again or contact support.');
+          toast.error(data.error?.message || "Failed to delete your account. Please try again or contact support.");
         }
       } catch (error) {
-        console.error('Delete account error:', error);
-        toast.error('An unexpected error occurred while deleting your account. Please try again or contact support.');
+        console.error("Delete account error:", error);
+        toast.error("An unexpected error occurred while deleting your account. Please try again or contact support.");
       }
     }
   };
@@ -101,9 +101,7 @@ const SettingsContent = () => {
             <Shield className="h-5 w-5" />
             Account Actions
           </CardTitle>
-          <CardDescription>
-            Manage your account session and security.
-          </CardDescription>
+          <CardDescription>Manage your account session and security.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button
@@ -113,7 +111,7 @@ const SettingsContent = () => {
             className="w-full sm:w-auto hover:bg-gray-100 dark:hover:bg-gray-300"
           >
             <LogOut className="mr-2 h-4 w-4" />
-            {isLoggingOut ? 'Logging out...' : 'Logout'}
+            {isLoggingOut ? "Logging out..." : "Logout"}
           </Button>
         </CardContent>
       </Card>
@@ -124,28 +122,17 @@ const SettingsContent = () => {
           <CardTitle className="flex items-center gap-2">
             <Sun className="h-5 w-5" />
             Appearance
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-              Coming Soon
-            </span>
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">Coming Soon</span>
           </CardTitle>
-          <CardDescription>
-            Customize how the application looks and feels.
-          </CardDescription>
+          <CardDescription>Customize how the application looks and feels.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between opacity-50">
             <div className="space-y-0.5">
               <Label htmlFor="dark-mode">Dark Mode</Label>
-              <p className="text-sm text-muted-foreground">
-                Switch between light and dark themes
-              </p>
+              <p className="text-sm text-muted-foreground">Switch between light and dark themes</p>
             </div>
-            <Switch
-              id="dark-mode"
-              checked={darkMode}
-              onCheckedChange={setDarkMode}
-              disabled
-            />
+            <Switch id="dark-mode" checked={darkMode} onCheckedChange={setDarkMode} disabled />
           </div>
         </CardContent>
       </Card>
@@ -156,21 +143,15 @@ const SettingsContent = () => {
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
             Notifications
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-              Coming Soon
-            </span>
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">Coming Soon</span>
           </CardTitle>
-          <CardDescription>
-            Configure how you receive notifications.
-          </CardDescription>
+          <CardDescription>Configure how you receive notifications.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between opacity-50">
             <div className="space-y-0.5">
               <Label htmlFor="email-notifications">Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Receive email updates about your account
-              </p>
+              <p className="text-sm text-muted-foreground">Receive email updates about your account</p>
             </div>
             <Switch
               id="email-notifications"
@@ -183,9 +164,7 @@ const SettingsContent = () => {
           <div className="flex items-center justify-between opacity-50">
             <div className="space-y-0.5">
               <Label htmlFor="summary-notifications">Summary Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when new summaries are available
-              </p>
+              <p className="text-sm text-muted-foreground">Get notified when new summaries are available</p>
             </div>
             <Switch
               id="summary-notifications"
@@ -204,19 +183,15 @@ const SettingsContent = () => {
             <EyeOff className="h-5 w-5" />
             Hidden Content
           </CardTitle>
-          <CardDescription>
-            Manage content you have hidden from your dashboard.
-          </CardDescription>
+          <CardDescription>Manage content you have hidden from your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
             <div className="space-y-1">
               <p className="font-medium">Hidden Summaries</p>
-              <p className="text-sm text-muted-foreground">
-                View and restore summaries you have hidden
-              </p>
+              <p className="text-sm text-muted-foreground">View and restore summaries you have hidden</p>
             </div>
-            <Button variant="outline" onClick={() => window.location.href = '/hidden'}>
+            <Button variant="outline" onClick={() => (window.location.href = "/hidden")}>
               Manage Hidden
             </Button>
           </div>
@@ -230,16 +205,14 @@ const SettingsContent = () => {
             <Shield className="h-5 w-5" />
             Privacy & Data
           </CardTitle>
-          <CardDescription>
-            Control your data and privacy preferences.
-          </CardDescription>
+          <CardDescription>Control your data and privacy preferences.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="p-4 border rounded-lg bg-muted/50">
             <h4 className="font-medium mb-2">Data Usage</h4>
             <p className="text-sm text-muted-foreground">
-              Your email address is used only for account authentication and password recovery.
-              We don't share your personal information with third parties.
+              Your email address is used only for account authentication and password recovery. We don&apos;t share your
+              personal information with third parties.
             </p>
           </div>
         </CardContent>
@@ -252,9 +225,7 @@ const SettingsContent = () => {
             <UserX className="h-5 w-5" />
             Danger Zone
           </CardTitle>
-          <CardDescription>
-            Irreversible actions that will permanently affect your account.
-          </CardDescription>
+          <CardDescription>Irreversible actions that will permanently affect your account.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

@@ -1,4 +1,4 @@
-import { type Page, type Locator, expect } from '@playwright/test';
+import { type Page, type Locator, expect } from "@playwright/test";
 
 export class HomePage {
   readonly page: Page;
@@ -6,11 +6,11 @@ export class HomePage {
 
   constructor(page: Page) {
     this.page = page;
-    this.body = page.locator('body');
+    this.body = page.locator("body");
   }
 
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto("/");
   }
 
   async expectLoaded() {

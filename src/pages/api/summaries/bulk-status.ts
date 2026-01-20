@@ -1,7 +1,7 @@
-import type { APIRoute } from 'astro';
-import type { BulkGenerationStatus, ApiError, ApiSuccess } from '../../../types';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { getBulkGenerationStatus } from '../../../lib/summaries.service';
+import type { APIRoute } from "astro";
+import type { BulkGenerationStatus, ApiError, ApiSuccess } from "../../../types";
+import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import { getBulkGenerationStatus } from "../../../lib/summaries.service";
 
 /**
  * GET /api/summaries/bulk-status
@@ -44,28 +44,31 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized bulk status check - no valid session');
+      securityLogger.auth("Unauthorized bulk status check - no valid session");
       securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/summaries/bulk-status',
+        method: "GET",
+        path: "/api/summaries/bulk-status",
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('GET', '/api/summaries/bulk-status', duration, 401);
+      performanceLogger.apiResponseTime("GET", "/api/summaries/bulk-status", duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -73,39 +76,37 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
     // Extract and validate query parameters
     const urlParams = new URL(url).searchParams;
-    const generationId = urlParams.get('id');
+    const generationId = urlParams.get("id");
 
     // Validate generation ID if provided
     if (generationId) {
-      const UUIDSchema = (await import('../../../lib/validation/schemas')).UUIDSchema;
+      const UUIDSchema = (await import("../../../lib/validation/schemas")).UUIDSchema;
       const validationResult = UUIDSchema.safeParse(generationId);
       if (!validationResult.success) {
         const duration = performance.now() - startTime;
-        errorLogger.validationError(
-          new Error('Query parameter validation failed'),
-          undefined,
-          undefined,
-          { endpoint: '/api/summaries/bulk-status', method: 'GET' }
-        );
+        errorLogger.validationError(new Error("Query parameter validation failed"), undefined, undefined, {
+          endpoint: "/api/summaries/bulk-status",
+          method: "GET",
+        });
 
         securityLogger.apiAccess({
-          method: 'GET',
-          path: '/api/summaries/bulk-status',
+          method: "GET",
+          path: "/api/summaries/bulk-status",
           statusCode: 400,
         });
-        performanceLogger.apiResponseTime('GET', '/api/summaries/bulk-status', duration, 400);
+        performanceLogger.apiResponseTime("GET", "/api/summaries/bulk-status", duration, 400);
 
         const errorResponse: ApiError = {
           error: {
-            code: 'INVALID_INPUT',
-            message: 'Invalid generation ID format',
+            code: "INVALID_INPUT",
+            message: "Invalid generation ID format",
             details: validationResult.error.format(),
           },
         };
 
         return new Response(JSON.stringify(errorResponse), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
@@ -121,27 +122,27 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     if (generationId && statusData.length === 0) {
       const duration = performance.now() - startTime;
       securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/summaries/bulk-status',
+        method: "GET",
+        path: "/api/summaries/bulk-status",
         statusCode: 404,
       });
-      performanceLogger.apiResponseTime('GET', '/api/summaries/bulk-status', duration, 404);
+      performanceLogger.apiResponseTime("GET", "/api/summaries/bulk-status", duration, 404);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'BULK_GENERATION_NOT_FOUND',
-          message: 'Bulk generation not found',
+          code: "BULK_GENERATION_NOT_FOUND",
+          message: "Bulk generation not found",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     // Log successful status retrieval
-    securityLogger.auth('Bulk generation status retrieved successfully', {
+    securityLogger.auth("Bulk generation status retrieved successfully", {
       user_id: userId,
       generation_id: generationId,
       results_count: statusData.length,
@@ -150,56 +151,53 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     // Format successful response
     const successResponse: ApiSuccess<BulkGenerationStatus[]> = {
       data: statusData,
-      message: generationId
-        ? 'Bulk generation status retrieved'
-        : 'Bulk generation history retrieved',
+      message: generationId ? "Bulk generation status retrieved" : "Bulk generation history retrieved",
     };
 
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/summaries/bulk-status',
+      method: "GET",
+      path: "/api/summaries/bulk-status",
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('GET', '/api/summaries/bulk-status', duration, 200);
+    performanceLogger.apiResponseTime("GET", "/api/summaries/bulk-status", duration, 200);
 
     return new Response(JSON.stringify(successResponse), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle unexpected errors
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/summaries/bulk-status',
-      method: 'GET',
+      endpoint: "/api/summaries/bulk-status",
+      method: "GET",
     });
 
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/summaries/bulk-status',
+      method: "GET",
+      path: "/api/summaries/bulk-status",
       statusCode: 500,
     });
-    performanceLogger.apiResponseTime('GET', '/api/summaries/bulk-status', duration, 500);
+    performanceLogger.apiResponseTime("GET", "/api/summaries/bulk-status", duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

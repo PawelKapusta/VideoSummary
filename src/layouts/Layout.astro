@@ -1,12 +1,12 @@
 ---
-import { Toaster } from '@/components/ui/sonner';
-import { Header } from '@/components/ui/header';
-import { AppFooter } from '@/components/shared/AppFooter';
+import { Toaster } from "@/components/ui/sonner";
+import { Header } from "@/components/ui/header";
+import { AppFooter } from "@/components/shared/AppFooter";
 
 export interface Props {
-	title: string;
-    showNavigation?: boolean;
-    showFooter?: boolean;
+  title: string;
+  showNavigation?: boolean;
+  showFooter?: boolean;
 }
 
 const { title, showNavigation = false, showFooter = true } = Astro.props;
@@ -15,22 +15,22 @@ const currentPath = Astro.url.pathname;
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="description" content="Astro description" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
-	</head>
-	<body class="flex flex-col min-h-screen">
-        {showNavigation && <Header client:load currentPath={currentPath} />}
-		<main class="flex-1">
-			<slot />
-		</main>
-		{showFooter && <AppFooter client:load />}
-		<Toaster client:load richColors />
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Astro description" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="flex flex-col min-h-screen">
+    {showNavigation && <Header client:load currentPath={currentPath} />}
+    <main class="flex-1">
+      <slot />
+    </main>
+    {showFooter && <AppFooter client:load />}
+    <Toaster client:load richColors />
+  </body>
 </html>
 
 <style is:global>

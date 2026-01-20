@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,26 +7,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAddChannel } from '@/hooks/useAddChannel';
-import { z } from 'zod';
-import { cn } from '@/lib/utils';
-import { X, Plus } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAddChannel } from "@/hooks/useAddChannel";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
+import { X, Plus } from "lucide-react";
 
 interface AddChannelFormProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const urlSchema = z.string().url().regex(
-  /^https?:\/\/(www\.)?youtube\.com\/(channel\/|user\/|@|c\/)[^/?#]+$/,
-  "Invalid YouTube channel URL. Use format: youtube.com/channel/UC... or youtube.com/@channelname"
-);
+const urlSchema = z
+  .string()
+  .url()
+  .regex(
+    /^https?:\/\/(www\.)?youtube\.com\/(channel\/|user\/|@|c\/)[^/?#]+$/,
+    "Invalid YouTube channel URL. Use format: youtube.com/channel/UC... or youtube.com/@channelname"
+  );
 
 export default function AddChannelForm({ isOpen, onClose }: AddChannelFormProps) {
-  const [channelUrl, setChannelUrl] = useState('');
+  const [channelUrl, setChannelUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { mutate: addChannel, isPending } = useAddChannel();
 
@@ -40,12 +43,15 @@ export default function AddChannelForm({ isOpen, onClose }: AddChannelFormProps)
       return;
     }
 
-    addChannel({ channel_url: validationResult.data }, {
-      onSuccess: () => {
-        setChannelUrl('');
-        onClose();
+    addChannel(
+      { channel_url: validationResult.data },
+      {
+        onSuccess: () => {
+          setChannelUrl("");
+          onClose();
+        },
       }
-    });
+    );
   };
 
   return (
@@ -54,7 +60,8 @@ export default function AddChannelForm({ isOpen, onClose }: AddChannelFormProps)
         <DialogHeader>
           <DialogTitle>Add a new YouTube Channel</DialogTitle>
           <DialogDescription>
-            Enter the URL of the YouTube channel you want to subscribe to. You can subscribe to a maximum of 10 channels.
+            Enter the URL of the YouTube channel you want to subscribe to. You can subscribe to a maximum of 10
+            channels.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -98,7 +105,7 @@ export default function AddChannelForm({ isOpen, onClose }: AddChannelFormProps)
               size="lg"
             >
               <Plus className="mr-2 h-4 w-4" />
-              {isPending ? 'Subscribing...' : 'Subscribe'}
+              {isPending ? "Subscribing..." : "Subscribe"}
             </Button>
           </DialogFooter>
         </form>

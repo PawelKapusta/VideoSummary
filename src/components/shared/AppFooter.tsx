@@ -40,7 +40,7 @@ export function AppFooter() {
                     { href: "/dashboard", label: "Dashboard" },
                     { href: "/summaries", label: "Summaries" },
                     { href: "/generate", label: "Generate" },
-                    { href: "/profile", label: "Profile" }
+                    { href: "/profile", label: "Profile" },
                   ].map((link) => (
                     <li key={link.href}>
                       <a
@@ -66,7 +66,7 @@ export function AppFooter() {
                     { href: "/terms", label: "Terms of Service" },
                     { href: "/privacy", label: "Privacy Policy" },
                     { href: "mailto:support@videosummary.org", label: "Contact Support" },
-                    { href: "mailto:privacy@videosummary.org", label: "Privacy Requests" }
+                    { href: "mailto:privacy@videosummary.org", label: "Privacy Requests" },
                   ].map((link) => (
                     <li key={link.href}>
                       <a
@@ -101,4 +101,3 @@ export function AppFooter() {
     </footer>
   );
 }
-

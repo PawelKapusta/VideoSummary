@@ -179,6 +179,80 @@ Get Video Summary running locally in minutes.
 | `npm run check-bulk-status reset` | Reset stuck bulk generation status |
 | `npm run check-bulk-status-cli` | Check/reset status via Supabase CLI |
 
+## ⚙️ GitHub Actions Workflows
+
+VideoSummary uses GitHub Actions for automated background processing. The workflows are designed to run in production and handle summary generation without manual intervention.
+
+### Daily Summary Generation (`daily-summary-generation.yml`)
+
+**Purpose**: Automatically generates summaries for the latest videos from all subscribed channels once per day.
+
+- **Trigger**: Daily at 18:00 UTC (19:00 CET / 20:00 CEST)
+- **Manual trigger**: Can be run manually via GitHub Actions UI or API
+- **Process**:
+  1. Queues videos for summary generation using `/api/summaries/generate-all`
+  2. Processes up to 50 queued items sequentially
+  3. Handles long-running tasks (up to 6 hours timeout)
+- **Authentication**: Uses `CRON_SECRET` for API access
+
+### Process Summary Queue (`process-summary-queue.yml`)
+
+**Purpose**: Processes individual summary generation requests from the queue.
+
+- **Trigger**: Every 10 minutes (continuous background processing)
+- **Manual trigger**: Can be run manually via GitHub Actions UI or API
+- **Process**:
+  1. Processes one queue item at a time using `/api/summaries/process-next`
+  2. Handles long-running AI tasks (up to 10 minutes per item)
+  3. Supports Gradio transcription tasks that may take 5-10 minutes
+- **Authentication**: Uses `CRON_SECRET` for API access
+
+### Alternative: External Cron Services
+
+Instead of GitHub Actions, you can use external cron services to trigger the same endpoints. We recommend [cron-job.org](https://cron-job.org/en/) - a free, reliable cron service.
+
+#### cron-job.org Setup
+
+1. **Create account** at [cron-job.org](https://cron-job.org/en/)
+2. **Add two jobs**:
+
+**Daily Summary Generation:**
+- **URL**: `https://your-domain.com/api/summaries/generate-all`
+- **Method**: `POST`
+- **Schedule**: `0 18 * * *` (daily at 18:00 UTC)
+- **Headers**:
+  ```
+  x-cron-secret: YOUR_CRON_SECRET
+  Content-Type: application/json
+  ```
+
+**Queue Processing:**
+- **URL**: `https://your-domain.com/api/summaries/process-next`
+- **Method**: `POST`
+- **Schedule**: `*/10 * * * *` (every 10 minutes)
+- **Headers**:
+  ```
+  x-cron-secret: YOUR_CRON_SECRET
+  Content-Type: application/json
+  ```
+
+#### cron-job.org Features
+
+- ✅ **Free tier**: Up to 60 executions per hour
+- ✅ **Reliable execution**: CO₂-neutral servers, 15+ years in service
+- ✅ **Monitoring**: Execution history, status notifications, failure alerts
+- ✅ **Custom headers**: Support for authentication headers like `x-cron-secret`
+- ✅ **Test runs**: Test your jobs before scheduling
+- ✅ **REST API**: Manage jobs programmatically if needed
+
+#### Benefits over GitHub Actions
+
+- **Independent of GitHub**: No dependency on GitHub Actions limits or pricing
+- **Better monitoring**: Detailed execution logs and failure notifications
+- **Flexible scheduling**: Precise timing without GitHub's workflow limitations
+- **Cost-effective**: Free tier covers most use cases
+- **Reliable**: Dedicated cron infrastructure vs shared CI/CD runners
+
 ## 📚 Documentation
 
 ### API Reference

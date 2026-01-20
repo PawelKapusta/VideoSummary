@@ -1,7 +1,7 @@
-import React from 'react';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { Loader2 } from 'lucide-react';
+import React from "react";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Loader2 } from "lucide-react";
 
 interface VideoUrlFormProps {
   url: string;
@@ -16,9 +16,12 @@ const VideoUrlForm: React.FC<VideoUrlFormProps> = ({ url, onUrlChange, onSubmit,
     e.preventDefault();
     onSubmit();
   };
-  
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col space-y-3 md:flex-row md:items-center md:space-x-2 md:space-y-0">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col space-y-3 md:flex-row md:items-center md:space-x-2 md:space-y-0"
+    >
       <Input
         type="url"
         placeholder="https://www.youtube.com/watch?v=..."
@@ -38,7 +41,7 @@ const VideoUrlForm: React.FC<VideoUrlFormProps> = ({ url, onUrlChange, onSubmit,
             Generating...
           </>
         ) : (
-          'Generate Summary'
+          "Generate Summary"
         )}
       </Button>
     </form>

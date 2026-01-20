@@ -1,6 +1,6 @@
-import type { ApiError } from '@/types';
-import { AlertCircle, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { ApiError } from "@/types";
+import { AlertCircle, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface FormErrorMessageProps {
   error: ApiError | string | null;
@@ -13,15 +13,13 @@ export function FormErrorMessage({ error, onDismiss }: FormErrorMessageProps) {
   }
 
   const getErrorMessage = () => {
-    if (typeof error === 'string') {
+    if (typeof error === "string") {
       return error;
     }
     return error.error.message;
   };
 
-  const hasDetails = typeof error !== 'string' &&
-    error.error.details &&
-    Object.keys(error.error.details).length > 0;
+  const hasDetails = typeof error !== "string" && error.error.details && Object.keys(error.error.details).length > 0;
 
   return (
     <div
@@ -33,11 +31,7 @@ export function FormErrorMessage({ error, onDismiss }: FormErrorMessageProps) {
       <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600" aria-hidden="true" />
       <div className="flex-1">
         <p className="font-medium">{getErrorMessage()}</p>
-        {hasDetails && (
-          <pre className="mt-1 text-xs opacity-75">
-            {JSON.stringify(error.error.details, null, 2)}
-          </pre>
-        )}
+        {hasDetails && <pre className="mt-1 text-xs opacity-75">{JSON.stringify(error.error.details, null, 2)}</pre>}
       </div>
       {onDismiss && (
         <Button
@@ -54,4 +48,3 @@ export function FormErrorMessage({ error, onDismiss }: FormErrorMessageProps) {
     </div>
   );
 }
-

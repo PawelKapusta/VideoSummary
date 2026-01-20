@@ -1,8 +1,8 @@
-import type { APIRoute } from 'astro';
-import type { ApiError, ApiSuccess } from '../../../../types';
-import { UUIDSchema } from '../../../../lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '../../../../lib/logger';
-import { hideSummary, unhideSummary } from '../../../../lib/hidden-summaries.service';
+import type { APIRoute } from "astro";
+import type { ApiError, ApiSuccess } from "../../../../types";
+import { UUIDSchema } from "../../../../lib/validation/schemas";
+import { securityLogger, errorLogger, performanceLogger } from "../../../../lib/logger";
+import { hideSummary, unhideSummary } from "../../../../lib/hidden-summaries.service";
 
 /**
  * POST /api/summaries/:summaryId/hide
@@ -34,28 +34,31 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
 
   try {
     // Get user from session
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summary hide attempt - no valid session');
+      securityLogger.auth("Unauthorized summary hide attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'POST',
+        method: "POST",
         path: `/api/summaries/${params.summaryId}/hide`,
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, 401);
+      performanceLogger.apiResponseTime("POST", `/api/summaries/${params.summaryId}/hide`, duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -67,53 +70,51 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       const duration = performance.now() - startTime;
 
       securityLogger.apiAccess({
-        method: 'POST',
+        method: "POST",
         path: `/api/summaries/${params.summaryId}/hide`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, 400);
+      performanceLogger.apiResponseTime("POST", `/api/summaries/${params.summaryId}/hide`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Summary ID is required',
+          code: "INVALID_INPUT",
+          message: "Summary ID is required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const validationResult = UUIDSchema.safeParse(summaryId);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Path parameter validation failed'),
-        undefined,
-        undefined,
-        { endpoint: `/api/summaries/${params.summaryId}/hide`, method: 'POST' }
-      );
+      errorLogger.validationError(new Error("Path parameter validation failed"), undefined, undefined, {
+        endpoint: `/api/summaries/${params.summaryId}/hide`,
+        method: "POST",
+      });
 
       securityLogger.apiAccess({
-        method: 'POST',
+        method: "POST",
         path: `/api/summaries/${params.summaryId}/hide`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, 400);
+      performanceLogger.apiResponseTime("POST", `/api/summaries/${params.summaryId}/hide`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid summary ID format',
+          code: "INVALID_INPUT",
+          message: "Invalid summary ID format",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -123,25 +124,25 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       hideResult = await hideSummary(supabase, userId, summaryId);
     } catch (serviceError) {
       let statusCode = 500;
-      let errorCode = 'INTERNAL_ERROR';
-      let message = 'An unexpected error occurred';
+      let errorCode = "INTERNAL_ERROR";
+      let message = "An unexpected error occurred";
 
       if (serviceError instanceof Error) {
         switch (serviceError.message) {
-          case 'SUMMARY_NOT_FOUND':
+          case "SUMMARY_NOT_FOUND":
             statusCode = 404;
-            errorCode = 'SUMMARY_NOT_FOUND';
-            message = 'Summary not found';
+            errorCode = "SUMMARY_NOT_FOUND";
+            message = "Summary not found";
             break;
-          case 'CHANNEL_NOT_SUBSCRIBED':
+          case "CHANNEL_NOT_SUBSCRIBED":
             statusCode = 403;
-            errorCode = 'FORBIDDEN';
-            message = 'You must be subscribed to the channel to hide this summary';
+            errorCode = "FORBIDDEN";
+            message = "You must be subscribed to the channel to hide this summary";
             break;
-          case 'ALREADY_HIDDEN':
+          case "ALREADY_HIDDEN":
             statusCode = 409;
-            errorCode = 'ALREADY_HIDDEN';
-            message = 'Summary is already hidden';
+            errorCode = "ALREADY_HIDDEN";
+            message = "Summary is already hidden";
             break;
           // Add more cases as needed
         }
@@ -150,15 +151,15 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
       const duration = performance.now() - startTime;
       errorLogger.appError(serviceError instanceof Error ? serviceError : new Error(String(serviceError)), {
         endpoint: `/api/summaries/${summaryId}/hide`,
-        method: 'POST',
+        method: "POST",
       });
 
       securityLogger.apiAccess({
-        method: 'POST',
+        method: "POST",
         path: `/api/summaries/${summaryId}/hide`,
         statusCode,
       });
-      performanceLogger.apiResponseTime('POST', `/api/summaries/${summaryId}/hide`, duration, statusCode);
+      performanceLogger.apiResponseTime("POST", `/api/summaries/${summaryId}/hide`, duration, statusCode);
 
       const errorResponse: ApiError = {
         error: {
@@ -169,23 +170,23 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
 
       return new Response(JSON.stringify(errorResponse), {
         status: statusCode,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     // Log success
-    securityLogger.auth('Summary hidden successfully', {
+    securityLogger.auth("Summary hidden successfully", {
       user_id: userId,
       summary_id: summaryId,
     });
 
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'POST',
+      method: "POST",
       path: `/api/summaries/${summaryId}/hide`,
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('POST', `/api/summaries/${summaryId}/hide`, duration, 200);
+    performanceLogger.apiResponseTime("POST", `/api/summaries/${summaryId}/hide`, duration, 200);
 
     const successResponse: ApiSuccess = {
       message: hideResult.message,
@@ -194,37 +195,36 @@ export const POST: APIRoute = async ({ request, locals, params }) => {
     return new Response(JSON.stringify(successResponse), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "Content-Type": "application/json",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: `/api/summaries/${params.summaryId}/hide`,
-      method: 'POST',
+      method: "POST",
     });
 
     securityLogger.apiAccess({
-      method: 'POST',
+      method: "POST",
       path: `/api/summaries/${params.summaryId}/hide`,
       statusCode: 500,
     });
-    performanceLogger.apiResponseTime('POST', `/api/summaries/${params.summaryId}/hide`, duration, 500);
+    performanceLogger.apiResponseTime("POST", `/api/summaries/${params.summaryId}/hide`, duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };
@@ -257,28 +257,31 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized unhide summary attempt - no valid session');
+      securityLogger.auth("Unauthorized unhide summary attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'DELETE',
+        method: "DELETE",
         path: `/api/summaries/${params.summaryId}/hide`,
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/summaries/${params.summaryId}/hide`, duration, 401);
+      performanceLogger.apiResponseTime("DELETE", `/api/summaries/${params.summaryId}/hide`, duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -291,54 +294,52 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'DELETE',
+        method: "DELETE",
         path: `/api/summaries/${params.summaryId}/hide`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/summaries/${params.summaryId}/hide`, duration, 400);
+      performanceLogger.apiResponseTime("DELETE", `/api/summaries/${params.summaryId}/hide`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Summary ID is required',
+          code: "INVALID_INPUT",
+          message: "Summary ID is required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const validationResult = UUIDSchema.safeParse(summaryId);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Path parameter validation failed'),
-        undefined,
-        undefined,
-        { endpoint: `/api/summaries/${params.summaryId}/hide`, method: 'DELETE' }
-      );
+      errorLogger.validationError(new Error("Path parameter validation failed"), undefined, undefined, {
+        endpoint: `/api/summaries/${params.summaryId}/hide`,
+        method: "DELETE",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'DELETE',
+        method: "DELETE",
         path: `/api/summaries/${params.summaryId}/hide`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('DELETE', `/api/summaries/${params.summaryId}/hide`, duration, 400);
+      performanceLogger.apiResponseTime("DELETE", `/api/summaries/${params.summaryId}/hide`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid summary ID format',
+          code: "INVALID_INPUT",
+          message: "Invalid summary ID format",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -346,7 +347,7 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
     const result = await unhideSummary(supabase, userId, summaryId);
 
     // Log successful unhide
-    securityLogger.auth('Summary unhidden successfully', {
+    securityLogger.auth("Summary unhidden successfully", {
       user_id: userId,
       summary_id: summaryId,
     });
@@ -359,51 +360,50 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'DELETE',
+      method: "DELETE",
       path: `/api/summaries/${params.summaryId}/hide`,
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('DELETE', `/api/summaries/${params.summaryId}/hide`, duration, 200);
+    performanceLogger.apiResponseTime("DELETE", `/api/summaries/${params.summaryId}/hide`, duration, 200);
 
     return new Response(JSON.stringify(successResponse), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle specific error types
     const duration = performance.now() - startTime;
     let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
+    let errorCode = "INTERNAL_ERROR";
+    let message = "An unexpected error occurred";
 
     if (error instanceof Error) {
-      if (error.message === 'SUMMARY_NOT_HIDDEN') {
+      if (error.message === "SUMMARY_NOT_HIDDEN") {
         statusCode = 404;
-        errorCode = 'RESOURCE_NOT_FOUND';
-        message = 'Summary not found or not hidden';
+        errorCode = "RESOURCE_NOT_FOUND";
+        message = "Summary not found or not hidden";
       }
     }
 
     // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: `/api/summaries/${params.summaryId}/hide`,
-      method: 'DELETE',
+      method: "DELETE",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'DELETE',
+      method: "DELETE",
       path: `/api/summaries/${params.summaryId}/hide`,
       statusCode,
     });
-    performanceLogger.apiResponseTime('DELETE', `/api/summaries/${params.summaryId}/hide`, duration, statusCode);
+    performanceLogger.apiResponseTime("DELETE", `/api/summaries/${params.summaryId}/hide`, duration, statusCode);
 
     const errorResponse: ApiError = {
       error: {
@@ -414,7 +414,7 @@ export const DELETE: APIRoute = async ({ request, locals, params }) => {
 
     return new Response(JSON.stringify(errorResponse), {
       status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

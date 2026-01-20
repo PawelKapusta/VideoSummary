@@ -27,17 +27,17 @@ export type LogLevel = "fatal" | "error" | "warning" | "info" | "debug" | "trace
  * Sensitive fields that should be automatically redacted from logs
  */
 export const SENSITIVE_FIELDS = [
-  'password',
-  'token',
-  'access_token',
-  'refresh_token',
-  'authorization',
-  'api_key',
-  'secret',
-  'private_key',
-  'session_id',
-  'cookie',
-  'email', // Always treat email as sensitive for privacy
+  "password",
+  "token",
+  "access_token",
+  "refresh_token",
+  "authorization",
+  "api_key",
+  "secret",
+  "private_key",
+  "session_id",
+  "cookie",
+  "email", // Always treat email as sensitive for privacy
 ] as const;
 
 /**
@@ -48,14 +48,12 @@ const SENSITIVE_FIELDS_MUTABLE = [...SENSITIVE_FIELDS];
 /**
  * Type for sensitive field names
  */
-export type SensitiveField = typeof SENSITIVE_FIELDS[number];
+export type SensitiveField = (typeof SENSITIVE_FIELDS)[number];
 
 /**
  * Structured log properties - any serializable data except sensitive fields
  */
-export type LogProperties = Record<string, any> & {
-  [K in SensitiveField]?: never; // Prevent sensitive fields at compile time
-};
+export type LogProperties = Record<string, any> & Partial<Record<SensitiveField, never>>;
 
 /**
  * Safe logging utility that converts typed properties to LogTape-compatible format
@@ -65,14 +63,13 @@ export function toLogProperties<T extends Record<string, any>>(properties: T): R
   return properties;
 }
 
-
 /**
  * Creates a support ticket identifier for exceptional user assistance
  * Use only when trace ID correlation is insufficient for debugging
  */
 export function createSupportTicketId(userId: string): string {
   // Use environment-specific salt for consistency
-  const salt = process.env.LOG_SALT || 'videosummary_default_salt_2024';
+  const salt = process.env.LOG_SALT || "videosummary_default_salt_2024";
 
   // Create deterministic hash for support ticket
   const input = `${salt}:support:${userId}:${Date.now()}`;
@@ -80,14 +77,13 @@ export function createSupportTicketId(userId: string): string {
 
   for (let i = 0; i < input.length; i++) {
     const char = input.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
 
   const hashStr = Math.abs(hash).toString(36).toUpperCase();
   return `SUPPORT_${hashStr.slice(0, 8)}`;
 }
-
 
 /**
  * Logger categories for different application modules
@@ -210,10 +206,10 @@ export async function initializeLogging(): Promise<void> {
       reset: isDevelopment, // Safe reset in dev
     });
   } catch (error) {
-    if ((error as Error).message?.includes('Already configured')) {
-      console.warn('Logging already configured; skipping re-init (likely HMR)');
+    if ((error as Error).message?.includes("Already configured")) {
+      console.warn("Logging already configured; skipping re-init (likely HMR)");
     } else {
-      console.error('Failed to initialize logging:', error);
+      console.error("Failed to initialize logging:", error);
     }
   }
 
@@ -263,24 +259,30 @@ export const securityLogger = {
    * Log API access patterns for monitoring
    */
   apiAccess: (data: ApiAccessData) => {
-    apiLogger.info(`API access: ${data.method} ${data.path} -> ${data.statusCode}`, toLogProperties({
-      method: data.method,
-      path: data.path,
-      statusCode: data.statusCode,
-      userId: data.userId,
-      ip: data.ip,
-    }));
+    apiLogger.info(
+      `API access: ${data.method} ${data.path} -> ${data.statusCode}`,
+      toLogProperties({
+        method: data.method,
+        path: data.path,
+        statusCode: data.statusCode,
+        userId: data.userId,
+        ip: data.ip,
+      })
+    );
   },
 
   /**
    * Log security events with structured data
    */
   logSecurityEvent: (eventType: SecurityEventType, message: string, properties?: LogProperties) => {
-    const level = eventType.includes('failure') || eventType.includes('violation') ? 'warning' : 'info';
-    authLogger[level](`Security event: ${eventType}`, toLogProperties({
-      security_event_type: eventType,
-      ...properties,
-    }));
+    const level = eventType.includes("failure") || eventType.includes("violation") ? "warning" : "info";
+    authLogger[level](
+      `Security event: ${eventType}`,
+      toLogProperties({
+        security_event_type: eventType,
+        ...properties,
+      })
+    );
   },
 };
 
@@ -324,61 +326,76 @@ export const errorLogger = {
    * Log application errors with context
    */
   appError: (error: Error, context?: ErrorContext) => {
-    appLogger.error("Application error", toLogProperties({
-      error: error.message,
-      stack: error.stack,
-      ...context,
-    }));
+    appLogger.error(
+      "Application error",
+      toLogProperties({
+        error: error.message,
+        stack: error.stack,
+        ...context,
+      })
+    );
   },
 
   /**
    * Log API errors
    */
   apiError: (error: Error, method: string, path: string, statusCode?: number, context?: ErrorContext) => {
-    apiLogger.error("API error", toLogProperties({
-      error: error.message,
-      stack: error.stack,
-      method,
-      path,
-      statusCode,
-      ...context,
-    }));
+    apiLogger.error(
+      "API error",
+      toLogProperties({
+        error: error.message,
+        stack: error.stack,
+        method,
+        path,
+        statusCode,
+        ...context,
+      })
+    );
   },
 
   /**
    * Log external API errors (YouTube, OpenRouter, etc.)
    */
   externalError: (service: string, error: Error, context?: ErrorContext) => {
-    externalLogger.error("External API error", toLogProperties({
-      service,
-      error: error.message,
-      stack: error.stack,
-      ...context,
-    }));
+    externalLogger.error(
+      "External API error",
+      toLogProperties({
+        service,
+        error: error.message,
+        stack: error.stack,
+        ...context,
+      })
+    );
   },
 
   /**
    * Log database errors
    */
   dbError: (error: Error, operation: string, context?: ErrorContext) => {
-    dbLogger.error("Database error", toLogProperties({
-      error: error.message,
-      stack: error.stack,
-      operation,
-      ...context,
-    }));
+    dbLogger.error(
+      "Database error",
+      toLogProperties({
+        error: error.message,
+        stack: error.stack,
+        operation,
+        ...context,
+      })
+    );
   },
 
   /**
    * Log validation errors
    */
   validationError: (error: Error, field?: string, value?: any, context?: ErrorContext) => {
-    appLogger.warning("Validation error", toLogProperties({
-      error: error.message,
-      field,
-      value: typeof value === 'object' ? JSON.stringify(value) : value,
-      ...context,
-    }));
+    appLogger.warning(
+      "Validation error",
+      toLogProperties({
+        error: error.message,
+        field,
+        value: typeof value === "object" ? JSON.stringify(value) : value,
+        ...context,
+      })
+    );
   },
 };
 

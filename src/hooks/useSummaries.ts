@@ -1,7 +1,7 @@
-import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { apiClient as api } from '../lib/api'; // Named import with alias
-import type { PaginatedResponse, SummaryWithVideo, FilterOptions, SummaryStatus } from '../types';
+import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { apiClient as api } from "../lib/api"; // Named import with alias
+import type { PaginatedResponse, SummaryWithVideo, FilterOptions, SummaryStatus } from "../types";
 
 interface PageParam {
   offset: number;
@@ -15,7 +15,7 @@ export function useSummaries(filters: FilterOptions) {
     (string | FilterOptions)[],
     PageParam
   >({
-    queryKey: ['summaries', filters],
+    queryKey: ["summaries", filters],
     queryFn: async ({ pageParam }: { pageParam: PageParam }) => {
       const params = {
         ...filters,
@@ -23,9 +23,9 @@ export function useSummaries(filters: FilterOptions) {
         offset: pageParam.offset,
         include_hidden: filters.include_hidden ?? false,
         hidden_only: filters.hidden_only ?? false,
-        sort: filters.sort ?? 'published_at_desc',
+        sort: filters.sort ?? "published_at_desc",
       };
-      const response = await api.get<PaginatedResponse<SummaryWithVideo>>('/api/summaries', { params });
+      const response = await api.get<PaginatedResponse<SummaryWithVideo>>("/api/summaries", { params });
       // API returns PaginatedResponse<SummaryWithVideo> which has { data: [], pagination: {} }
       // We need to return the full response for React Query infinite query
       return response;
@@ -44,13 +44,11 @@ export function useSummaries(filters: FilterOptions) {
     refetchInterval: (query) => {
       // Poll every 30 seconds if there are pending/in_progress summaries
       const data = query.state.data;
-      const hasActiveSummaries = data?.pages?.some(page =>
-        page.data?.some((summary: SummaryWithVideo) =>
-          summary.status === 'pending' || summary.status === 'in_progress'
-        )
+      const hasActiveSummaries = data?.pages?.some((page) =>
+        page.data?.some((summary: SummaryWithVideo) => summary.status === "pending" || summary.status === "in_progress")
       );
       return hasActiveSummaries ? 30 * 1000 : false; // 30s polling for active summaries
     },
-    retry: (failureCount, error) => failureCount < 3 && !error.message.includes('401'), // No retry on auth
+    retry: (failureCount, error) => failureCount < 3 && !error.message.includes("401"), // No retry on auth
   });
 }

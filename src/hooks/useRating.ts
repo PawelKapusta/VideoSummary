@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { apiClient } from '@/lib/api';
-import type { RatingResponse, RateSummaryRequest } from '@/types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { apiClient } from "@/lib/api";
+import type { RatingResponse, RateSummaryRequest } from "@/types";
 
 async function rateSummaryAPI(summaryId: string, rating: boolean): Promise<RatingResponse> {
   const request: RateSummaryRequest = { rating };
@@ -19,11 +19,11 @@ export function useRating(summaryId: string) {
     mutationFn: (rating: boolean) => rateSummaryAPI(summaryId, rating),
     onSuccess: (data) => {
       // Invalidate and refetch summary details to update rating stats
-      queryClient.invalidateQueries({ queryKey: ['summaryDetails', summaryId] });
-      toast.success(data.rating ? 'Upvoted!' : 'Downvoted!');
+      queryClient.invalidateQueries({ queryKey: ["summaryDetails", summaryId] });
+      toast.success(data.rating ? "Upvoted!" : "Downvoted!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to rate summary');
+      toast.error(error.message || "Failed to rate summary");
     },
   });
 
@@ -31,11 +31,11 @@ export function useRating(summaryId: string) {
     mutationFn: () => removeRatingAPI(summaryId),
     onSuccess: () => {
       // Invalidate and refetch summary details to update rating stats
-      queryClient.invalidateQueries({ queryKey: ['summaryDetails', summaryId] });
-      toast.success('Rating removed');
+      queryClient.invalidateQueries({ queryKey: ["summaryDetails", summaryId] });
+      toast.success("Rating removed");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to remove rating');
+      toast.error(error.message || "Failed to remove rating");
     },
   });
 

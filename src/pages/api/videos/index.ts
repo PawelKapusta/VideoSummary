@@ -1,8 +1,8 @@
-import type { APIRoute } from 'astro';
-import type { PaginatedResponse, VideoSummary, ApiError } from '../../../types';
-import { VideoListFiltersSchema, UUIDSchema } from '../../../lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { listVideos } from '../../../lib/videos.service';
+import type { APIRoute } from "astro";
+import type { PaginatedResponse, VideoSummary, ApiError } from "../../../types";
+import { VideoListFiltersSchema, UUIDSchema } from "../../../lib/validation/schemas";
+import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import { listVideos } from "../../../lib/videos.service";
 
 /**
  * GET /api/videos
@@ -40,28 +40,31 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized videos list attempt - no valid session');
+      securityLogger.auth("Unauthorized videos list attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/videos',
+        method: "GET",
+        path: "/api/videos",
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('GET', '/api/videos', duration, 401);
+      performanceLogger.apiResponseTime("GET", "/api/videos", duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -69,12 +72,12 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
     // Parse and validate query parameters
     const urlParams = new URL(url).searchParams;
-    const rawLimit = urlParams.get('limit');
-    const rawOffset = urlParams.get('offset');
-    const rawChannelId = urlParams.get('channel_id');
-    const rawStatus = urlParams.get('status');
-    const rawSearch = urlParams.get('search');
-    const rawSort = urlParams.get('sort');
+    const rawLimit = urlParams.get("limit");
+    const rawOffset = urlParams.get("offset");
+    const rawChannelId = urlParams.get("channel_id");
+    const rawStatus = urlParams.get("status");
+    const rawSearch = urlParams.get("search");
+    const rawSort = urlParams.get("sort");
 
     const validationResult = VideoListFiltersSchema.safeParse({
       limit: rawLimit,
@@ -87,32 +90,30 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Query parameter validation failed'),
-        undefined,
-        undefined,
-        { endpoint: '/api/videos', method: 'GET' }
-      );
+      errorLogger.validationError(new Error("Query parameter validation failed"), undefined, undefined, {
+        endpoint: "/api/videos",
+        method: "GET",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/videos',
+        method: "GET",
+        path: "/api/videos",
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('GET', '/api/videos', duration, 400);
+      performanceLogger.apiResponseTime("GET", "/api/videos", duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid query parameters',
+          code: "INVALID_INPUT",
+          message: "Invalid query parameters",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -126,35 +127,31 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
         // Log API access and performance for validation error
         securityLogger.apiAccess({
-          method: 'GET',
-          path: '/api/videos',
+          method: "GET",
+          path: "/api/videos",
           statusCode: 400,
         });
-        performanceLogger.apiResponseTime('GET', '/api/videos', duration, 400);
+        performanceLogger.apiResponseTime("GET", "/api/videos", duration, 400);
 
         const errorResponse: ApiError = {
           error: {
-            code: 'INVALID_INPUT',
-            message: 'Invalid channel_id format',
+            code: "INVALID_INPUT",
+            message: "Invalid channel_id format",
           },
         };
 
         return new Response(JSON.stringify(errorResponse), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
 
     // Get paginated videos
-    const result: PaginatedResponse<VideoSummary> = await listVideos(
-      supabase,
-      userId,
-      filters
-    );
+    const result: PaginatedResponse<VideoSummary> = await listVideos(supabase, userId, filters);
 
     // Log successful videos access
-    securityLogger.auth('Videos list accessed successfully', {
+    securityLogger.auth("Videos list accessed successfully", {
       user_id: userId,
       total_videos: result.pagination.total,
       filters: {
@@ -170,49 +167,48 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/videos',
+      method: "GET",
+      path: "/api/videos",
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('GET', '/api/videos', duration, 200);
+    performanceLogger.apiResponseTime("GET", "/api/videos", duration, 200);
 
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle unexpected errors
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/videos',
-      method: 'GET',
+      endpoint: "/api/videos",
+      method: "GET",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/videos',
+      method: "GET",
+      path: "/api/videos",
       statusCode: 500,
     });
-    performanceLogger.apiResponseTime('GET', '/api/videos', duration, 500);
+    performanceLogger.apiResponseTime("GET", "/api/videos", duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

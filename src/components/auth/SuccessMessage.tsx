@@ -1,18 +1,18 @@
-import React, { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import React, { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, ArrowRight } from "lucide-react";
 
 export const SuccessMessage: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
-      window.location.href = '/login';
+      window.location.href = "/login";
     }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
   const handleManualRedirect = () => {
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   return (

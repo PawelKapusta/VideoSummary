@@ -1,5 +1,5 @@
 interface LegalFooterProps {
-  activePage?: 'terms' | 'privacy';
+  activePage?: "terms" | "privacy";
 }
 
 export function LegalFooter({ activePage }: LegalFooterProps = {}) {
@@ -15,7 +15,7 @@ export function LegalFooter({ activePage }: LegalFooterProps = {}) {
             <a
               href="/terms"
               className={`text-foreground/80 hover:text-foreground hover:scale-105 px-2 py-1 rounded-md transition-all duration-200 ${
-                activePage === 'terms' ? 'font-medium' : ''
+                activePage === "terms" ? "font-medium" : ""
               }`}
             >
               Terms of Service
@@ -23,7 +23,7 @@ export function LegalFooter({ activePage }: LegalFooterProps = {}) {
             <a
               href="/privacy"
               className={`text-foreground/80 hover:text-foreground hover:scale-105 px-2 py-1 rounded-md transition-all duration-200 ${
-                activePage === 'privacy' ? 'font-medium' : ''
+                activePage === "privacy" ? "font-medium" : ""
               }`}
             >
               Privacy Policy
@@ -43,4 +43,3 @@ export function LegalFooter({ activePage }: LegalFooterProps = {}) {
     </footer>
   );
 }
-

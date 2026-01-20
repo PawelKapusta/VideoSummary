@@ -1,12 +1,12 @@
-import type { APIRoute } from 'astro';
-import type { ApiError, ApiSuccess } from '../../../types';
-import { securityLogger, errorLogger, performanceLogger, appLogger } from '../../../lib/logger';
-import { processNextQueueItem, type ProcessNextQueueResult } from '../../../lib/summaries.service';
-import type { RuntimeEnv } from '../../../lib/env';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from 'astro:env/server';
+import type { APIRoute } from "astro";
+import type { ApiError, ApiSuccess } from "../../../types";
+import { securityLogger, errorLogger, performanceLogger, appLogger } from "../../../lib/logger";
+import { processNextQueueItem, type ProcessNextQueueResult } from "../../../lib/summaries.service";
+import type { RuntimeEnv } from "../../../lib/env";
+import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "astro:env/server";
 
-const ENDPOINT_PATH = '/api/summaries/process-next';
+const ENDPOINT_PATH = "/api/summaries/process-next";
 
 /**
  * POST /api/summaries/process-next
@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ locals }) => {
   const startTime = performance.now();
 
   try {
-    appLogger.info('Queue processing triggered', {
+    appLogger.info("Queue processing triggered", {
       endpoint: ENDPOINT_PATH,
       timestamp: new Date().toISOString(),
     });
@@ -56,24 +56,21 @@ export const POST: APIRoute = async ({ locals }) => {
     });
 
     // Process next queue item
-    const result: ProcessNextQueueResult = await processNextQueueItem(
-      supabaseAdmin,
-      runtimeEnv
-    );
+    const result: ProcessNextQueueResult = await processNextQueueItem(supabaseAdmin, runtimeEnv);
 
     // Log result
     const duration = performance.now() - startTime;
-    
+
     if (result.processed) {
       if (result.success) {
-        appLogger.info('Queue item processed successfully', {
+        appLogger.info("Queue item processed successfully", {
           queueItemId: result.queueItemId,
           videoId: result.videoId,
           summaryId: result.summaryId,
           duration: `${duration.toFixed(0)}ms`,
         });
       } else {
-        appLogger.warn('Queue item processing failed', {
+        appLogger.warn("Queue item processing failed", {
           queueItemId: result.queueItemId,
           videoId: result.videoId,
           error: result.error,
@@ -81,14 +78,14 @@ export const POST: APIRoute = async ({ locals }) => {
         });
       }
     } else {
-      appLogger.info('No queue items to process', {
+      appLogger.info("No queue items to process", {
         message: result.message,
         duration: `${duration.toFixed(0)}ms`,
       });
     }
 
-    securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode: 200 });
-    performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, 200);
+    securityLogger.apiAccess({ method: "POST", path: ENDPOINT_PATH, statusCode: 200 });
+    performanceLogger.apiResponseTime("POST", ENDPOINT_PATH, duration, 200);
 
     return new Response(
       JSON.stringify({
@@ -98,10 +95,10 @@ export const POST: APIRoute = async ({ locals }) => {
       {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'DENY',
-          'X-XSS-Protection': '1; mode=block',
+          "Content-Type": "application/json",
+          "X-Content-Type-Options": "nosniff",
+          "X-Frame-Options": "DENY",
+          "X-XSS-Protection": "1; mode=block",
         },
       }
     );
@@ -111,12 +108,12 @@ export const POST: APIRoute = async ({ locals }) => {
 
     errorLogger.appError(error instanceof Error ? error : new Error(errorMessage), {
       endpoint: ENDPOINT_PATH,
-      method: 'POST',
+      method: "POST",
     });
-    securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode: 500 });
-    performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, 500);
+    securityLogger.apiAccess({ method: "POST", path: ENDPOINT_PATH, statusCode: 500 });
+    performanceLogger.apiResponseTime("POST", ENDPOINT_PATH, duration, 500);
 
-    appLogger.error('Queue processing failed', {
+    appLogger.error("Queue processing failed", {
       errorMessage,
       duration: `${duration.toFixed(0)}ms`,
     });
@@ -124,11 +121,11 @@ export const POST: APIRoute = async ({ locals }) => {
     return new Response(
       JSON.stringify({
         error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Queue processing failed',
+          code: "INTERNAL_ERROR",
+          message: "Queue processing failed",
         },
       } satisfies ApiError),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 };

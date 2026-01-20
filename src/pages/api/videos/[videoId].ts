@@ -1,8 +1,8 @@
-import type { APIRoute } from 'astro';
-import type { DetailedVideo, ApiError } from '../../../types';
-import { UUIDSchema } from '../../../lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { getVideoDetails } from '../../../lib/videos.service';
+import type { APIRoute } from "astro";
+import type { DetailedVideo, ApiError } from "../../../types";
+import { UUIDSchema } from "../../../lib/validation/schemas";
+import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import { getVideoDetails } from "../../../lib/videos.service";
 
 /**
  * GET /api/videos/:videoId
@@ -41,28 +41,31 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized video details attempt - no valid session');
+      securityLogger.auth("Unauthorized video details attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'GET',
+        method: "GET",
         path: `/api/videos/${params.videoId}`,
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('GET', `/api/videos/${params.videoId}`, duration, 401);
+      performanceLogger.apiResponseTime("GET", `/api/videos/${params.videoId}`, duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -75,54 +78,52 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'GET',
+        method: "GET",
         path: `/api/videos/${params.videoId}`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('GET', `/api/videos/${params.videoId}`, duration, 400);
+      performanceLogger.apiResponseTime("GET", `/api/videos/${params.videoId}`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Video ID is required',
+          code: "INVALID_INPUT",
+          message: "Video ID is required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const validationResult = UUIDSchema.safeParse(videoId);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Path parameter validation failed'),
-        undefined,
-        undefined,
-        { endpoint: `/api/videos/${params.videoId}`, method: 'GET' }
-      );
+      errorLogger.validationError(new Error("Path parameter validation failed"), undefined, undefined, {
+        endpoint: `/api/videos/${params.videoId}`,
+        method: "GET",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'GET',
+        method: "GET",
         path: `/api/videos/${params.videoId}`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('GET', `/api/videos/${params.videoId}`, duration, 400);
+      performanceLogger.apiResponseTime("GET", `/api/videos/${params.videoId}`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid video ID format',
+          code: "INVALID_INPUT",
+          message: "Invalid video ID format",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -130,7 +131,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     const video: DetailedVideo = await getVideoDetails(supabase, videoId);
 
     // Log successful video details access
-    securityLogger.auth('Video details accessed successfully', {
+    securityLogger.auth("Video details accessed successfully", {
       user_id: userId,
       video_id: videoId,
     });
@@ -138,51 +139,50 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'GET',
+      method: "GET",
       path: `/api/videos/${params.videoId}`,
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('GET', `/api/videos/${params.videoId}`, duration, 200);
+    performanceLogger.apiResponseTime("GET", `/api/videos/${params.videoId}`, duration, 200);
 
     return new Response(JSON.stringify(video), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle specific error types
     const duration = performance.now() - startTime;
     let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
+    let errorCode = "INTERNAL_ERROR";
+    let message = "An unexpected error occurred";
 
     if (error instanceof Error) {
-      if (error.message === 'VIDEO_NOT_FOUND') {
+      if (error.message === "VIDEO_NOT_FOUND") {
         statusCode = 404;
-        errorCode = 'RESOURCE_NOT_FOUND';
-        message = 'Video not found';
+        errorCode = "RESOURCE_NOT_FOUND";
+        message = "Video not found";
       }
     }
 
     // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: `/api/videos/${params.videoId}`,
-      method: 'GET',
+      method: "GET",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'GET',
+      method: "GET",
       path: `/api/videos/${params.videoId}`,
       statusCode,
     });
-    performanceLogger.apiResponseTime('GET', `/api/videos/${params.videoId}`, duration, statusCode);
+    performanceLogger.apiResponseTime("GET", `/api/videos/${params.videoId}`, duration, statusCode);
 
     const errorResponse: ApiError = {
       error: {
@@ -193,7 +193,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 
     return new Response(JSON.stringify(errorResponse), {
       status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

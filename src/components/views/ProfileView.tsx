@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RefreshCw, FileText, Youtube, TrendingUp } from 'lucide-react';
-import type { UserProfile, SummaryWithVideo } from '@/types';
-import SubscriptionSection from './SubscriptionSection';
-import QueryProvider from '../providers/QueryProvider';
-import { useProfile } from '@/hooks/useProfile';
-import { useUserChannels } from '@/hooks/useUserChannels';
-import { useSummaries } from '@/hooks/useSummaries';
-import { ApiClientError } from '@/lib/api';
-import { useRemoveChannel } from '@/hooks/useRemoveChannel';
-import AddChannelForm from './AddChannelForm';
-import AppLoader from '@/components/ui/AppLoader';
+import React, { useState } from "react";
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RefreshCw, FileText, Youtube, TrendingUp } from "lucide-react";
+import type { UserProfile, SummaryWithVideo } from "@/types";
+import SubscriptionSection from "./SubscriptionSection";
+import QueryProvider from "../providers/QueryProvider";
+import { useProfile } from "@/hooks/useProfile";
+import { useUserChannels } from "@/hooks/useUserChannels";
+import { useSummaries } from "@/hooks/useSummaries";
+import { ApiClientError } from "@/lib/api";
+import { useRemoveChannel } from "@/hooks/useRemoveChannel";
+import AddChannelForm from "./AddChannelForm";
+import AppLoader from "@/components/ui/AppLoader";
 
 interface UserHeaderProps {
   profile: Partial<UserProfile>;
 }
 
 function UserHeader({ profile }: UserHeaderProps) {
-  const joinDate = profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A';
+  const joinDate = profile.created_at ? new Date(profile.created_at).toLocaleDateString() : "N/A";
 
   return (
     <Card className="mb-6 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-100 dark:to-gray-100 border-slate-200 dark:border-slate-300 shadow-lg">
@@ -27,11 +27,15 @@ function UserHeader({ profile }: UserHeaderProps) {
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16 ring-4 ring-slate-300 dark:ring-slate-400 shadow-xl">
             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.email}`} />
-            <AvatarFallback className="text-xl bg-slate-200 dark:bg-slate-300 text-slate-800 dark:text-slate-900 font-bold">{profile.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+            <AvatarFallback className="text-xl bg-slate-200 dark:bg-slate-300 text-slate-800 dark:text-slate-900 font-bold">
+              {profile.email?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
           </Avatar>
           <div>
             <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-900">Your Insights</CardTitle>
-            <CardDescription className="text-lg font-semibold text-slate-700 dark:text-slate-800">{profile.email || 'Loading...'}</CardDescription>
+            <CardDescription className="text-lg font-semibold text-slate-700 dark:text-slate-800">
+              {profile.email || "Loading..."}
+            </CardDescription>
             <p className="text-base font-medium text-slate-600 dark:text-slate-700 mt-1">Member since {joinDate}</p>
           </div>
         </div>
@@ -40,7 +44,15 @@ function UserHeader({ profile }: UserHeaderProps) {
   );
 }
 
-function StatsSection({ totalSummaries, totalChannels, thisMonthSummaries }: { totalSummaries: number; totalChannels: number; thisMonthSummaries: number }) {
+function StatsSection({
+  totalSummaries,
+  totalChannels,
+  thisMonthSummaries,
+}: {
+  totalSummaries: number;
+  totalChannels: number;
+  thisMonthSummaries: number;
+}) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <Card className="text-center">
@@ -76,7 +88,6 @@ function StatsSection({ totalSummaries, totalChannels, thisMonthSummaries }: { t
   );
 }
 
-
 function ProfileContent() {
   const { profile, isLoading, error, refetch } = useProfile();
   const { data: channels } = useUserChannels();
@@ -88,17 +99,21 @@ function ProfileContent() {
   const totalChannels = channels?.length || 0;
 
   // Calculate summaries from this month
-  const thisMonthSummaries = summariesData?.pages?.reduce((acc, page) => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
+  const thisMonthSummaries =
+    summariesData?.pages?.reduce((acc, page) => {
+      const now = new Date();
+      const thisMonth = now.getMonth();
+      const thisYear = now.getFullYear();
 
-    return acc + page.data.filter((summary: SummaryWithVideo) => {
-      if (!summary.generated_at) return false;
-      const summaryDate = new Date(summary.generated_at);
-      return summaryDate.getMonth() === thisMonth && summaryDate.getFullYear() === thisYear;
-    }).length;
-  }, 0) || 0;
+      return (
+        acc +
+        page.data.filter((summary: SummaryWithVideo) => {
+          if (!summary.generated_at) return false;
+          const summaryDate = new Date(summary.generated_at);
+          return summaryDate.getMonth() === thisMonth && summaryDate.getFullYear() === thisYear;
+        }).length
+      );
+    }, 0) || 0;
 
   const handleRemoveChannel = (subscriptionId: string) => {
     removeChannel(subscriptionId);
@@ -113,7 +128,7 @@ function ProfileContent() {
   }
 
   if (error) {
-    let errorMessage = 'An unexpected error occurred.';
+    let errorMessage = "An unexpected error occurred.";
     if (error instanceof ApiClientError) {
       errorMessage = error.message;
     } else if (error instanceof Error) {
@@ -144,9 +159,7 @@ function ProfileContent() {
 
   return (
     <div className="container max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-      <UserHeader
-        profile={profile}
-      />
+      <UserHeader profile={profile} />
 
       <StatsSection
         totalSummaries={totalSummaries}
@@ -160,10 +173,7 @@ function ProfileContent() {
         onAddClick={() => setAddModalOpen(true)}
       />
 
-      <AddChannelForm
-        isOpen={isAddModalOpen}
-        onClose={() => setAddModalOpen(false)}
-      />
+      <AddChannelForm isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>
   );
 }
@@ -173,7 +183,7 @@ export function ProfileView() {
     <QueryProvider>
       <ProfileContent />
     </QueryProvider>
-  )
+  );
 }
 
 export default ProfileView;

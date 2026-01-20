@@ -1,7 +1,7 @@
-import type { APIRoute } from 'astro';
-import type { ConfirmResetPasswordRequest, ApiSuccess, ApiError } from '@/types';
-import { ConfirmResetPasswordRequestSchema } from '@/lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '@/lib/logger';
+import type { APIRoute } from "astro";
+import type { ConfirmResetPasswordRequest, ApiSuccess, ApiError } from "@/types";
+import { ConfirmResetPasswordRequestSchema } from "@/lib/validation/schemas";
+import { securityLogger, errorLogger, performanceLogger } from "@/lib/logger";
 
 /**
  * POST /api/auth/reset-password/confirm
@@ -39,32 +39,30 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const validationResult = ConfirmResetPasswordRequestSchema.safeParse(body);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Request validation failed'),
-        undefined,
-        undefined,
-        { endpoint: '/api/auth/reset-password/confirm', method: 'POST' }
-      );
+      errorLogger.validationError(new Error("Request validation failed"), undefined, undefined, {
+        endpoint: "/api/auth/reset-password/confirm",
+        method: "POST",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/auth/reset-password/confirm',
+        method: "POST",
+        path: "/api/auth/reset-password/confirm",
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('POST', '/api/auth/reset-password/confirm', duration, 400);
+      performanceLogger.apiResponseTime("POST", "/api/auth/reset-password/confirm", duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid token or password format',
+          code: "INVALID_INPUT",
+          message: "Invalid token or password format",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -73,37 +71,37 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Call Supabase Auth verifyOtp to validate the reset token
     const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
       token_hash: token,
-      type: 'recovery',
+      type: "recovery",
     });
 
     if (otpError) {
       // Handle OTP verification errors
       const duration = performance.now() - startTime;
-      errorLogger.apiError(otpError, 'POST', '/api/auth/reset-password/confirm');
+      errorLogger.apiError(otpError, "POST", "/api/auth/reset-password/confirm");
 
       // Log password reset failure
-      securityLogger.authFailure('Password reset token verification failed', {
-        error_type: 'invalid_token',
+      securityLogger.authFailure("Password reset token verification failed", {
+        error_type: "invalid_token",
       });
 
       // Log API access and performance for token error
       securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/auth/reset-password/confirm',
+        method: "POST",
+        path: "/api/auth/reset-password/confirm",
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('POST', '/api/auth/reset-password/confirm', duration, 400);
+      performanceLogger.apiResponseTime("POST", "/api/auth/reset-password/confirm", duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid or expired reset token',
+          code: "INVALID_TOKEN",
+          message: "Invalid or expired reset token",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -111,30 +109,30 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!otpData.user) {
       const duration = performance.now() - startTime;
       errorLogger.apiError(
-        new Error('Supabase verifyOtp succeeded but no user returned'),
-        'POST',
-        '/api/auth/reset-password/confirm'
+        new Error("Supabase verifyOtp succeeded but no user returned"),
+        "POST",
+        "/api/auth/reset-password/confirm"
       );
-      securityLogger.authFailure('Password reset failed: no user returned after token verification');
+      securityLogger.authFailure("Password reset failed: no user returned after token verification");
 
       // Log API access and performance for internal error
       securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/auth/reset-password/confirm',
+        method: "POST",
+        path: "/api/auth/reset-password/confirm",
         statusCode: 500,
       });
-      performanceLogger.apiResponseTime('POST', '/api/auth/reset-password/confirm', duration, 500);
+      performanceLogger.apiResponseTime("POST", "/api/auth/reset-password/confirm", duration, 500);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Password reset failed',
+          code: "INTERNAL_ERROR",
+          message: "Password reset failed",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -146,88 +144,87 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (updateError) {
       // Handle password update errors
       const duration = performance.now() - startTime;
-      errorLogger.apiError(updateError, 'POST', '/api/auth/reset-password/confirm');
-      securityLogger.authFailure('Password reset failed: password update error', {
-        error_type: 'password_update_failed',
+      errorLogger.apiError(updateError, "POST", "/api/auth/reset-password/confirm");
+      securityLogger.authFailure("Password reset failed: password update error", {
+        error_type: "password_update_failed",
       });
 
       // Log API access and performance for password update error
       securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/auth/reset-password/confirm',
+        method: "POST",
+        path: "/api/auth/reset-password/confirm",
         statusCode: 422,
       });
-      performanceLogger.apiResponseTime('POST', '/api/auth/reset-password/confirm', duration, 422);
+      performanceLogger.apiResponseTime("POST", "/api/auth/reset-password/confirm", duration, 422);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Password update failed',
+          code: "VALIDATION_ERROR",
+          message: "Password update failed",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 422,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     // Log successful password reset
-    securityLogger.auth('Password reset successful', {
+    securityLogger.auth("Password reset successful", {
       user_id: otpData.user.id, // Safe to log - this is an internal UUID
     });
 
     // Format successful response
     const successResponse: ApiSuccess<void> = {
-      message: 'Password successfully reset',
+      message: "Password successfully reset",
     };
 
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/auth/reset-password/confirm',
+      method: "POST",
+      path: "/api/auth/reset-password/confirm",
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('POST', '/api/auth/reset-password/confirm', duration, 200);
+    performanceLogger.apiResponseTime("POST", "/api/auth/reset-password/confirm", duration, 200);
 
     return new Response(JSON.stringify(successResponse), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle unexpected errors
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/auth/reset-password/confirm',
-      method: 'POST',
+      endpoint: "/api/auth/reset-password/confirm",
+      method: "POST",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/auth/reset-password/confirm',
+      method: "POST",
+      path: "/api/auth/reset-password/confirm",
       statusCode: 500,
     });
-    performanceLogger.apiResponseTime('POST', '/api/auth/reset-password/confirm', duration, 500);
+    performanceLogger.apiResponseTime("POST", "/api/auth/reset-password/confirm", duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

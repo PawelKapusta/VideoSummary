@@ -1,8 +1,8 @@
-import React from 'react';
-import type { VideoSummary } from '@/types';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import type { VideoSummary } from "@/types";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface VideoCardProps {
   video: VideoSummary;
@@ -13,11 +13,11 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onGenerate }) => {
   return (
     <Card
       onClick={() => {
-        if (video.summary_id && video.summary_status === 'completed') {
+        if (video.summary_id && video.summary_status === "completed") {
           window.location.href = `/summaries/${video.summary_id}`;
-        } else if (video.summary_id && video.summary_status === 'failed') {
+        } else if (video.summary_id && video.summary_status === "failed") {
           onGenerate(video);
-        } else if (!video.summary_id || video.summary_status === 'pending' || video.summary_status === 'in_progress') {
+        } else if (!video.summary_id || video.summary_status === "pending" || video.summary_status === "in_progress") {
           // Don't allow clicking when in progress or pending
           return;
         } else {
@@ -40,21 +40,37 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onGenerate }) => {
         <p className="text-sm text-muted-foreground">{video.channel.name}</p>
       </CardContent>
       <CardFooter className="flex justify-between items-center gap-4 mt-auto">
-        {video.summary_id && video.summary_status === 'completed' ? (
+        {video.summary_id && video.summary_status === "completed" ? (
           <>
             <Badge
               variant="secondary"
               className="pl-2.5 pr-3 py-1.5 flex items-center gap-2 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-2xl transition-all duration-300 group-hover:bg-black/80 group-hover:border-white/20"
             >
               <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] animate-pulse-slow"></div>
-              <span className="text-[10px] font-bold text-emerald-100 tracking-widest uppercase">Summary Available</span>
+              <span className="text-[10px] font-bold text-emerald-100 tracking-widest uppercase">
+                Summary Available
+              </span>
             </Badge>
             <span className="text-sm font-medium text-black group-hover:text-gray-700 group-hover:underline decoration-gray-400/60 underline-offset-4 flex items-center gap-1 transition-colors">
               See Summary
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
             </span>
           </>
-        ) : video.summary_id && video.summary_status === 'in_progress' ? (
+        ) : video.summary_id && video.summary_status === "in_progress" ? (
           <>
             <Badge
               variant="outline"
@@ -63,11 +79,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onGenerate }) => {
               <div className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)] animate-pulse"></div>
               <span className="text-[10px] font-bold text-blue-100 tracking-widest uppercase">Generating</span>
             </Badge>
-            <span className="text-sm font-medium text-gray-500 cursor-not-allowed">
-              In Progress
-            </span>
+            <span className="text-sm font-medium text-gray-500 cursor-not-allowed">In Progress</span>
           </>
-        ) : video.summary_id && video.summary_status === 'pending' ? (
+        ) : video.summary_id && video.summary_status === "pending" ? (
           <>
             <Badge
               variant="outline"
@@ -76,11 +90,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onGenerate }) => {
               <div className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_rgba(251,191,36,0.6)] animate-pulse"></div>
               <span className="text-[10px] font-bold text-yellow-100 tracking-widest uppercase">Pending</span>
             </Badge>
-            <span className="text-sm font-medium text-gray-500 cursor-not-allowed">
-              Queued
-            </span>
+            <span className="text-sm font-medium text-gray-500 cursor-not-allowed">Queued</span>
           </>
-        ) : video.summary_id && video.summary_status === 'failed' ? (
+        ) : video.summary_id && video.summary_status === "failed" ? (
           <>
             <Badge
               variant="outline"
@@ -91,7 +103,23 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onGenerate }) => {
             </Badge>
             <span className="text-sm font-medium text-black group-hover:text-gray-700 group-hover:underline decoration-gray-400/60 underline-offset-4 flex items-center gap-1 transition-colors">
               Try Again
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+              >
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M8 16H3v5" />
+              </svg>
             </span>
           </>
         ) : (
@@ -105,7 +133,21 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onGenerate }) => {
             </Badge>
             <span className="text-sm font-medium text-black group-hover:text-gray-700 group-hover:underline decoration-gray-400/60 underline-offset-4 flex items-center gap-1 transition-colors">
               Generate Summary
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
             </span>
           </>
         )}

@@ -1,7 +1,7 @@
-import React from 'react';
-import type { VideoPreviewViewModel } from '../../types';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import AppLoader from '../ui/AppLoader';
+import React from "react";
+import type { VideoPreviewViewModel } from "../../types";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import AppLoader from "../ui/AppLoader";
 
 interface VideoPreviewProps {
   video: VideoPreviewViewModel | null;
@@ -11,9 +11,7 @@ interface VideoPreviewProps {
 const VideoPreview: React.FC<VideoPreviewProps> = ({ video, isLoading }) => {
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <AppLoader loadingText="Loading preview..." className="min-h-[200px]" />
-      );
+      return <AppLoader loadingText="Loading preview..." className="min-h-[200px]" />;
     }
 
     if (!video) {
@@ -41,9 +39,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ video, isLoading }) => {
       <CardHeader>
         <CardTitle>Video Preview</CardTitle>
       </CardHeader>
-      <CardContent>
-        {renderContent()}
-      </CardContent>
+      <CardContent>{renderContent()}</CardContent>
     </Card>
   );
 };

@@ -1,4 +1,4 @@
-export type Role = 'system' | 'user' | 'assistant';
+export type Role = "system" | "user" | "assistant";
 
 export interface ChatMessage {
   role: Role;
@@ -12,7 +12,7 @@ export interface JsonSchema {
 }
 
 export interface ResponseFormat {
-  type: 'json_schema';
+  type: "json_schema";
   json_schema: JsonSchema;
 }
 
@@ -43,13 +43,12 @@ export interface OpenRouterResponse {
   created: number;
   model: string;
   usage?: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
   };
   error?: {
     message: string;
     code?: number;
   };
 }
-

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Button } from '../ui/button';
-import { FileText, Search, Youtube, Sparkles, Home } from 'lucide-react';
+import React from "react";
+import { Button } from "../ui/button";
+import { FileText, Search, Youtube, Sparkles, Home } from "lucide-react";
 
 interface Props {
   message?: string;
@@ -9,9 +9,9 @@ interface Props {
 }
 
 const EmptyState: React.FC<Props> = ({
-  message = 'No summaries available yet.',
-  description = 'Start building your knowledge base by subscribing to channels and generating AI-powered summaries of their videos.',
-  onClearFilters
+  message = "No summaries available yet.",
+  description = "Start building your knowledge base by subscribing to channels and generating AI-powered summaries of their videos.",
+  onClearFilters,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-8 max-w-2xl mx-auto">
@@ -24,13 +24,9 @@ const EmptyState: React.FC<Props> = ({
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">
-        {message}
-      </h2>
+      <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">{message}</h2>
 
-      <p className="text-lg text-gray-600 mb-8 text-center leading-relaxed max-w-lg">
-        {description}
-      </p>
+      <p className="text-lg text-gray-600 mb-8 text-center leading-relaxed max-w-lg">{description}</p>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center">
         {onClearFilters && (
@@ -55,10 +51,10 @@ const EmptyState: React.FC<Props> = ({
 
       <div className="mt-8 text-center">
         <p className="text-sm text-gray-500">
-          Browse available videos on our{' '}
+          Browse available videos on our{" "}
           <a href="/videos" className="text-indigo-600 hover:text-indigo-700 font-medium">
             videos page
-          </a>{' '}
+          </a>{" "}
           to get started
         </p>
       </div>

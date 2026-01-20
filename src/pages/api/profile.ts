@@ -1,7 +1,7 @@
-import type { APIRoute } from 'astro';
-import type { UserProfile, ApiError } from '../../types';
-import { securityLogger, errorLogger, performanceLogger } from '../../lib/logger';
-import { getUserProfile } from '../../lib/profile.service';
+import type { APIRoute } from "astro";
+import type { UserProfile, ApiError } from "../../types";
+import { securityLogger, errorLogger, performanceLogger } from "../../lib/logger";
+import { getUserProfile } from "../../lib/profile.service";
 
 // export const prerender = false;
 /**
@@ -35,28 +35,31 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized profile access attempt - no valid session');
+      securityLogger.auth("Unauthorized profile access attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/profile',
+        method: "GET",
+        path: "/api/profile",
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('GET', '/api/profile', duration, 401);
+      performanceLogger.apiResponseTime("GET", "/api/profile", duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -66,56 +69,55 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const profile: UserProfile = await getUserProfile(supabase, userId);
 
     // Log successful profile access
-    securityLogger.auth('Profile accessed successfully', {
+    securityLogger.auth("Profile accessed successfully", {
       user_id: userId, // Safe to log - this is an internal UUID
     });
 
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/profile',
+      method: "GET",
+      path: "/api/profile",
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('GET', '/api/profile', duration, 200);
+    performanceLogger.apiResponseTime("GET", "/api/profile", duration, 200);
 
     return new Response(JSON.stringify(profile), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle unexpected errors
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/profile',
-      method: 'GET',
+      endpoint: "/api/profile",
+      method: "GET",
     });
 
     // Determine appropriate error response based on error type
     let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
+    let errorCode = "INTERNAL_ERROR";
+    let message = "An unexpected error occurred";
 
-    if (error instanceof Error && error.message === 'User not found') {
+    if (error instanceof Error && error.message === "User not found") {
       statusCode = 404;
-      errorCode = 'RESOURCE_NOT_FOUND';
-      message = 'User profile not found';
+      errorCode = "RESOURCE_NOT_FOUND";
+      message = "User profile not found";
     }
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/profile',
+      method: "GET",
+      path: "/api/profile",
       statusCode,
     });
-    performanceLogger.apiResponseTime('GET', '/api/profile', duration, statusCode);
+    performanceLogger.apiResponseTime("GET", "/api/profile", duration, statusCode);
 
     const errorResponse: ApiError = {
       error: {
@@ -126,7 +128,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
     return new Response(JSON.stringify(errorResponse), {
       status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

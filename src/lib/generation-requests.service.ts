@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '../db/supabase.client';
-import type { GenerationStatusResponse } from '../types';
+import type { SupabaseClient } from "../db/supabase.client";
+import type { GenerationStatusResponse } from "../types";
 
 /**
  * Check if a summary can be generated for a specific channel today
@@ -16,10 +16,10 @@ export async function checkGenerationStatus(
 ): Promise<GenerationStatusResponse> {
   // First verify user is subscribed to the channel
   const { data: subscription, error: subscriptionError } = await supabase
-    .from('subscriptions')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('channel_id', channelId)
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("channel_id", channelId)
     .maybeSingle();
 
   if (subscriptionError) {
@@ -27,25 +27,22 @@ export async function checkGenerationStatus(
   }
 
   if (!subscription) {
-    throw new Error('CHANNEL_NOT_SUBSCRIBED');
+    throw new Error("CHANNEL_NOT_SUBSCRIBED");
   }
 
   // Get today's date range (UTC)
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   const startOfDay = `${today}T00:00:00Z`;
   const endOfDay = `${today}T23:59:59.999Z`;
 
   // Get all videos from this channel
-  const { data: videos, error: videosError } = await supabase
-    .from('videos')
-    .select('id')
-    .eq('channel_id', channelId);
+  const { data: videos, error: videosError } = await supabase.from("videos").select("id").eq("channel_id", channelId);
 
   if (videosError) {
     throw videosError;
   }
 
-  const videoIds = videos?.map(v => v.id) || [];
+  const videoIds = videos?.map((v) => v.id) || [];
 
   // Count successful summaries today for this channel
   let successfulSummariesToday = 0;
@@ -53,13 +50,13 @@ export async function checkGenerationStatus(
 
   if (videoIds.length > 0) {
     const { data: summaries, error: summariesError } = await supabase
-      .from('summaries')
-      .select('id, generated_at')
-      .in('video_id', videoIds)
-      .eq('status', 'completed')
-      .gte('generated_at', startOfDay)
-      .lte('generated_at', endOfDay)
-      .order('generated_at', { ascending: false });
+      .from("summaries")
+      .select("id, generated_at")
+      .in("video_id", videoIds)
+      .eq("status", "completed")
+      .gte("generated_at", startOfDay)
+      .lte("generated_at", endOfDay)
+      .order("generated_at", { ascending: false });
 
     if (summariesError) {
       throw summariesError;
@@ -78,7 +75,6 @@ export async function checkGenerationStatus(
     successful_summaries_today_global: successfulSummariesToday,
     limit: limit,
     last_successful_generation_at: lastSuccessfulGenerationAt,
-    note: 'This is a GLOBAL limit per channel (across all users). Only successful (completed) summaries count toward the daily limit. Failed generation attempts can be retried.',
+    note: "This is a GLOBAL limit per channel (across all users). Only successful (completed) summaries count toward the daily limit. Failed generation attempts can be retried.",
   };
 }
-

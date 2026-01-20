@@ -1,6 +1,6 @@
-import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
-import { apiClient as api } from '../lib/api';
-import type { PaginatedResponse, SummaryWithVideo, FilterOptions } from '../types';
+import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
+import { apiClient as api } from "../lib/api";
+import type { PaginatedResponse, SummaryWithVideo, FilterOptions } from "../types";
 
 interface PageParam {
   offset: number;
@@ -14,22 +14,20 @@ export function useHiddenSummaries(filters: FilterOptions = {}) {
     string[],
     PageParam
   >({
-    queryKey: ['hiddenSummaries', JSON.stringify(filters)],
+    queryKey: ["hiddenSummaries", JSON.stringify(filters)],
     queryFn: async ({ pageParam }: { pageParam: PageParam }) => {
       const params = {
         limit: 20,
         offset: pageParam.offset,
         hidden_only: true, // Show only hidden summaries
-        sort: 'published_at_desc',
+        sort: "published_at_desc",
         ...filters, // Spread filters into params
       };
-      
-      // Remove undefined values
-      const cleanParams = Object.fromEntries(
-        Object.entries(params).filter(([_, v]) => v !== undefined && v !== '')
-      );
 
-      const response = await api.get<PaginatedResponse<SummaryWithVideo>>('/api/summaries', { params: cleanParams });
+      // Remove undefined values
+      const cleanParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined && v !== ""));
+
+      const response = await api.get<PaginatedResponse<SummaryWithVideo>>("/api/summaries", { params: cleanParams });
       return response;
     },
     initialPageParam: { offset: 0 },
@@ -38,7 +36,7 @@ export function useHiddenSummaries(filters: FilterOptions = {}) {
       const offset = lastPage.pagination.offset;
       const limit = lastPage.pagination.limit;
       const total = lastPage.pagination.total;
-      
+
       if (offset + limit < total) {
         return { offset: offset + limit };
       }
@@ -46,7 +44,6 @@ export function useHiddenSummaries(filters: FilterOptions = {}) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes cache
-    retry: (failureCount, error) => failureCount < 3 && !error.message.includes('401'),
+    retry: (failureCount, error) => failureCount < 3 && !error.message.includes("401"),
   });
 }
-

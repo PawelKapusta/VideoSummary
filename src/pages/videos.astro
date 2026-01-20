@@ -1,9 +1,8 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import VideosView from '../components/views/videos/VideosView';
+import Layout from "../layouts/Layout.astro";
+import VideosView from "../components/views/videos/VideosView";
 ---
 
 <Layout title="Video Summary" showNavigation={true}>
-	<VideosView client:only="react" />
+  <VideosView client:only="react" />
 </Layout>
-

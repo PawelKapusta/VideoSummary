@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface TypewriterAnimationProps {
   text: string;
@@ -13,10 +13,10 @@ const TypewriterAnimation: React.FC<TypewriterAnimationProps> = ({
   text,
   speed = 50,
   delay = 0,
-  className = '',
-  cursorClassName = '',
+  className = "",
+  cursorClassName = "",
 }) => {
-  const [displayText, setDisplayText] = useState('');
+  const [displayText, setDisplayText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ const TypewriterAnimation: React.FC<TypewriterAnimationProps> = ({
         <motion.span
           className={`inline-block w-0.5 h-5 bg-current ml-0.5 ${cursorClassName}`}
           animate={{ opacity: [1, 0] }}
-          transition={{ duration: 0.8, repeat: Infinity, repeatType: 'reverse' }}
+          transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
         />
       )}
     </span>

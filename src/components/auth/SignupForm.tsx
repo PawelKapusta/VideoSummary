@@ -1,14 +1,14 @@
-import { useEffect, useRef, useMemo } from 'react';
-import React from 'react';
-import type { AuthResponse, ApiError } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { EmailInput } from './EmailInput';
-import { PasswordInput } from './PasswordInput';
-import { ConfirmPasswordInput } from './ConfirmPasswordInput';
-import { FormErrorMessage } from './FormErrorMessage';
-import { useSignupForm } from '@/hooks/useSignupForm';
-import { motion } from 'framer-motion';
+import { useEffect, useRef, useMemo } from "react";
+import React from "react";
+import type { AuthResponse, ApiError } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { EmailInput } from "./EmailInput";
+import { PasswordInput } from "./PasswordInput";
+import { ConfirmPasswordInput } from "./ConfirmPasswordInput";
+import { FormErrorMessage } from "./FormErrorMessage";
+import { useSignupForm } from "@/hooks/useSignupForm";
+import { motion } from "framer-motion";
 
 export interface SignupFormProps {
   onSuccess?: (response: AuthResponse) => void;
@@ -23,19 +23,19 @@ export function SignupForm({ onSuccess, onError }: SignupFormProps) {
     handleSubmit,
     hasSubmitted,
     clearFormError,
-    isDisabled
+    isDisabled,
   } = useSignupForm({ onSuccess, onError });
 
   const formRef = useRef<HTMLFormElement>(null);
   const focusedOnceRef = useRef(false);
 
   useEffect(() => {
-    if (hasSubmitted && Object.values(errors).some(e => e) && !isSubmitting && !focusedOnceRef.current) {
+    if (hasSubmitted && Object.values(errors).some((e) => e) && !isSubmitting && !focusedOnceRef.current) {
       focusedOnceRef.current = true;
       const firstErrorInput = formRef.current?.querySelector('[aria-invalid="true"]') as HTMLInputElement;
       if (firstErrorInput) {
         firstErrorInput.focus();
-        firstErrorInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstErrorInput.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
   }, [hasSubmitted, errors, isSubmitting]);
@@ -46,17 +46,19 @@ export function SignupForm({ onSuccess, onError }: SignupFormProps) {
     }
   }, [isSubmitting]);
 
-  const computedIsValid = useMemo(() =>
-    Object.values(errors).every(e => !e) &&
-    data.email.trim() &&
-    data.password.trim() &&
-    data.confirmPassword.trim() &&
-    data.confirmPassword === data.password,
-    [errors, data]);
+  const computedIsValid = useMemo(
+    () =>
+      Object.values(errors).every((e) => !e) &&
+      data.email.trim() &&
+      data.password.trim() &&
+      data.confirmPassword.trim() &&
+      data.confirmPassword === data.password,
+    [errors, data]
+  );
 
-  const apiError = errors.form ?
-    ({ error: { code: 'FORM_ERROR' as const, message: errors.form, details: {} } } as ApiError) :
-    null;
+  const apiError = errors.form
+    ? ({ error: { code: "FORM_ERROR" as const, message: errors.form, details: {} } } as ApiError)
+    : null;
 
   return (
     <form
@@ -67,26 +69,22 @@ export function SignupForm({ onSuccess, onError }: SignupFormProps) {
       }}
       noValidate
       className="space-y-4"
-      role="form"
     >
-      <FormErrorMessage
-        error={apiError}
-        onDismiss={clearFormError}
-      />
+      <FormErrorMessage error={apiError} onDismiss={clearFormError} />
 
       <div className="space-y-3">
         <EmailInput
           value={data.email}
-          onChange={(value) => handleInputChange('email', value)}
-          onBlur={() => handleBlur('email')}
+          onChange={(value) => handleInputChange("email", value)}
+          onBlur={() => handleBlur("email")}
           error={errors.email}
           disabled={isSubmitting}
         />
 
         <PasswordInput
           value={data.password}
-          onChange={(value) => handleInputChange('password', value)}
-          onBlur={() => handleBlur('password')}
+          onChange={(value) => handleInputChange("password", value)}
+          onBlur={() => handleBlur("password")}
           error={errors.password}
           disabled={isSubmitting}
           showToggle={true}
@@ -95,19 +93,15 @@ export function SignupForm({ onSuccess, onError }: SignupFormProps) {
 
         <ConfirmPasswordInput
           value={data.confirmPassword}
-          onChange={(value) => handleInputChange('confirmPassword', value)}
-          onBlur={() => handleBlur('confirmPassword')}
+          onChange={(value) => handleInputChange("confirmPassword", value)}
+          onBlur={() => handleBlur("confirmPassword")}
           error={errors.confirmPassword}
-          password={data.password}
           disabled={isSubmitting}
           showToggle={true}
         />
       </div>
 
-      <motion.div
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.98 }}
-      >
+      <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
         <Button
           type="submit"
           className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg shadow-blue-500/25 py-6 text-lg font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -119,7 +113,7 @@ export function SignupForm({ onSuccess, onError }: SignupFormProps) {
               Creating Account...
             </>
           ) : (
-            'Sign Up'
+            "Sign Up"
           )}
         </Button>
       </motion.div>

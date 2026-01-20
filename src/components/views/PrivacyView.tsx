@@ -1,8 +1,8 @@
-import { LegalHeader } from '../shared/LegalHeader';
-import { LegalFooter } from '../shared/LegalFooter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Separator } from '../ui/separator';
-import { Badge } from '../ui/badge';
+import { LegalHeader } from "../shared/LegalHeader";
+import { LegalFooter } from "../shared/LegalFooter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Separator } from "../ui/separator";
+import { Badge } from "../ui/badge";
 
 interface PrivacyViewProps {
   isAuthenticated?: boolean;
@@ -30,11 +30,10 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
           {/* Quick Overview */}
           <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                🔒 Privacy First
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2">🔒 Privacy First</CardTitle>
               <CardDescription>
-                We respect your privacy and are committed to protecting your personal data. This policy explains our practices transparently.
+                We respect your privacy and are committed to protecting your personal data. This policy explains our
+                practices transparently.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -46,9 +45,7 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
             </CardHeader>
             <CardContent>
               <div className="text-red-700 space-y-2">
-                <p className="font-medium">
-                  VideoSummary bears NO RESPONSIBILITY for:
-                </p>
+                <p className="font-medium">VideoSummary bears NO RESPONSIBILITY for:</p>
                 <ul className="space-y-1 ml-4">
                   <li>• Accuracy, completeness, or reliability of AI-generated content</li>
                   <li>• Any errors, inaccuracies, or harmful information in summaries</li>
@@ -57,7 +54,8 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                   <li>• Any damages or consequences resulting from the use of generated content</li>
                 </ul>
                 <p className="text-sm mt-3 font-medium">
-                  Users bear full responsibility for verifying and appropriately using any information obtained through this application.
+                  Users bear full responsibility for verifying and appropriately using any information obtained through
+                  this application.
                 </p>
               </div>
             </CardContent>
@@ -114,7 +112,6 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                   </div>
                 </CardContent>
               </Card>
-
             </div>
           </section>
 
@@ -266,14 +263,25 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h4 className="font-semibold text-blue-800 mb-2">📋 YouTube API Compliance</h4>
                   <p className="text-sm text-blue-700 mb-2">
-                    Our YouTube integration follows{' '}
-                    <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener" className="underline">
+                    Our YouTube integration follows{" "}
+                    <a
+                      href="https://www.youtube.com/t/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
                       YouTube Terms of Service
-                    </a>
-                    {' '}and{' '}
-                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" className="underline">
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="https://policies.google.com/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
                       Google Privacy Policy
-                    </a>.
+                    </a>
+                    .
                   </p>
                   <div className="text-xs text-blue-600 space-y-1">
                     <div>• We only access publicly available video metadata and captions</div>
@@ -296,34 +304,44 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
             <Card className="border-purple-200 bg-purple-50">
               <CardHeader>
                 <CardTitle className="text-purple-700">🛡️ GDPR & CCPA Rights</CardTitle>
-                <CardDescription>
-                  You have control over your personal data
-                </CardDescription>
+                <CardDescription>You have control over your personal data</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <Badge variant="secondary" className="mt-0.5">Access</Badge>
+                      <Badge variant="secondary" className="mt-0.5">
+                        Access
+                      </Badge>
                       <span className="text-sm">Request a copy of your personal data</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <Badge variant="secondary" className="mt-0.5">Rectify</Badge>
+                      <Badge variant="secondary" className="mt-0.5">
+                        Rectify
+                      </Badge>
                       <span className="text-sm">Correct inaccurate information</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <Badge variant="secondary" className="mt-0.5">Erase</Badge>
+                      <Badge variant="secondary" className="mt-0.5">
+                        Erase
+                      </Badge>
                       <span className="text-sm">Delete your account and data</span>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <Badge variant="outline" className="mt-0.5">Portability</Badge>
+                      <Badge variant="outline" className="mt-0.5">
+                        Portability
+                      </Badge>
                       <span className="text-sm">Data export functionality</span>
                     </div>
                     <div className="flex items-start gap-3">
-                      <Badge variant="outline" className="mt-0.5">Object</Badge>
-                      <span className="text-sm">Object to personal data processing (including automated decisions)</span>
+                      <Badge variant="outline" className="mt-0.5">
+                        Object
+                      </Badge>
+                      <span className="text-sm">
+                        Object to personal data processing (including automated decisions)
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -347,9 +365,7 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
             <Card>
               <CardHeader>
                 <CardTitle>📞 Contact Information</CardTitle>
-                <CardDescription>
-                  Questions about your privacy or data rights?
-                </CardDescription>
+                <CardDescription>Questions about your privacy or data rights?</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -370,7 +386,6 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
             </Card>
           </section>
 
-
           {/* Acknowledgment */}
           <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
             <CardHeader>
@@ -390,4 +405,3 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
     </>
   );
 }
-

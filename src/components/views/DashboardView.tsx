@@ -1,17 +1,16 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { useSummaries } from '../../hooks/useSummaries';
-import SummaryList from '../summaries/SummaryList';
-import AppLoader from '../ui/AppLoader';
-import EmptyState from '../summaries/EmptyState';
-import ErrorState from '../shared/ErrorState';
-import type { FilterOptions, SummaryWithVideo, VideoSummary } from '../../types';
-import QueryProvider from '../providers/QueryProvider';
-import { useMutation } from '@tanstack/react-query';
-import { generateSummary } from '../../lib/api';
-import GenerateSummaryDialog from './videos/GenerateSummaryDialog';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import React, { useCallback, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useSummaries } from "../../hooks/useSummaries";
+import SummaryList from "../summaries/SummaryList";
+import AppLoader from "../ui/AppLoader";
+import EmptyState from "../summaries/EmptyState";
+import ErrorState from "../shared/ErrorState";
+import type { FilterOptions, SummaryWithVideo, VideoSummary } from "../../types";
+import QueryProvider from "../providers/QueryProvider";
+import { useMutation } from "@tanstack/react-query";
+import { generateSummary } from "../../lib/api";
+import GenerateSummaryDialog from "./videos/GenerateSummaryDialog";
 
 const DashboardContent = () => {
   const filters: FilterOptions = useMemo(() => ({}), []);
@@ -24,12 +23,12 @@ const DashboardContent = () => {
       return generateSummary({ video_url: videoUrl });
     },
     onSuccess: () => {
-      toast.success('Summary queued for generation - processing will begin in ~10 minutes');
-      queryClient.invalidateQueries({ queryKey: ['summaries'] });
+      toast.success("Summary queued for generation - processing will begin in ~10 minutes");
+      queryClient.invalidateQueries({ queryKey: ["summaries"] });
       setSelectedVideo(null);
     },
     onError: (error: any) => {
-      const errorMessage = error?.error?.message || 'An unknown error occurred.';
+      const errorMessage = error?.error?.message || "An unknown error occurred.";
       toast.error(`Failed to generate summary: ${errorMessage}`);
     },
   });
@@ -46,55 +45,60 @@ const DashboardContent = () => {
       summary_status: summary.status,
     });
   }, []);
-  const {
-    data,
-    isLoading,
-    isFetching,
-    error,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage
-  } = useSummaries(filters);
+  const { data, isLoading, isFetching, error, hasNextPage, fetchNextPage, isFetchingNextPage } = useSummaries(filters);
 
   const summaries = data?.pages.flatMap((page: any) => page.data) || [];
-  const status = isLoading ? 'loading' : (error ? 'error' : (summaries.length > 0 ? 'success' : 'empty'));
+  const status = isLoading ? "loading" : error ? "error" : summaries.length > 0 ? "success" : "empty";
   const isInitialLoading = isLoading && summaries.length === 0;
-  const isListEmpty = status === 'empty';
+  const isListEmpty = status === "empty";
 
-  const handleLoadMore = useCallback(() => {
-    fetchNextPage();
-  }, [fetchNextPage]);
+  const handleRate = useCallback(
+    async (id: string, rating: boolean | null) => {
+      // Update the specific summary in the cache instead of invalidating everything
+      queryClient.setQueryData(["summaries", filters], (oldData: any) => {
+        if (!oldData) return oldData;
 
-  const handleRate = useCallback(async (id: string, rating: boolean | null) => {
-    // Update the specific summary in the cache instead of invalidating everything
-    queryClient.setQueryData(['summaries', filters], (oldData: any) => {
-      if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            data: page.data.map((summary: any) => (summary.id === id ? { ...summary, user_rating: rating } : summary)),
+          })),
+        };
+      });
+    },
+    [queryClient, filters]
+  );
 
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: any) => ({
-          ...page,
-          data: page.data.map((summary: any) =>
-            summary.id === id ? { ...summary, user_rating: rating } : summary
-          )
-        }))
-      };
-    });
-  }, [queryClient, filters]);
+  const handleHide = useCallback(
+    async (id: string) => {
+      try {
+        const response = await fetch(`/api/summaries/${id}/hide`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-  const handleHide = useCallback(async (id: string) => {
-    try {
-      // Clear all caches to ensure fresh data
-      await queryClient.invalidateQueries({ queryKey: ['summaries'] });
-      await queryClient.invalidateQueries({ queryKey: ['hiddenSummaries'] });
-      toast.success('Summary hidden successfully');
-    } catch (err) {
-      toast.error('Failed to hide summary');
-    }
-  }, [queryClient]);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || "Failed to hide summary");
+        }
+
+        // Clear all caches to ensure fresh data
+        await queryClient.invalidateQueries({ queryKey: ["summaries"] });
+        await queryClient.invalidateQueries({ queryKey: ["hiddenSummaries"] });
+        toast.success("Summary hidden successfully");
+      } catch (err) {
+        console.error("Hide summary error:", err);
+        toast.error(err instanceof Error ? err.message : "Failed to hide summary");
+      }
+    },
+    [queryClient]
+  );
 
   const handleRetry = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['summaries'] });
+    queryClient.invalidateQueries({ queryKey: ["summaries"] });
   }, [queryClient]);
 
   return (
@@ -119,7 +123,12 @@ const DashboardContent = () => {
             <div className="flex-shrink-0">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               </div>
             </div>
@@ -164,11 +173,7 @@ const DashboardContent = () => {
 
       {isInitialLoading && <AppLoader loadingText="Loading summaries..." />}
 
-      {isListEmpty && !isInitialLoading && (
-        <EmptyState
-          message="Welcome to your dashboard"
-        />
-      )}
+      {isListEmpty && !isInitialLoading && <EmptyState message="Welcome to your dashboard" />}
 
       {!isInitialLoading && !isListEmpty && (
         <SummaryList
@@ -179,8 +184,7 @@ const DashboardContent = () => {
           hasNextPage={hasNextPage}
           fetchNextPage={fetchNextPage}
           error={error}
-          refetch={() => { }} // Placeholder; add refetch if needed
-          filters={filters}
+          refetch={handleRetry}
           onHide={handleHide}
           onRate={handleRate}
           onRegenerate={handleRegenerate}
@@ -195,12 +199,7 @@ const DashboardContent = () => {
         onConfirm={generateSummaryMutation}
       />
 
-      {status === 'error' && !isInitialLoading && (
-        <ErrorState
-          error={error}
-          onRetry={handleRetry}
-        />
-      )}
+      {status === "error" && !isInitialLoading && <ErrorState error={error} onRetry={handleRetry} />}
     </div>
   );
 };

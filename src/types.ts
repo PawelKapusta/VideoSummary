@@ -1,14 +1,14 @@
-import type { Database, Tables } from './db/database.types';
+import type { Database, Tables } from "./db/database.types";
 
 // ============================================================================
 // BASE ENTITY TYPES (derived from database tables)
 // ============================================================================
 
 /** Basic channel information for responses */
-export type Channel = Pick<Tables<'channels'>, 'id' | 'youtube_channel_id' | 'name' | 'created_at'>;
+export type Channel = Pick<Tables<"channels">, "id" | "youtube_channel_id" | "name" | "created_at">;
 
 /** Basic video information for list views */
-export type VideoBasic = Pick<Tables<'videos'>, 'id' | 'youtube_video_id' | 'title' | 'thumbnail_url' | 'published_at'>;
+export type VideoBasic = Pick<Tables<"videos">, "id" | "youtube_video_id" | "title" | "thumbnail_url" | "published_at">;
 
 /** Video with computed YouTube URL for detailed views */
 export type VideoWithUrl = VideoBasic & {
@@ -16,34 +16,50 @@ export type VideoWithUrl = VideoBasic & {
 };
 
 /** Basic summary information */
-export type SummaryBasic = Pick<Tables<'summaries'>, 'id' | 'status' | 'generated_at'>;
+export type SummaryBasic = Pick<Tables<"summaries">, "id" | "status" | "generated_at">;
 
 /** Complete summary information with all fields */
-export type SummaryFull = Pick<Tables<'summaries'>, 'id' | 'video_id' | 'tldr' | 'full_summary' | 'status' | 'error_code' | 'generated_at'>;
+export type SummaryFull = Pick<
+  Tables<"summaries">,
+  "id" | "video_id" | "tldr" | "full_summary" | "status" | "error_code" | "generated_at"
+>;
 
 /** Basic profile information */
-export type Profile = Pick<Tables<'profiles'>, 'id' | 'created_at'>;
+export type Profile = Pick<Tables<"profiles">, "id" | "created_at">;
 
 /** Subscription information */
-export type Subscription = Pick<Tables<'subscriptions'>, 'id' | 'user_id' | 'channel_id' | 'created_at'>;
+export type Subscription = Pick<Tables<"subscriptions">, "id" | "user_id" | "channel_id" | "created_at">;
 
 /** Summary rating information */
-export type SummaryRating = Pick<Tables<'summary_ratings'>, 'id' | 'user_id' | 'summary_id' | 'rating' | 'created_at'>;
+export type SummaryRating = Pick<Tables<"summary_ratings">, "id" | "user_id" | "summary_id" | "rating" | "created_at">;
 
 /** Hidden summary information */
-export type HiddenSummary = Pick<Tables<'hidden_summaries'>, 'id' | 'user_id' | 'summary_id' | 'hidden_at'>;
+export type HiddenSummary = Pick<Tables<"hidden_summaries">, "id" | "user_id" | "summary_id" | "hidden_at">;
 
 /** Bulk generation status information */
-export type BulkGenerationStatus = Pick<Tables<'bulk_generation_status'>, 'id' | 'user_id' | 'status' | 'started_at' | 'completed_at' | 'total_channels' | 'processed_channels' | 'successful_summaries' | 'failed_summaries' | 'error_message' | 'created_at'>;
+export type BulkGenerationStatus = Pick<
+  Tables<"bulk_generation_status">,
+  | "id"
+  | "user_id"
+  | "status"
+  | "started_at"
+  | "completed_at"
+  | "total_channels"
+  | "processed_channels"
+  | "successful_summaries"
+  | "failed_summaries"
+  | "error_message"
+  | "created_at"
+>;
 
 /** Generation request information */
-export type GenerationRequest = Pick<Tables<'generation_requests'>, 'id' | 'user_id' | 'video_id' | 'created_at'>;
+export type GenerationRequest = Pick<Tables<"generation_requests">, "id" | "user_id" | "video_id" | "created_at">;
 
 /** Aggregated rating statistics */
-export type RatingStats = {
+export interface RatingStats {
   upvotes: number;
   downvotes: number;
-};
+}
 
 // ============================================================================
 // REQUEST DTOs (Command Models)
@@ -88,6 +104,7 @@ export interface RateSummaryRequest {
 }
 
 /** Bulk summary generation request payload */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface GenerateBulkSummariesRequest {
   // No parameters needed - generates for all user's subscribed channels
 }
@@ -152,11 +169,11 @@ export interface SummaryWithVideo {
   video: VideoBasic;
   channel: Channel;
   tldr: string | null;
-  status: Database['public']['Enums']['summary_status'];
+  status: Database["public"]["Enums"]["summary_status"];
   generated_at: string | null;
   user_rating: boolean | null;
   error_code?: SummaryErrorCode | null; // Add optional for failed
-  summary_data?: Pick<SummaryData, 'duration' | 'language'>;
+  summary_data?: Pick<SummaryData, "duration" | "language">;
 }
 
 /** Detailed summary with full information */
@@ -166,8 +183,8 @@ export interface DetailedSummary {
   channel: Channel;
   tldr: string | null;
   full_summary: SummaryData | null;
-  status: Database['public']['Enums']['summary_status'];
-  error_code: Database['public']['Enums']['summary_error_code'] | null;
+  status: Database["public"]["Enums"]["summary_status"];
+  error_code: Database["public"]["Enums"]["summary_error_code"] | null;
   generated_at: string | null;
   rating_stats: RatingStats;
   user_rating: boolean | null;
@@ -241,20 +258,20 @@ export interface PaginatedResponse<T> {
 // ============================================================================
 
 /** Summary status enum values */
-export type SummaryStatus = Database['public']['Enums']['summary_status'];
+export type SummaryStatus = Database["public"]["Enums"]["summary_status"];
 
 /** Summary error code enum values */
-export type SummaryErrorCode = Database['public']['Enums']['summary_error_code'];
+export type SummaryErrorCode = Database["public"]["Enums"]["summary_error_code"];
 
 /** Bulk generation status enum values */
-export type BulkGenerationStatusEnum = Database['public']['Enums']['bulk_generation_status_enum'];
+export type BulkGenerationStatusEnum = Database["public"]["Enums"]["bulk_generation_status_enum"];
 
 /** Standard API error response */
 export interface ApiError {
   error: {
     code: string;
     message: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   };
 }
 
@@ -290,15 +307,11 @@ export interface LoginFormState {
 }
 
 /** Error codes from login API for type-safe error handling */
-export type LoginErrorCode = 
-  | 'INVALID_INPUT'
-  | 'INVALID_CREDENTIALS'
-  | 'RATE_LIMIT_EXCEEDED'
-  | 'INTERNAL_ERROR';
+export type LoginErrorCode = "INVALID_INPUT" | "INVALID_CREDENTIALS" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_ERROR";
 
 /** Toast notification type */
 export interface ToastNotification {
-  type: 'success' | 'error' | 'info';
+  type: "success" | "error" | "info";
   message: string;
   duration?: number;
 }
@@ -331,12 +344,12 @@ export interface RegisterFormState {
 }
 
 /** Error codes from register API for type-safe error handling */
-export type RegisterErrorCode = 
-  | 'INVALID_INPUT'
-  | 'EMAIL_ALREADY_EXISTS'
-  | 'VALIDATION_ERROR'
-  | 'RATE_LIMIT_EXCEEDED'
-  | 'INTERNAL_ERROR';
+export type RegisterErrorCode =
+  | "INVALID_INPUT"
+  | "EMAIL_ALREADY_EXISTS"
+  | "VALIDATION_ERROR"
+  | "RATE_LIMIT_EXCEEDED"
+  | "INTERNAL_ERROR";
 
 // ============================================================================
 // RESET PASSWORD VIEW SPECIFIC TYPES
@@ -391,22 +404,22 @@ export interface ConfirmResetFormState {
 // ============================================================================
 
 /** Insert types for database operations */
-export type ChannelInsert = Database['public']['Tables']['channels']['Insert'];
-export type ChannelUpdate = Database['public']['Tables']['channels']['Update'];
-export type VideoInsert = Database['public']['Tables']['videos']['Insert'];
-export type VideoUpdate = Database['public']['Tables']['videos']['Update'];
-export type SummaryInsert = Database['public']['Tables']['summaries']['Insert'];
-export type SummaryUpdate = Database['public']['Tables']['summaries']['Update'];
-export type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
-export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
-export type SubscriptionInsert = Database['public']['Tables']['subscriptions']['Insert'];
-export type SubscriptionUpdate = Database['public']['Tables']['subscriptions']['Update'];
-export type SummaryRatingInsert = Database['public']['Tables']['summary_ratings']['Insert'];
-export type SummaryRatingUpdate = Database['public']['Tables']['summary_ratings']['Update'];
-export type HiddenSummaryInsert = Database['public']['Tables']['hidden_summaries']['Insert'];
-export type HiddenSummaryUpdate = Database['public']['Tables']['hidden_summaries']['Update'];
-export type GenerationRequestInsert = Database['public']['Tables']['generation_requests']['Insert'];
-export type GenerationRequestUpdate = Database['public']['Tables']['generation_requests']['Update'];
+export type ChannelInsert = Database["public"]["Tables"]["channels"]["Insert"];
+export type ChannelUpdate = Database["public"]["Tables"]["channels"]["Update"];
+export type VideoInsert = Database["public"]["Tables"]["videos"]["Insert"];
+export type VideoUpdate = Database["public"]["Tables"]["videos"]["Update"];
+export type SummaryInsert = Database["public"]["Tables"]["summaries"]["Insert"];
+export type SummaryUpdate = Database["public"]["Tables"]["summaries"]["Update"];
+export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
+export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+export type SubscriptionInsert = Database["public"]["Tables"]["subscriptions"]["Insert"];
+export type SubscriptionUpdate = Database["public"]["Tables"]["subscriptions"]["Update"];
+export type SummaryRatingInsert = Database["public"]["Tables"]["summary_ratings"]["Insert"];
+export type SummaryRatingUpdate = Database["public"]["Tables"]["summary_ratings"]["Update"];
+export type HiddenSummaryInsert = Database["public"]["Tables"]["hidden_summaries"]["Insert"];
+export type HiddenSummaryUpdate = Database["public"]["Tables"]["hidden_summaries"]["Update"];
+export type GenerationRequestInsert = Database["public"]["Tables"]["generation_requests"]["Insert"];
+export type GenerationRequestUpdate = Database["public"]["Tables"]["generation_requests"]["Update"];
 
 export interface FilterOptions {
   search?: string;
@@ -476,7 +489,7 @@ export interface VideoPreviewViewModel {
 
 export interface ValidationStep {
   text: string;
-  status: 'pending' | 'checking' | 'success' | 'error';
+  status: "pending" | "checking" | "success" | "error";
   error_message?: string;
 }
 
@@ -496,8 +509,8 @@ export interface ValidationStatusViewModel {
  * Represents the state of the filters applied to the videos list.
  */
 export interface VideosFilterState {
-  channelId: string | 'all';
-  summaryStatus: 'all' | 'with' | 'without';
+  channelId: string | "all";
+  summaryStatus: "all" | "with" | "without";
   searchQuery?: string;
-  sort?: 'published_at_desc' | 'published_at_asc';
+  sort?: "published_at_desc" | "published_at_asc";
 }

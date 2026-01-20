@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import SubscriptionTable from './SubscriptionTable';
-import type { UserProfile } from '@/types';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import SubscriptionTable from "./SubscriptionTable";
+import type { UserProfile } from "@/types";
 
 interface SubscriptionSectionProps {
   profile: UserProfile;
@@ -10,11 +10,7 @@ interface SubscriptionSectionProps {
   onAddClick: () => void;
 }
 
-export default function SubscriptionSection({ 
-  profile, 
-  onRemoveChannel,
-  onAddClick,
-}: SubscriptionSectionProps) {
+export default function SubscriptionSection({ profile, onRemoveChannel, onAddClick }: SubscriptionSectionProps) {
   const canAdd = profile.subscription_count < 10;
 
   return (
@@ -32,10 +28,7 @@ export default function SubscriptionSection({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <SubscriptionTable 
-          channels={profile.subscribed_channels} 
-          onRemove={onRemoveChannel} 
-        />
+        <SubscriptionTable channels={profile.subscribed_channels} onRemove={onRemoveChannel} />
       </CardContent>
     </Card>
   );

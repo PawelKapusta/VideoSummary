@@ -1,15 +1,8 @@
-import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Youtube } from 'lucide-react';
-import ChannelRow from './ChannelRow';
-import type { SubscriptionWithChannel } from '@/types';
+import React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Youtube } from "lucide-react";
+import ChannelRow from "./ChannelRow";
+import type { SubscriptionWithChannel } from "@/types";
 
 interface SubscriptionTableProps {
   channels: SubscriptionWithChannel[];
@@ -42,18 +35,16 @@ export default function SubscriptionTable({ channels, onRemove }: SubscriptionTa
                   </div>
                   <div>
                     <p className="text-slate-500 font-medium">No channels subscribed yet</p>
-                    <p className="text-sm text-slate-400 mt-1">Add your first YouTube channel to start receiving summaries</p>
+                    <p className="text-sm text-slate-400 mt-1">
+                      Add your first YouTube channel to start receiving summaries
+                    </p>
                   </div>
                 </div>
               </TableCell>
             </TableRow>
           ) : (
             channels.map((channel) => (
-              <ChannelRow
-                key={channel.subscription_id}
-                channel={channel}
-                onRemove={onRemove}
-              />
+              <ChannelRow key={channel.subscription_id} channel={channel} onRemove={onRemove} />
             ))
           )}
         </TableBody>

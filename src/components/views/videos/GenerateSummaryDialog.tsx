@@ -1,5 +1,5 @@
-import React from 'react';
-import type { VideoSummary, ValidationStep } from '@/types';
+import React from "react";
+import type { VideoSummary, ValidationStep } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -8,13 +8,13 @@ import {
   DialogDescription,
   DialogFooter,
   DialogOverlay,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useSummaryGenerationValidation } from '@/hooks/useSummaryGenerationValidation';
-import { CheckCircle2, XCircle, Loader2, Circle, Play, Clock, User, AlertTriangle, X, XIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useSummaryGenerationValidation } from "@/hooks/useSummaryGenerationValidation";
+import { CheckCircle2, XCircle, Loader2, Circle, Play, Clock, User, AlertTriangle, X, XIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface GenerateSummaryDialogProps {
   video: VideoSummary | null;
@@ -24,15 +24,15 @@ interface GenerateSummaryDialogProps {
   onConfirm: (video: VideoSummary) => void;
 }
 
-const StatusIcon: React.FC<{ status: ValidationStep['status'] }> = ({ status }) => {
+const StatusIcon: React.FC<{ status: ValidationStep["status"] }> = ({ status }) => {
   switch (status) {
-    case 'checking':
+    case "checking":
       return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
-    case 'success':
+    case "success":
       return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-    case 'error':
+    case "error":
       return <XCircle className="h-5 w-5 text-red-600" />;
-    case 'pending':
+    case "pending":
     default:
       return <Circle className="h-5 w-5 text-muted-foreground" />;
   }
@@ -45,20 +45,23 @@ const ValidationStepItem: React.FC<{ step: ValidationStep }> = ({ step }) => {
         <StatusIcon status={step.status} />
       </div>
       <div className="flex flex-col space-y-1 min-w-0 flex-1">
-        <span className={`text-base font-semibold leading-relaxed ${
-          step.status === 'checking' ? 'text-blue-500 dark:text-blue-400' :
-          step.status === 'success' ? 'text-green-600 dark:text-green-400' :
-          step.status === 'error' ? 'text-red-600 dark:text-red-400' :
-          'text-muted-foreground'
-        }`}>
+        <span
+          className={`text-base font-semibold leading-relaxed ${
+            step.status === "checking"
+              ? "text-blue-500 dark:text-blue-400"
+              : step.status === "success"
+                ? "text-green-600 dark:text-green-400"
+                : step.status === "error"
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-muted-foreground"
+          }`}
+        >
           {step.text}
         </span>
         {step.error_message && (
           <div className="flex items-start space-x-2">
             <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-            <span className="text-xs text-red-600 dark:text-red-400 leading-tight">
-              {step.error_message}
-            </span>
+            <span className="text-xs text-red-600 dark:text-red-400 leading-tight">{step.error_message}</span>
           </div>
         )}
       </div>
@@ -110,9 +113,7 @@ const GenerateSummaryDialog: React.FC<GenerateSummaryDialogProps> = ({
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground line-clamp-2 leading-tight">
-                    {video.title}
-                  </h3>
+                  <h3 className="font-semibold text-foreground line-clamp-2 leading-tight">{video.title}</h3>
                   <div className="flex items-center space-x-2 mt-2">
                     <div className="flex items-center space-x-1">
                       <User className="h-3 w-3 text-muted-foreground" />
@@ -137,7 +138,10 @@ const GenerateSummaryDialog: React.FC<GenerateSummaryDialogProps> = ({
             <CardHeader className="pb-0">
               <CardTitle className="text-base flex items-center space-x-2">
                 <span>Pre-generate Checks</span>
-                <Badge variant={isAllValid ? "default" : "destructive"} className={`text-sm px-3 py-1 rounded-full shadow-sm font-medium transition-all duration-200 hover:shadow-md ${isAllValid ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200'}`}>
+                <Badge
+                  variant={isAllValid ? "default" : "destructive"}
+                  className={`text-sm px-3 py-1 rounded-full shadow-sm font-medium transition-all duration-200 hover:shadow-md ${isAllValid ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-red-100 text-red-800 hover:bg-red-200"}`}
+                >
                   {isAllValid ? "✓ Ready" : "⚠️ Issues Found"}
                 </Badge>
               </CardTitle>

@@ -1,8 +1,8 @@
-import { LegalHeader } from '../shared/LegalHeader';
-import { LegalFooter } from '../shared/LegalFooter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Separator } from '../ui/separator';
-import { Badge } from '../ui/badge';
+import { LegalHeader } from "../shared/LegalHeader";
+import { LegalFooter } from "../shared/LegalFooter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Separator } from "../ui/separator";
+import { Badge } from "../ui/badge";
 
 interface TermsViewProps {
   isAuthenticated?: boolean;
@@ -30,11 +30,10 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
           {/* Quick Overview */}
           <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                📋 Quick Overview
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2">📋 Quick Overview</CardTitle>
               <CardDescription>
-                VideoSummary is an AI-powered service that creates summaries of YouTube videos using their public captions and transcripts.
+                VideoSummary is an AI-powered service that creates summaries of YouTube videos using their public
+                captions and transcripts.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -45,26 +44,25 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
               <CardTitle className="text-yellow-800">⚠️ Critical Service Disclaimer</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-3">
-                  <p className="text-yellow-800 font-medium text-lg">
-                    THE SERVICE IS PROVIDED "AS IS" WITHOUT ANY WARRANTIES OR GUARANTEES OF ANY KIND.
+              <div className="space-y-3">
+                <p className="text-yellow-800 font-medium text-lg">
+                  THE SERVICE IS PROVIDED "AS IS" WITHOUT ANY WARRANTIES OR GUARANTEES OF ANY KIND.
+                </p>
+                <div className="space-y-2">
+                  <p className="text-yellow-700 font-medium">⚠️ VideoSummary bears NO RESPONSIBILITY for:</p>
+                  <ul className="text-yellow-700 text-sm space-y-1 ml-4">
+                    <li>• Accuracy, completeness, or correctness of AI-generated content</li>
+                    <li>• Any errors, inaccuracies, or harmful information in summaries</li>
+                    <li>• Use of content for legal, medical, financial, or other critical decisions</li>
+                    <li>• Copyright violations or other intellectual property rights infringements</li>
+                    <li>• Any damages resulting from the use of generated content</li>
+                  </ul>
+                  <p className="text-yellow-700 text-sm mt-3 font-medium">
+                    AI may generate incorrect or misleading information. Always verify important information from
+                    reliable sources.
                   </p>
-                  <div className="space-y-2">
-                    <p className="text-yellow-700 font-medium">
-                      ⚠️ VideoSummary bears NO RESPONSIBILITY for:
-                    </p>
-                    <ul className="text-yellow-700 text-sm space-y-1 ml-4">
-                      <li>• Accuracy, completeness, or correctness of AI-generated content</li>
-                      <li>• Any errors, inaccuracies, or harmful information in summaries</li>
-                      <li>• Use of content for legal, medical, financial, or other critical decisions</li>
-                      <li>• Copyright violations or other intellectual property rights infringements</li>
-                      <li>• Any damages resulting from the use of generated content</li>
-                    </ul>
-                    <p className="text-yellow-700 text-sm mt-3 font-medium">
-                      AI may generate incorrect or misleading information. Always verify important information from reliable sources.
-                    </p>
-                  </div>
                 </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -83,13 +81,15 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
                     <li className="flex items-start gap-3">
                       <span className="text-green-600 font-bold mt-1">•</span>
                       <div>
-                        <span className="font-semibold">AI Summaries:</span> YouTube video summaries (currently in Polish)
+                        <span className="font-semibold">AI Summaries:</span> YouTube video summaries (currently in
+                        Polish)
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="text-green-600 font-bold mt-1">•</span>
                       <div>
-                        <span className="font-semibold">Transcripts:</span> Access to video transcripts (AI-generated when official unavailable)
+                        <span className="font-semibold">Transcripts:</span> Access to video transcripts (AI-generated
+                        when official unavailable)
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -115,15 +115,21 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
                 <CardContent className="space-y-4 flex-1">
                   <div className="space-y-2">
                     <div className="font-semibold text-base">Original video content</div>
-                    <div className="text-sm text-muted-foreground">We only provide AI-generated summaries, not the actual video files or streaming capabilities</div>
+                    <div className="text-sm text-muted-foreground">
+                      We only provide AI-generated summaries, not the actual video files or streaming capabilities
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <div className="font-semibold text-base">Video downloads</div>
-                    <div className="text-sm text-muted-foreground">No downloading or offline access to video content - summaries are available online only</div>
+                    <div className="text-sm text-muted-foreground">
+                      No downloading or offline access to video content - summaries are available online only
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <div className="font-semibold text-base">Copyrighted materials</div>
-                    <div className="text-sm text-muted-foreground">We respect content creators' rights and do not distribute or host copyrighted video content</div>
+                    <div className="text-sm text-muted-foreground">
+                      We respect content creators' rights and do not distribute or host copyrighted video content
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -246,12 +252,8 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
             <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center">Acceptable Use Policy</h2>
             <Card className="border-red-200 bg-red-50">
               <CardHeader>
-                <CardTitle className="text-red-700 flex items-center gap-2">
-                  🚫 Prohibited Activities
-                </CardTitle>
-                <CardDescription>
-                  You agree NOT to engage in these activities:
-                </CardDescription>
+                <CardTitle className="text-red-700 flex items-center gap-2">🚫 Prohibited Activities</CardTitle>
+                <CardDescription>You agree NOT to engage in these activities:</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -280,9 +282,7 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
             <Card>
               <CardHeader>
                 <CardTitle>🎨 Respect for Creators</CardTitle>
-                <CardDescription>
-                  We respect intellectual property and support content creators
-                </CardDescription>
+                <CardDescription>We respect intellectual property and support content creators</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -295,18 +295,19 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
                     <li>• Always provide attribution and links</li>
                   </ul>
                   <p className="text-sm text-green-700 mt-2">
-                    <strong>Note:</strong> Content creators can request removal of their content via DMCA takedown notices.
+                    <strong>Note:</strong> Content creators can request removal of their content via DMCA takedown
+                    notices.
                   </p>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h4 className="font-semibold text-blue-800 mb-2">📞 DMCA Compliance</h4>
                   <p className="text-sm text-blue-700 mb-2">
-                    For copyright concerns, contact us at{' '}
+                    For copyright concerns, contact us at{" "}
                     <a href="mailto:support@videosummary.org" className="underline">
                       support@videosummary.org
-                    </a>
-                    {' '}with:
+                    </a>{" "}
+                    with:
                   </p>
                   <ul className="text-sm text-blue-700 space-y-1 ml-4">
                     <li>• Description of copyrighted work</li>
@@ -322,19 +323,17 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
             </Card>
           </section>
 
-
           {/* Contact */}
           <section>
             <Card>
               <CardHeader>
                 <CardTitle>📧 Contact Information</CardTitle>
-                <CardDescription>
-                  Questions about these terms? Get in touch:
-                </CardDescription>
+                <CardDescription>Questions about these terms? Get in touch:</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-lg">
-                  Email: <a href="mailto:support@videosummary.org" className="text-blue-600 hover:underline">
+                  Email:{" "}
+                  <a href="mailto:support@videosummary.org" className="text-blue-600 hover:underline">
                     support@videosummary.org
                   </a>
                 </p>
@@ -374,4 +373,3 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
     </>
   );
 }
-

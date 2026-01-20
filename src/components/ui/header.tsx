@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Menu, Video, Home, FileText, User, Sparkles, Film, Settings, EyeOff } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
-import QueryProvider from '@/components/providers/QueryProvider';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Menu, Video, Home, FileText, User, Sparkles, Film, Settings } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import QueryProvider from "@/components/providers/QueryProvider";
 
 interface NavLinkProps {
   href: string;
@@ -30,10 +30,12 @@ const NavLink = ({ href, children, currentPath, onClick, icon: Icon }: NavLinkPr
     >
       {Icon && <Icon className="h-4 w-4" />}
       {children}
-      <span className={cn(
-        "absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/80 transition-all duration-200 group-hover:w-3/4",
-        isActive ? "w-3/4" : ""
-      )} />
+      <span
+        className={cn(
+          "absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/80 transition-all duration-200 group-hover:w-3/4",
+          isActive ? "w-3/4" : ""
+        )}
+      />
     </a>
   );
 };
@@ -42,16 +44,16 @@ interface HeaderProps {
   currentPath?: string;
 }
 
-function HeaderContent({ currentPath = '' }: HeaderProps) {
+function HeaderContent({ currentPath = "" }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const links = [
-    { name: 'Home', href: '/dashboard', icon: Home },
-    { name: 'Summaries', href: '/summaries', icon: FileText },
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Generate', href: '/generate', icon: Sparkles },
-    { name: 'Videos', href: '/videos', icon: Film },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: "Home", href: "/dashboard", icon: Home },
+    { name: "Summaries", href: "/summaries", icon: FileText },
+    { name: "Profile", href: "/profile", icon: User },
+    { name: "Generate", href: "/generate", icon: Sparkles },
+    { name: "Videos", href: "/videos", icon: Film },
+    { name: "Settings", href: "/settings", icon: Settings },
   ];
 
   return (
@@ -72,12 +74,19 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
         <div className="md:hidden mr-2 flex items-center">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-3 hover:bg-accent/50 transition-all duration-200 hover:scale-105">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mr-3 hover:bg-accent/50 transition-all duration-200 hover:scale-105"
+              >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[80%] max-w-[300px] pr-0 bg-white text-black rounded-r-xl shadow-2xl">
+            <SheetContent
+              side="left"
+              className="w-[80%] max-w-[300px] pr-0 bg-white text-black rounded-r-xl shadow-2xl"
+            >
               <SheetHeader className="text-left px-4 pt-6 pb-4">
                 <SheetTitle className="flex items-center space-x-2 text-zinc-950 dark:text-zinc-50">
                   <div className="flex items-center justify-center w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-sm">
@@ -103,10 +112,12 @@ function HeaderContent({ currentPath = '' }: HeaderProps) {
                     >
                       {IconComponent && <IconComponent className="h-5 w-5 flex-shrink-0" />}
                       {link.name}
-                      <span className={cn(
-                        "absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-0 bg-gradient-to-b from-primary to-primary/80 transition-all duration-200 rounded-r-full",
-                        currentPath === link.href ? "h-3/4" : "group-hover:h-1/2"
-                      )} />
+                      <span
+                        className={cn(
+                          "absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-0 bg-gradient-to-b from-primary to-primary/80 transition-all duration-200 rounded-r-full",
+                          currentPath === link.href ? "h-3/4" : "group-hover:h-1/2"
+                        )}
+                      />
                     </a>
                   );
                 })}

@@ -1,35 +1,37 @@
 export class OpenRouterError extends Error {
-  constructor(message: string, public status?: number) {
+  constructor(
+    message: string,
+    public status?: number
+  ) {
     super(message);
-    this.name = 'OpenRouterError';
+    this.name = "OpenRouterError";
   }
 }
 
 export class AuthenticationError extends OpenRouterError {
-  constructor(message: string = 'Invalid API Key') {
+  constructor(message = "Invalid API Key") {
     super(message, 401);
-    this.name = 'AuthenticationError';
+    this.name = "AuthenticationError";
   }
 }
 
 export class RateLimitError extends OpenRouterError {
-  constructor(message: string = 'Rate limit exceeded') {
+  constructor(message = "Rate limit exceeded") {
     super(message, 429);
-    this.name = 'RateLimitError';
+    this.name = "RateLimitError";
   }
 }
 
 export class InvalidRequestError extends OpenRouterError {
   constructor(message: string) {
     super(message, 400);
-    this.name = 'InvalidRequestError';
+    this.name = "InvalidRequestError";
   }
 }
 
 export class ServerError extends OpenRouterError {
   constructor(message: string, status: number) {
     super(message, status);
-    this.name = 'ServerError';
+    this.name = "ServerError";
   }
 }
-

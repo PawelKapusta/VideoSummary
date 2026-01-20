@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { ThumbsUp, ThumbsDown, EyeOff, Clock, AlertCircle, Languages, Loader2, RefreshCw } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import type { SummaryWithVideo, SummaryStatus, SummaryErrorCode } from '../../types';
-import { useRating } from '../../hooks/useRating';
-import { apiClient as api } from '../../lib/api';
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+import { ThumbsUp, ThumbsDown, EyeOff, Clock, AlertCircle, Languages, Loader2, RefreshCw } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import type { SummaryWithVideo } from "../../types";
+import { useRating } from "../../hooks/useRating";
+import { apiClient as api } from "../../lib/api";
 
 interface Props {
   summary: SummaryWithVideo;
@@ -25,7 +24,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
   const { rateSummary, removeRating, isRating } = useRating(summary.id);
 
   const handleRate = (rating: boolean) => {
-    if (isRating || summary.status !== 'completed') return;
+    if (isRating || summary.status !== "completed") return;
 
     if (userRating === rating) {
       // Remove rating if clicking the same button
@@ -47,24 +46,27 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
       await api.post(`/api/summaries/${summary.id}/hide`);
       onHide(summary.id);
       setShowDialog(false);
-      toast.success('Summary hidden');
+      toast.success("Summary hidden");
     } catch (error) {
-      toast.error('Failed to hide summary');
-      console.error('Hide failed:', error);
+      toast.error("Failed to hide summary");
+      console.error("Hide failed:", error);
     } finally {
       setIsHiding(false);
     }
   };
 
-  const isCompleted = summary.status === 'completed';
+  const isCompleted = summary.status === "completed";
 
   // Assume error_code is available in summary if failed; adjust type if needed
 
   return (
-    <Card className="group flex flex-col cursor-pointer overflow-hidden border-muted-foreground/20 hover:border-primary/50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" onClick={() => onClick(summary.id)}>
+    <Card
+      className="group flex flex-col cursor-pointer overflow-hidden border-muted-foreground/20 hover:border-primary/50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+      onClick={() => onClick(summary.id)}
+    >
       <div className="relative aspect-video w-full overflow-hidden">
         <img
-          src={summary.video.thumbnail_url || '/placeholder.svg'}
+          src={summary.video.thumbnail_url || "/placeholder.svg"}
           alt={summary.video.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
@@ -73,43 +75,44 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
         {(() => {
           const getStatusConfig = (status: string) => {
             // Elegant "Tech Pill" design: dark glass, round, with a glowing status dot
-            const containerStyle = "absolute top-3 right-3 pl-2.5 pr-3 py-1.5 flex items-center gap-2 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-2xl z-10 transition-all duration-300 group-hover:bg-black/80 group-hover:border-white/20";
+            const containerStyle =
+              "absolute top-3 right-3 pl-2.5 pr-3 py-1.5 flex items-center gap-2 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-2xl z-10 transition-all duration-300 group-hover:bg-black/80 group-hover:border-white/20";
 
             switch (status) {
-              case 'completed':
+              case "completed":
                 return {
                   container: containerStyle,
                   dot: "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] animate-pulse-slow",
                   text: "text-[10px] font-bold text-emerald-100 tracking-widest uppercase",
-                  label: "Completed"
+                  label: "Completed",
                 };
-              case 'failed':
+              case "failed":
                 return {
                   container: containerStyle,
                   dot: "w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]",
                   text: "text-[10px] font-bold text-rose-100 tracking-widest uppercase",
-                  label: "Failed"
+                  label: "Failed",
                 };
-              case 'in_progress':
+              case "in_progress":
                 return {
                   container: containerStyle,
                   dot: "w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.6)] animate-pulse",
                   text: "text-[10px] font-bold text-blue-100 tracking-widest uppercase",
-                  label: "Processing"
+                  label: "Processing",
                 };
-              case 'pending':
+              case "pending":
                 return {
                   container: containerStyle,
                   dot: "w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.6)] animate-pulse",
                   text: "text-[10px] font-bold text-amber-100 tracking-widest uppercase",
-                  label: "Queued"
+                  label: "Queued",
                 };
               default:
                 return {
                   container: containerStyle,
                   dot: "w-2 h-2 rounded-full bg-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.6)]",
                   text: "text-[10px] font-bold text-slate-100 tracking-widest uppercase",
-                  label: status
+                  label: status,
                 };
             }
           };
@@ -120,14 +123,14 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
             <div className={config.container}>
               <div className={config.dot} />
               <span className={config.text}>{config.label}</span>
-              {summary.status === 'pending' && (
+              {summary.status === "pending" && (
                 <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                   <span className="text-[8px] bg-amber-500/90 text-amber-100 px-1.5 py-0.5 rounded-full font-medium">
                     Processing in ~10 min
                   </span>
                 </div>
               )}
-              {summary.status === 'in_progress' && (
+              {summary.status === "in_progress" && (
                 <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                   <span className="text-[8px] bg-blue-500/90 text-blue-100 px-1.5 py-0.5 rounded-full font-medium">
                     Generating summary...
@@ -140,7 +143,10 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
       </div>
 
       <CardHeader className="pb-2 p-4 space-y-2">
-        <CardTitle className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2" onClick={(e) => e.stopPropagation()}>
+        <CardTitle
+          className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           {summary.video.title}
         </CardTitle>
         <CardDescription className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -150,7 +156,11 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
         <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
           <div className="flex items-center">
             <Clock className="mr-1 h-3 w-3" />
-            <span>{summary.video.published_at ? format(new Date(summary.video.published_at), 'MMM dd, yyyy') : 'Unknown date'}</span>
+            <span>
+              {summary.video.published_at
+                ? format(new Date(summary.video.published_at), "MMM dd, yyyy")
+                : "Unknown date"}
+            </span>
           </div>
           {summary.summary_data && (
             <div className="flex items-center">
@@ -162,23 +172,26 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
       </CardHeader>
 
       <CardContent className="px-4 pt-0 pb-0 flex flex-col flex-1">
-        {summary.status === 'failed' ? (
+        {summary.status === "failed" ? (
           <div className="flex flex-col items-center justify-center text-center py-6 text-muted-foreground bg-destructive/5 rounded-md border border-dashed border-destructive/20 flex-1 mb-4">
             <AlertCircle className="h-8 w-8 text-destructive mb-2" />
-            <p className="text-sm font-semibold text-foreground">
-              Generation Failed
-            </p>
+            <p className="text-sm font-semibold text-foreground">Generation Failed</p>
             <p className="text-xs text-muted-foreground px-4 mt-1 mb-4">
-              {summary.error_code === 'NO_SUBTITLES' ? 'Unable to generate summary: No subtitles available.' :
-                summary.error_code === 'VIDEO_TOO_LONG' ? 'Video is too long to process.' :
-                  `Error: ${summary.error_code || 'Unknown error'}`}
+              {summary.error_code === "NO_SUBTITLES"
+                ? "Unable to generate summary: No subtitles available."
+                : summary.error_code === "VIDEO_TOO_LONG"
+                  ? "Video is too long to process."
+                  : `Error: ${summary.error_code || "Unknown error"}`}
             </p>
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
                 className="bg-white border-red-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition-all duration-300 font-bold"
-                onClick={(e) => { e.stopPropagation(); onRegenerate?.(summary); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRegenerate?.(summary);
+                }}
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                 Try Again
@@ -187,7 +200,10 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
                 size="sm"
                 variant="ghost"
                 className="text-muted-foreground hover:text-orange-600 hover:bg-orange-50 transition-all duration-300"
-                onClick={(e) => { e.stopPropagation(); setShowDialog(true); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDialog(true);
+                }}
               >
                 <EyeOff className="w-3.5 h-3.5 mr-1.5" />
                 Hide
@@ -196,7 +212,9 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
           </div>
         ) : (
           <div className="flex-1">
-            <p className="text-base text-foreground/80 line-clamp-4 mb-3 leading-relaxed">{summary.tldr || 'No summary available'}</p>
+            <p className="text-base text-foreground/80 line-clamp-4 mb-3 leading-relaxed">
+              {summary.tldr || "No summary available"}
+            </p>
           </div>
         )}
 
@@ -206,26 +224,38 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-10 w-10 rounded-xl transition-all duration-300 group/like ${userRating === true
-                  ? 'bg-green-50 text-green-600 shadow-sm'
-                  : 'text-muted-foreground hover:bg-green-50/80 hover:text-green-600'
-                  }`}
-                onClick={(e) => { e.stopPropagation(); handleRate(true); }}
+                className={`h-10 w-10 rounded-xl transition-all duration-300 group/like ${
+                  userRating === true
+                    ? "bg-green-50 text-green-600 shadow-sm"
+                    : "text-muted-foreground hover:bg-green-50/80 hover:text-green-600"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRate(true);
+                }}
                 disabled={isRating}
               >
-                <ThumbsUp className={`w-5 h-5 transition-transform duration-300 group-hover/like:scale-110 ${userRating === true ? 'fill-current' : ''}`} />
+                <ThumbsUp
+                  className={`w-5 h-5 transition-transform duration-300 group-hover/like:scale-110 ${userRating === true ? "fill-current" : ""}`}
+                />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-10 w-10 rounded-xl transition-all duration-300 group/dislike ${userRating === false
-                  ? 'bg-red-50 text-red-600 shadow-sm'
-                  : 'text-muted-foreground hover:bg-red-50/80 hover:text-red-600'
-                  }`}
-                onClick={(e) => { e.stopPropagation(); handleRate(false); }}
+                className={`h-10 w-10 rounded-xl transition-all duration-300 group/dislike ${
+                  userRating === false
+                    ? "bg-red-50 text-red-600 shadow-sm"
+                    : "text-muted-foreground hover:bg-red-50/80 hover:text-red-600"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRate(false);
+                }}
                 disabled={isRating}
               >
-                <ThumbsDown className={`w-5 h-5 transition-transform duration-300 group-hover/dislike:scale-110 ${userRating === false ? 'fill-current' : ''}`} />
+                <ThumbsDown
+                  className={`w-5 h-5 transition-transform duration-300 group-hover/dislike:scale-110 ${userRating === false ? "fill-current" : ""}`}
+                />
               </Button>
             </div>
 
@@ -233,7 +263,10 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
               variant="ghost"
               size="icon"
               className="h-10 w-10 rounded-xl text-muted-foreground hover:text-orange-600 hover:bg-orange-50/80 transition-all duration-300 group/hide"
-              onClick={(e) => { e.stopPropagation(); setShowDialog(true); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDialog(true);
+              }}
             >
               <EyeOff className="w-5 h-5 transition-all duration-300 group-hover/hide:scale-110 group-hover/hide:rotate-6" />
             </Button>
@@ -254,7 +287,8 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
                 </div>
               </div>
               <DialogDescription className="text-base leading-relaxed">
-                This summary will be completely hidden from your main dashboard view. The summary data remains safe and can be restored anytime from your settings.
+                This summary will be completely hidden from your main dashboard view. The summary data remains safe and
+                can be restored anytime from your settings.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -272,7 +306,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
                       </li>
                       <li className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-orange-400 rounded-full flex-shrink-0"></div>
-                        Won't appear in regular search results
+                        Won&apos;t appear in regular search results
                       </li>
                       <li className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-orange-400 rounded-full flex-shrink-0"></div>
@@ -286,13 +320,19 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
             <DialogFooter className="flex gap-3 pt-2">
               <Button
                 variant="outline"
-                onClick={(e) => { e.stopPropagation(); setShowDialog(false); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDialog(false);
+                }}
                 className="flex-1 h-11"
               >
                 Keep Visible
               </Button>
               <Button
-                onClick={(e) => { e.stopPropagation(); handleHide(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleHide();
+                }}
                 disabled={isHiding}
                 className="flex-1 h-11 bg-orange-600 hover:bg-orange-700 text-white font-medium"
               >
@@ -311,12 +351,11 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
       </CardContent>
     </Card>
   );
 });
 
-SummaryCard.displayName = 'SummaryCard'; // For debugging
+SummaryCard.displayName = "SummaryCard"; // For debugging
 
 export default SummaryCard;

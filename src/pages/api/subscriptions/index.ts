@@ -1,9 +1,9 @@
-import type { APIRoute } from 'astro';
-import type { SubscriptionWithChannel, ApiSuccess, ApiError, PaginatedResponse } from '../../../types';
-import { SubscribeRequestSchema, PaginationSchema } from '../../../lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { subscribeToChannel, listUserSubscriptions } from '../../../lib/subscriptions.service';
-import type { RuntimeEnv } from '../../../lib/env';
+import type { APIRoute } from "astro";
+import type { SubscriptionWithChannel, ApiSuccess, ApiError, PaginatedResponse } from "../../../types";
+import { SubscribeRequestSchema, PaginationSchema } from "../../../lib/validation/schemas";
+import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import { subscribeToChannel, listUserSubscriptions } from "../../../lib/subscriptions.service";
+import type { RuntimeEnv } from "../../../lib/env";
 
 /**
  * POST /api/subscriptions
@@ -41,28 +41,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized subscription attempt - no valid session');
+      securityLogger.auth("Unauthorized subscription attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/subscriptions',
+        method: "POST",
+        path: "/api/subscriptions",
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('POST', '/api/subscriptions', duration, 401);
+      performanceLogger.apiResponseTime("POST", "/api/subscriptions", duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -75,32 +78,30 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const validationResult = SubscribeRequestSchema.safeParse(body);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Request validation failed'),
-        undefined,
-        undefined,
-        { endpoint: '/api/subscriptions', method: 'POST' }
-      );
+      errorLogger.validationError(new Error("Request validation failed"), undefined, undefined, {
+        endpoint: "/api/subscriptions",
+        method: "POST",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'POST',
-        path: '/api/subscriptions',
+        method: "POST",
+        path: "/api/subscriptions",
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('POST', '/api/subscriptions', duration, 400);
+      performanceLogger.apiResponseTime("POST", "/api/subscriptions", duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_URL',
-          message: 'Invalid YouTube channel URL format',
+          code: "INVALID_URL",
+          message: "Invalid YouTube channel URL format",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -116,7 +117,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
 
     // Log successful subscription
-    securityLogger.auth('Channel subscription successful', {
+    securityLogger.auth("Channel subscription successful", {
       user_id: userId,
       channel_id: subscriptionData.channel.id,
       subscription_id: subscriptionData.subscription_id,
@@ -125,69 +126,68 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Format successful response
     const successResponse: ApiSuccess<SubscriptionWithChannel> = {
       data: subscriptionData,
-      message: 'Successfully subscribed to channel',
+      message: "Successfully subscribed to channel",
     };
 
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/subscriptions',
+      method: "POST",
+      path: "/api/subscriptions",
       statusCode: 201,
     });
-    performanceLogger.apiResponseTime('POST', '/api/subscriptions', duration, 201);
+    performanceLogger.apiResponseTime("POST", "/api/subscriptions", duration, 201);
 
     return new Response(JSON.stringify(successResponse), {
       status: 201,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle specific error types
     const duration = performance.now() - startTime;
     let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
+    let errorCode = "INTERNAL_ERROR";
+    let message = "An unexpected error occurred";
 
     if (error instanceof Error) {
-      if (error.message === 'SUBSCRIPTION_LIMIT_REACHED') {
+      if (error.message === "SUBSCRIPTION_LIMIT_REACHED") {
         statusCode = 422;
-        errorCode = 'SUBSCRIPTION_LIMIT_REACHED';
-        message = 'Maximum subscription limit reached (10 channels)';
-      } else if (error.message === 'ALREADY_SUBSCRIBED') {
+        errorCode = "SUBSCRIPTION_LIMIT_REACHED";
+        message = "Maximum subscription limit reached (10 channels)";
+      } else if (error.message === "ALREADY_SUBSCRIBED") {
         statusCode = 409;
-        errorCode = 'ALREADY_SUBSCRIBED';
-        message = 'Already subscribed to this channel';
-      } else if (error.message.includes('YouTube channel not found')) {
+        errorCode = "ALREADY_SUBSCRIBED";
+        message = "Already subscribed to this channel";
+      } else if (error.message.includes("YouTube channel not found")) {
         statusCode = 404;
-        errorCode = 'CHANNEL_NOT_FOUND';
-        message = 'YouTube channel not found';
-      } else if (error.message.includes('YouTube API')) {
+        errorCode = "CHANNEL_NOT_FOUND";
+        message = "YouTube channel not found";
+      } else if (error.message.includes("YouTube API")) {
         statusCode = 500;
-        errorCode = 'YOUTUBE_API_ERROR';
-        message = 'YouTube API service error';
+        errorCode = "YOUTUBE_API_ERROR";
+        message = "YouTube API service error";
       }
     }
 
     // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/subscriptions',
-      method: 'POST',
+      endpoint: "/api/subscriptions",
+      method: "POST",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'POST',
-      path: '/api/subscriptions',
+      method: "POST",
+      path: "/api/subscriptions",
       statusCode,
     });
-    performanceLogger.apiResponseTime('POST', '/api/subscriptions', duration, statusCode);
+    performanceLogger.apiResponseTime("POST", "/api/subscriptions", duration, statusCode);
 
     const errorResponse: ApiError = {
       error: {
@@ -198,7 +198,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     return new Response(JSON.stringify(errorResponse), {
       status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };
@@ -237,28 +237,31 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized subscriptions list attempt - no valid session');
+      securityLogger.auth("Unauthorized subscriptions list attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/subscriptions',
+        method: "GET",
+        path: "/api/subscriptions",
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('GET', '/api/subscriptions', duration, 401);
+      performanceLogger.apiResponseTime("GET", "/api/subscriptions", duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -266,8 +269,8 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
     // Parse and validate query parameters
     const urlParams = new URL(url).searchParams;
-    const rawLimit = urlParams.get('limit');
-    const rawOffset = urlParams.get('offset');
+    const rawLimit = urlParams.get("limit");
+    const rawOffset = urlParams.get("offset");
 
     const validationResult = PaginationSchema.safeParse({
       limit: rawLimit,
@@ -276,32 +279,30 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
 
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Query parameter validation failed'),
-        undefined,
-        undefined,
-        { endpoint: '/api/subscriptions', method: 'GET' }
-      );
+      errorLogger.validationError(new Error("Query parameter validation failed"), undefined, undefined, {
+        endpoint: "/api/subscriptions",
+        method: "GET",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'GET',
-        path: '/api/subscriptions',
+        method: "GET",
+        path: "/api/subscriptions",
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('GET', '/api/subscriptions', duration, 400);
+      performanceLogger.apiResponseTime("GET", "/api/subscriptions", duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid limit or offset value',
+          code: "INVALID_INPUT",
+          message: "Invalid limit or offset value",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -316,7 +317,7 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     );
 
     // Log successful subscriptions access
-    securityLogger.auth('Subscriptions list accessed successfully', {
+    securityLogger.auth("Subscriptions list accessed successfully", {
       user_id: userId,
       subscription_count: result.pagination.total,
     });
@@ -324,49 +325,48 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/subscriptions',
+      method: "GET",
+      path: "/api/subscriptions",
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('GET', '/api/subscriptions', duration, 200);
+    performanceLogger.apiResponseTime("GET", "/api/subscriptions", duration, 200);
 
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle unexpected errors
     const duration = performance.now() - startTime;
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
-      endpoint: '/api/subscriptions',
-      method: 'GET',
+      endpoint: "/api/subscriptions",
+      method: "GET",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'GET',
-      path: '/api/subscriptions',
+      method: "GET",
+      path: "/api/subscriptions",
       statusCode: 500,
     });
-    performanceLogger.apiResponseTime('GET', '/api/subscriptions', duration, 500);
+    performanceLogger.apiResponseTime("GET", "/api/subscriptions", duration, 500);
 
     const errorResponse: ApiError = {
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred",
       },
     };
 
     return new Response(JSON.stringify(errorResponse), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

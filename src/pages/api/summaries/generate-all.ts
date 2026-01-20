@@ -1,12 +1,12 @@
-import type { APIRoute } from 'astro';
-import type { BulkGenerationResponse, ApiError, ApiSuccess } from '../../../types';
-import { securityLogger, errorLogger, performanceLogger, appLogger } from '../../../lib/logger';
-import { startBulkSummaryGeneration } from '../../../lib/summaries.service';
-import type { RuntimeEnv } from '../../../lib/env';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from 'astro:env/server';
+import type { APIRoute } from "astro";
+import type { BulkGenerationResponse, ApiError, ApiSuccess } from "../../../types";
+import { securityLogger, errorLogger, performanceLogger, appLogger } from "../../../lib/logger";
+import { startBulkSummaryGeneration } from "../../../lib/summaries.service";
+import type { RuntimeEnv } from "../../../lib/env";
+import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "astro:env/server";
 
-const ENDPOINT_PATH = '/api/summaries/generate-all';
+const ENDPOINT_PATH = "/api/summaries/generate-all";
 
 /**
  * POST /api/summaries/generate-all
@@ -45,7 +45,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const startTime = performance.now();
 
   try {
-    appLogger.info('Daily summary generation triggered', {
+    appLogger.info("Daily summary generation triggered", {
       endpoint: ENDPOINT_PATH,
       timestamp: new Date().toISOString(),
     });
@@ -57,24 +57,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
         JSON.parse(body);
       } catch {
         const duration = performance.now() - startTime;
-        errorLogger.validationError(
-          new Error('Request body validation failed'),
-          undefined,
-          undefined,
-          { endpoint: ENDPOINT_PATH, method: 'POST' }
-        );
+        errorLogger.validationError(new Error("Request body validation failed"), undefined, undefined, {
+          endpoint: ENDPOINT_PATH,
+          method: "POST",
+        });
 
-        securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode: 400 });
-        performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, 400);
+        securityLogger.apiAccess({ method: "POST", path: ENDPOINT_PATH, statusCode: 400 });
+        performanceLogger.apiResponseTime("POST", ENDPOINT_PATH, duration, 400);
 
         return new Response(
           JSON.stringify({
             error: {
-              code: 'INVALID_REQUEST_BODY',
-              message: 'Request body must be empty or valid JSON',
+              code: "INVALID_REQUEST_BODY",
+              message: "Request body must be empty or valid JSON",
             },
           } satisfies ApiError),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
     }
@@ -92,21 +90,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
 
     // Start bulk summary generation (queues videos, processing done by cron)
-    const result: BulkGenerationResponse = await startBulkSummaryGeneration(
-      supabaseAdmin,
-      runtimeEnv
-    );
+    const result: BulkGenerationResponse = await startBulkSummaryGeneration(supabaseAdmin, runtimeEnv);
 
     // Log success
     const duration = performance.now() - startTime;
-    securityLogger.auth('System bulk summary generation initiated', {
+    securityLogger.auth("System bulk summary generation initiated", {
       bulk_generation_id: result.id,
       status: result.status,
     });
-    securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode: 202 });
-    performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, 202);
+    securityLogger.apiAccess({ method: "POST", path: ENDPOINT_PATH, statusCode: 202 });
+    performanceLogger.apiResponseTime("POST", ENDPOINT_PATH, duration, 202);
 
-    appLogger.info('Daily summary generation started successfully', {
+    appLogger.info("Daily summary generation started successfully", {
       bulkGenerationId: result.id,
       message: result.message,
       estimatedTime: result.estimated_completion_time,
@@ -120,10 +115,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       {
         status: 202,
         headers: {
-          'Content-Type': 'application/json',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'DENY',
-          'X-XSS-Protection': '1; mode=block',
+          "Content-Type": "application/json",
+          "X-Content-Type-Options": "nosniff",
+          "X-Frame-Options": "DENY",
+          "X-XSS-Protection": "1; mode=block",
         },
       }
     );
@@ -133,28 +128,28 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Map error codes to HTTP status codes
     let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
+    let errorCode = "INTERNAL_ERROR";
+    let message = "An unexpected error occurred";
 
-    if (errorMessage === 'BULK_GENERATION_IN_PROGRESS') {
+    if (errorMessage === "BULK_GENERATION_IN_PROGRESS") {
       statusCode = 409;
-      errorCode = 'BULK_GENERATION_IN_PROGRESS';
-      message = 'Bulk summary generation is already in progress. Please wait for it to complete.';
-    } else if (errorMessage === 'NO_CHANNELS_FOUND') {
+      errorCode = "BULK_GENERATION_IN_PROGRESS";
+      message = "Bulk summary generation is already in progress. Please wait for it to complete.";
+    } else if (errorMessage === "NO_CHANNELS_FOUND") {
       statusCode = 422;
-      errorCode = 'NO_CHANNELS_FOUND';
-      message = 'No channels found in database. Subscribe to channels first.';
+      errorCode = "NO_CHANNELS_FOUND";
+      message = "No channels found in database. Subscribe to channels first.";
     }
 
     // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(errorMessage), {
       endpoint: ENDPOINT_PATH,
-      method: 'POST',
+      method: "POST",
     });
-    securityLogger.apiAccess({ method: 'POST', path: ENDPOINT_PATH, statusCode });
-    performanceLogger.apiResponseTime('POST', ENDPOINT_PATH, duration, statusCode);
+    securityLogger.apiAccess({ method: "POST", path: ENDPOINT_PATH, statusCode });
+    performanceLogger.apiResponseTime("POST", ENDPOINT_PATH, duration, statusCode);
 
-    appLogger.error('Daily summary generation failed', {
+    appLogger.error("Daily summary generation failed", {
       errorCode,
       errorMessage,
       statusCode,
@@ -167,7 +162,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           message,
         },
       } satisfies ApiError),
-      { status: statusCode, headers: { 'Content-Type': 'application/json' } }
+      { status: statusCode, headers: { "Content-Type": "application/json" } }
     );
   }
 };

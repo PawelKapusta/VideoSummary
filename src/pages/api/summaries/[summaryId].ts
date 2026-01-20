@@ -1,8 +1,8 @@
-import type { APIRoute } from 'astro';
-import type { DetailedSummary, ApiError } from '../../../types';
-import { UUIDSchema } from '../../../lib/validation/schemas';
-import { securityLogger, errorLogger, performanceLogger } from '../../../lib/logger';
-import { getSummaryDetails } from '../../../lib/summaries.service';
+import type { APIRoute } from "astro";
+import type { DetailedSummary, ApiError } from "../../../types";
+import { UUIDSchema } from "../../../lib/validation/schemas";
+import { securityLogger, errorLogger, performanceLogger } from "../../../lib/logger";
+import { getSummaryDetails } from "../../../lib/summaries.service";
 
 /**
  * GET /api/summaries/:summaryId
@@ -43,28 +43,31 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 
   try {
     // Get user from session (cookie-based)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       const duration = performance.now() - startTime;
-      securityLogger.auth('Unauthorized summary details attempt - no valid session');
+      securityLogger.auth("Unauthorized summary details attempt - no valid session");
       securityLogger.apiAccess({
-        method: 'GET',
+        method: "GET",
         path: `/api/summaries/${params.summaryId}`,
         statusCode: 401,
       });
-      performanceLogger.apiResponseTime('GET', `/api/summaries/${params.summaryId}`, duration, 401);
+      performanceLogger.apiResponseTime("GET", `/api/summaries/${params.summaryId}`, duration, 401);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -77,54 +80,52 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'GET',
+        method: "GET",
         path: `/api/summaries/${params.summaryId}`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('GET', `/api/summaries/${params.summaryId}`, duration, 400);
+      performanceLogger.apiResponseTime("GET", `/api/summaries/${params.summaryId}`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Summary ID is required',
+          code: "INVALID_INPUT",
+          message: "Summary ID is required",
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     const validationResult = UUIDSchema.safeParse(summaryId);
     if (!validationResult.success) {
       const duration = performance.now() - startTime;
-      errorLogger.validationError(
-        new Error('Path parameter validation failed'),
-        undefined,
-        undefined,
-        { endpoint: `/api/summaries/${params.summaryId}`, method: 'GET' }
-      );
+      errorLogger.validationError(new Error("Path parameter validation failed"), undefined, undefined, {
+        endpoint: `/api/summaries/${params.summaryId}`,
+        method: "GET",
+      });
 
       // Log API access and performance for validation error
       securityLogger.apiAccess({
-        method: 'GET',
+        method: "GET",
         path: `/api/summaries/${params.summaryId}`,
         statusCode: 400,
       });
-      performanceLogger.apiResponseTime('GET', `/api/summaries/${params.summaryId}`, duration, 400);
+      performanceLogger.apiResponseTime("GET", `/api/summaries/${params.summaryId}`, duration, 400);
 
       const errorResponse: ApiError = {
         error: {
-          code: 'INVALID_INPUT',
-          message: 'Invalid summary ID format',
+          code: "INVALID_INPUT",
+          message: "Invalid summary ID format",
           details: validationResult.error.format(),
         },
       };
 
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -132,7 +133,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     const summary: DetailedSummary = await getSummaryDetails(supabase, userId, summaryId);
 
     // Log successful summary details access
-    securityLogger.auth('Summary details accessed successfully', {
+    securityLogger.auth("Summary details accessed successfully", {
       user_id: userId,
       summary_id: summaryId,
     });
@@ -140,51 +141,50 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     // Log API access and performance
     const duration = performance.now() - startTime;
     securityLogger.apiAccess({
-      method: 'GET',
+      method: "GET",
       path: `/api/summaries/${params.summaryId}`,
       statusCode: 200,
     });
-    performanceLogger.apiResponseTime('GET', `/api/summaries/${params.summaryId}`, duration, 200);
+    performanceLogger.apiResponseTime("GET", `/api/summaries/${params.summaryId}`, duration, 200);
 
     return new Response(JSON.stringify(summary), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Add security headers
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
       },
     });
-
   } catch (error) {
     // Handle specific error types
     const duration = performance.now() - startTime;
     let statusCode = 500;
-    let errorCode = 'INTERNAL_ERROR';
-    let message = 'An unexpected error occurred';
+    let errorCode = "INTERNAL_ERROR";
+    let message = "An unexpected error occurred";
 
     if (error instanceof Error) {
-      if (error.message === 'SUMMARY_NOT_FOUND') {
+      if (error.message === "SUMMARY_NOT_FOUND") {
         statusCode = 404;
-        errorCode = 'SUMMARY_NOT_FOUND';
-        message = 'Summary not found';
+        errorCode = "SUMMARY_NOT_FOUND";
+        message = "Summary not found";
       }
     }
 
     // Log error
     errorLogger.appError(error instanceof Error ? error : new Error(String(error)), {
       endpoint: `/api/summaries/${params.summaryId}`,
-      method: 'GET',
+      method: "GET",
     });
 
     // Log API access and performance for error response
     securityLogger.apiAccess({
-      method: 'GET',
+      method: "GET",
       path: `/api/summaries/${params.summaryId}`,
       statusCode,
     });
-    performanceLogger.apiResponseTime('GET', `/api/summaries/${params.summaryId}`, duration, statusCode);
+    performanceLogger.apiResponseTime("GET", `/api/summaries/${params.summaryId}`, duration, statusCode);
 
     const errorResponse: ApiError = {
       error: {
@@ -195,7 +195,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 
     return new Response(JSON.stringify(errorResponse), {
       status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

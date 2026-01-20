@@ -1,30 +1,32 @@
-import { useState } from 'react';
-import ResetPasswordForm from '../auth/ResetPasswordForm';
-import { NavigationLinks } from '../auth/NavigationLinks';
-import { CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { AuthLayout } from '@/components/auth/AuthLayout';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import ResetPasswordForm from "../auth/ResetPasswordForm";
+import { NavigationLinks } from "../auth/NavigationLinks";
+import { CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { motion } from "framer-motion";
 
 export default function ResetPasswordView() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   return (
     <AuthLayout
-      title={showSuccess ? 'Link Sent' : 'Reset Password'}
-      description={showSuccess ? 'Check your email for instructions' : "Enter your email to receive a reset link"}
-      footer={!showSuccess ? (
-        <div className="text-center">
-          <a
-            href="/login"
-            className="font-semibold text-slate-600 hover:text-blue-600 transition-colors underline-offset-4 hover:underline"
-          >
-            ← Back to Login
-          </a>
-        </div>
-      ) : (
-        <NavigationLinks />
-      )}
+      title={showSuccess ? "Link Sent" : "Reset Password"}
+      description={showSuccess ? "Check your email for instructions" : "Enter your email to receive a reset link"}
+      footer={
+        !showSuccess ? (
+          <div className="text-center">
+            <a
+              href="/login"
+              className="font-semibold text-slate-600 hover:text-blue-600 transition-colors underline-offset-4 hover:underline"
+            >
+              ← Back to Login
+            </a>
+          </div>
+        ) : (
+          <NavigationLinks />
+        )
+      }
     >
       {showSuccess ? (
         <motion.div
@@ -43,7 +45,7 @@ export default function ResetPasswordView() {
           </div>
           <Button
             variant="outline"
-            onClick={() => window.location.href = '/reset-password/confirm?token=mock-dev-token'}
+            onClick={() => (window.location.href = "/reset-password/confirm?token=mock-dev-token")}
             className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white"
           >
             Test Confirm Page (Dev Only)

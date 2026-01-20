@@ -7,61 +7,61 @@
 
 // Load environment variables from .env file
 try {
-  const dotenv = await import('dotenv');
+  const dotenv = await import("dotenv");
   dotenv.config();
-  console.log('✅ Loaded environment variables from .env file');
-} catch (e) {
-  console.warn('⚠️  dotenv not available, trying to load .env manually...');
+  console.log("✅ Loaded environment variables from .env file");
+} catch {
+  console.warn("⚠️  dotenv not available, trying to load .env manually...");
 
   // Fallback: try to read .env file manually
   try {
-    const fs = await import('fs');
-    const path = await import('path');
+    const fs = await import("fs");
+    const path = await import("path");
 
-    const envPath = path.join(process.cwd(), '.env');
+    const envPath = path.join(process.cwd(), ".env");
     if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      const envLines = envContent.split('\n');
+      const envContent = fs.readFileSync(envPath, "utf8");
+      const envLines = envContent.split("\n");
 
       for (const line of envLines) {
         const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith('#')) {
-          const [key, ...valueParts] = trimmed.split('=');
+        if (trimmed && !trimmed.startsWith("#")) {
+          const [key, ...valueParts] = trimmed.split("=");
           if (key && valueParts.length > 0) {
-            const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remove quotes
+            const value = valueParts.join("=").replace(/^["']|["']$/g, ""); // Remove quotes
             process.env[key] = value;
           }
         }
       }
-      console.log('✅ Loaded environment variables from .env file (manual)');
+      console.log("✅ Loaded environment variables from .env file (manual)");
     } else {
-      console.warn('⚠️  .env file not found');
+      console.warn("⚠️  .env file not found");
     }
-  } catch (fsError) {
-    console.warn('⚠️  Could not read .env file manually');
+  } catch {
+    console.warn("⚠️  Could not read .env file manually");
   }
 }
 
-const { execSync } = require('child_process');
+const { execSync } = require("child_process");
 
 function runSupabaseSQL(sql) {
   try {
-    console.log('🔄 Executing SQL via Supabase CLI...');
+    console.log("🔄 Executing SQL via Supabase CLI...");
     const result = execSync(`supabase db reset --db-url "$(supabase db url)" --sql "${sql.replace(/"/g, '\\"')}"`, {
-      encoding: 'utf8',
-      stdio: 'pipe'
+      encoding: "utf8",
+      stdio: "pipe",
     });
     return result;
-  } catch (error) {
+  } catch {
     // Try alternative approach
     try {
       const result = execSync(`echo "${sql}" | supabase db sql`, {
-        encoding: 'utf8',
-        stdio: 'pipe'
+        encoding: "utf8",
+        stdio: "pipe",
       });
       return result;
-    } catch (e) {
-      throw new Error('Supabase CLI not available or not configured');
+    } catch {
+      throw new Error("Supabase CLI not available or not configured");
     }
   }
 }
@@ -77,14 +77,14 @@ function checkStatus() {
 
   try {
     const result = runSupabaseSQL(sql);
-    console.log('📊 Bulk generation status:');
+    console.log("📊 Bulk generation status:");
     console.log(result);
   } catch (error) {
-    console.error('❌ Failed to check status via CLI:', error.message);
-    console.log('💡 Make sure Supabase CLI is installed and configured:');
-    console.log('   npm install -g supabase');
-    console.log('   supabase login');
-    console.log('   supabase link --project-ref your-project-ref');
+    console.error("❌ Failed to check status via CLI:", error.message);
+    console.log("💡 Make sure Supabase CLI is installed and configured:");
+    console.log("   npm install -g supabase");
+    console.log("   supabase login");
+    console.log("   supabase link --project-ref your-project-ref");
   }
 }
 
@@ -110,30 +110,30 @@ function resetStuck() {
 
   try {
     const result = runSupabaseSQL(sql);
-    console.log('✅ Reset completed via Supabase CLI:');
+    console.log("✅ Reset completed via Supabase CLI:");
     console.log(result);
   } catch (error) {
-    console.error('❌ Failed to reset via CLI:', error.message);
-    console.log('💡 Alternative: Run SQL manually in Supabase Dashboard');
-    console.log('   See: scripts/reset-bulk-status.sql');
+    console.error("❌ Failed to reset via CLI:", error.message);
+    console.log("💡 Alternative: Run SQL manually in Supabase Dashboard");
+    console.log("   See: scripts/reset-bulk-status.sql");
   }
 }
 
 // Main logic
 const command = process.argv[2];
 
-if (command === 'reset') {
+if (command === "reset") {
   resetStuck();
-} else if (command === 'status' || command === 'check') {
+} else if (command === "status" || command === "check") {
   checkStatus();
 } else {
-  console.log('🚀 Bulk Generation Status Management (Supabase CLI)\n');
-  console.log('Usage:');
-  console.log('  node scripts/check-bulk-status-cli.js status  # Check status');
-  console.log('  node scripts/check-bulk-status-cli.js reset   # Reset stuck generations');
-  console.log('');
-  console.log('Requirements:');
-  console.log('  - Supabase CLI installed: npm install -g supabase');
-  console.log('  - Logged in: supabase login');
-  console.log('  - Project linked: supabase link --project-ref <ref>');
+  console.log("🚀 Bulk Generation Status Management (Supabase CLI)\n");
+  console.log("Usage:");
+  console.log("  node scripts/check-bulk-status-cli.js status  # Check status");
+  console.log("  node scripts/check-bulk-status-cli.js reset   # Reset stuck generations");
+  console.log("");
+  console.log("Requirements:");
+  console.log("  - Supabase CLI installed: npm install -g supabase");
+  console.log("  - Logged in: supabase login");
+  console.log("  - Project linked: supabase link --project-ref <ref>");
 }

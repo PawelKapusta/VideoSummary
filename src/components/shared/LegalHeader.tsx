@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Menu, FileText, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Menu, FileText, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 interface LegalHeaderProps {
-  activePage: 'terms' | 'privacy';
+  activePage: "terms" | "privacy";
   isAuthenticated?: boolean;
 }
 
@@ -13,11 +13,11 @@ export function LegalHeader({ activePage, isAuthenticated = false }: LegalHeader
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
-    { href: '/terms', label: 'Terms of Service', active: activePage === 'terms', icon: FileText },
-    { href: '/privacy', label: 'Privacy Policy', active: activePage === 'privacy', icon: Shield },
+    { href: "/terms", label: "Terms of Service", active: activePage === "terms", icon: FileText },
+    { href: "/privacy", label: "Privacy Policy", active: activePage === "privacy", icon: Shield },
     isAuthenticated
-      ? { href: '/dashboard', label: 'Dashboard', active: false, icon: null }
-      : { href: '/login', label: 'Sign In', active: false, icon: null },
+      ? { href: "/dashboard", label: "Dashboard", active: false, icon: null }
+      : { href: "/login", label: "Sign In", active: false, icon: null },
   ];
 
   return (
@@ -30,12 +30,19 @@ export function LegalHeader({ activePage, isAuthenticated = false }: LegalHeader
             <div className="md:hidden flex items-center">
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="hover:bg-accent/50 transition-all duration-200 hover:scale-105">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hover:bg-accent/50 transition-all duration-200 hover:scale-105"
+                  >
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Toggle Menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[80%] max-w-[300px] pr-0 bg-white text-black rounded-r-xl shadow-2xl">
+                <SheetContent
+                  side="left"
+                  className="w-[80%] max-w-[300px] pr-0 bg-white text-black rounded-r-xl shadow-2xl"
+                >
                   <SheetHeader className="text-left px-4 pt-6 pb-4">
                     <SheetTitle className="flex items-center space-x-2 text-zinc-950 dark:text-zinc-50">
                       <span className="text-xl font-bold text-black">VideoSummary</span>
@@ -58,10 +65,12 @@ export function LegalHeader({ activePage, isAuthenticated = false }: LegalHeader
                         >
                           {IconComponent && <IconComponent className="h-5 w-5 flex-shrink-0" />}
                           {link.label}
-                          <span className={cn(
-                            "absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-0 bg-gradient-to-b from-primary to-primary/80 transition-all duration-200 rounded-r-full",
-                            link.active ? "h-3/4" : "group-hover:h-1/2"
-                          )} />
+                          <span
+                            className={cn(
+                              "absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-0 bg-gradient-to-b from-primary to-primary/80 transition-all duration-200 rounded-r-full",
+                              link.active ? "h-3/4" : "group-hover:h-1/2"
+                            )}
+                          />
                         </a>
                       );
                     })}
@@ -71,10 +80,7 @@ export function LegalHeader({ activePage, isAuthenticated = false }: LegalHeader
             </div>
 
             {/* Logo/Brand */}
-            <a
-              href="/"
-              className="text-lg sm:text-2xl font-bold text-black hover:text-primary transition-colors"
-            >
+            <a href="/" className="text-lg sm:text-2xl font-bold text-black hover:text-primary transition-colors">
               VideoSummary
             </a>
           </div>
@@ -85,21 +91,23 @@ export function LegalHeader({ activePage, isAuthenticated = false }: LegalHeader
               <a
                 key={link.href}
                 href={link.href}
-                className={`relative text-sm font-medium transition-all duration-200 px-3 py-2 rounded-lg group ${link.active
-                  ? 'text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
-                  } hover:scale-105 hover:shadow-md hover:outline-1 hover:outline-primary/20 hover:outline`}
+                className={`relative text-sm font-medium transition-all duration-200 px-3 py-2 rounded-lg group ${
+                  link.active
+                    ? "text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                } hover:scale-105 hover:shadow-md hover:outline-1 hover:outline-primary/20 hover:outline`}
               >
                 {link.label}
-                <span className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/80 transition-all duration-200 group-hover:w-3/4 ${link.active ? 'w-3/4' : ''
-                  }`} />
+                <span
+                  className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/80 transition-all duration-200 group-hover:w-3/4 ${
+                    link.active ? "w-3/4" : ""
+                  }`}
+                />
               </a>
             ))}
           </nav>
         </div>
-
       </div>
     </header>
   );
 }
-
