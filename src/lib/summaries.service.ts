@@ -351,6 +351,10 @@ async function processSummaryGeneration(
                 type: "string",
                 enum: ["highly_recommended", "recommended", "neutral", "not_recommended"],
               },
+              content_density_rating: {
+                type: "string",
+                enum: ["low", "medium", "high", "very_high"],
+              },
             },
             required: [
               "genre",
@@ -361,6 +365,7 @@ async function processSummaryGeneration(
               "duration",
               "language",
               "worth_watching",
+              "content_density_rating",
             ],
             additionalProperties: false,
           },
@@ -388,6 +393,7 @@ async function processSummaryGeneration(
         duration: string;
         language: string;
         worth_watching: string;
+        content_density_rating: string;
       };
     }>(messages, schema);
     appLogger.debug("OpenRouter response received", {

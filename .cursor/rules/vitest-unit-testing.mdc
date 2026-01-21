@@ -1,6 +1,6 @@
-# AI Rules for {{project-name}}
-
-{{project-description}}
+---
+alwaysApply: false
+---
 
 ## TESTING
 

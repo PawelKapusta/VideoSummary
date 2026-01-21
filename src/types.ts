@@ -440,6 +440,7 @@ export interface SummaryData {
   duration: string;
   language: string;
   worth_watching: string;
+  content_density_rating: string;
 }
 
 export interface SummaryDetailsViewModel {
