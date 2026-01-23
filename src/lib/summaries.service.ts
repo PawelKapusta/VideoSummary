@@ -4,6 +4,7 @@ import type {
   DetailedSummary,
   PaginatedResponse,
   SummaryBasic,
+  SummaryData,
   SummaryStatus,
   SummaryWithVideo,
   BulkGenerationStatus,
@@ -183,15 +184,12 @@ export async function generateSummary(
   // 4. Atomowe utworzenie podsumowania (rate-limit + lock)
   // -------------------------------------------------
   const lockKey = hashStringToInt32(channelId);
-  const { data: rpcData, error: rpcErr } = await supabase.rpc(
-    "generate_summary_atomic" as "subscribe_to_channel_atomic",
-    {
-      p_user_id: userId,
-      p_video_id: videoId,
-      p_channel_id: channelId,
-      p_lock_key: lockKey,
-    } as Record<string, unknown>
-  );
+  const { data: rpcData, error: rpcErr } = await supabase.rpc("generate_summary_atomic", {
+    p_user_id: userId,
+    p_video_id: videoId,
+    p_channel_id: channelId,
+    p_lock_key: lockKey,
+  });
 
   if (rpcErr) {
     if (rpcErr.message.includes("GENERATION_LIMIT_REACHED")) throw new Error("GENERATION_LIMIT_REACHED");
@@ -419,7 +417,7 @@ async function processSummaryGeneration(
     }
     appLogger.info("Summary successfully saved to database", { summaryId });
   } catch (err: unknown) {
-    const msg = err.message || String(err);
+    const msg = err instanceof Error ? err.message : String(err);
 
     // Don't log transcript errors as application errors - they're expected business cases
     const isTranscriptError =
@@ -570,20 +568,20 @@ export async function listSummaries(
   // Sort data in memory using generated_at instead of video published_at
   if (data && data.length > 0) {
     const ascending = filters.sort === "oldest";
-    data.sort((a: SummaryWithVideo, b: SummaryWithVideo) => {
+    data.sort((a, b) => {
       const dateA = new Date(a.generated_at || 0).getTime();
       const dateB = new Date(b.generated_at || 0).getTime();
       return ascending ? dateA - dateB : dateB - dateA;
     });
     appLogger.debug("Data sorted in memory by generated_at", {
       userId,
-      firstItemDate: (data[0] as SummaryWithVideo)?.generated_at,
-      lastItemDate: (data[data.length - 1] as SummaryWithVideo)?.generated_at,
+      firstItemDate: data[0]?.generated_at,
+      lastItemDate: data[data.length - 1]?.generated_at,
     });
   }
 
   // Get user ratings for all summaries in this batch
-  const summaryIds = (data ?? []).map((row: SummaryWithVideo) => row.id).filter((id): id is string => id !== null);
+  const summaryIds = (data ?? []).map((row) => row.id).filter((id): id is string => id !== null);
   const { data: userRatings } = await supabase
     .from("summary_ratings")
     .select("summary_id, rating")
@@ -701,7 +699,7 @@ export async function getSummaryDetails(
       created_at: summary.videos.channels.created_at,
     },
     tldr: summary.tldr,
-    full_summary: summary.full_summary as unknown,
+    full_summary: summary.full_summary as unknown as SummaryData | null,
     status: summary.status,
     error_code: summary.error_code,
     generated_at: summary.generated_at,
@@ -760,7 +758,7 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
       staleGenerationsCount = staleGenerations?.length || 0;
     }
   } catch (err: unknown) {
-    appLogger.warn(`Exception cleaning up stale bulk generations: ${err.message}`);
+    appLogger.warn(`Exception cleaning up stale bulk generations: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   // Mark stale queue items as failed (table may not have any items yet)
@@ -782,7 +780,7 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
       staleQueueItemsCount = staleQueueItems?.length || 0;
     }
   } catch (err: unknown) {
-    appLogger.warn(`Exception cleaning up stale queue items: ${err.message}`);
+    appLogger.warn(`Exception cleaning up stale queue items: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   const cleanedCount = staleGenerationsCount + staleQueueItemsCount;
@@ -955,17 +953,24 @@ async function queueVideosForGeneration(
           skipped++;
           continue;
         }
-        throw queueError;
+        // For other database errors, log and skip this channel
+        appLogger.error(`Channel "${channel.name}" failed to queue video: ${queueError.message}`, {
+          videoId: latestVideo.id,
+          errorCode: queueError.code,
+        });
+        errors.push(`${channel.name}: Failed to queue video - ${queueError.message}`);
+        continue;
       }
 
       queued++;
       appLogger.info(`Channel "${channel.name}" queued: video "${latestVideo.title}"`);
     } catch (error: unknown) {
-      const errorMsg = `Channel ${channel.name}: ${error.message}`;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMsg = `Channel ${channel.name}: ${errorMessage}`;
       errors.push(errorMsg);
       appLogger.error("Error queueing video for channel", {
         channelId: channel.id,
-        error: error.message,
+        error: errorMessage,
       });
     }
   }
@@ -1087,7 +1092,7 @@ async function processQueueItem(
 
     return { success: true };
   } catch (error: unknown) {
-    const errorMsg = error.message || String(error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
 
     // Determine error code for summary
     let errorCode: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG" | null = null;
@@ -1259,24 +1264,46 @@ export async function startBulkSummaryGeneration(
     throw new Error("BULK_GENERATION_IN_PROGRESS");
   }
 
-  // 3. Fetch all channels
-  appLogger.debug("Fetching all channels...");
-  const { data: channels, error: channelsError } = await supabase
-    .from("channels")
-    .select("id, youtube_channel_id, name")
-    .order("created_at", { ascending: false });
+  // 3. Fetch channels that have at least one active subscription
+  appLogger.debug("Fetching subscribed channels...");
+  const { data: subscriptionsData, error: channelsError } = await supabase
+    .from("subscriptions")
+    .select(`
+      channels!inner(
+        id,
+        youtube_channel_id,
+        name,
+        created_at
+      )
+    `)
+    .order("channels.created_at", { ascending: false });
 
   if (channelsError) {
     appLogger.error(`Failed to fetch channels: ${channelsError.message} (code: ${channelsError.code})`);
-    errorLogger.dbError(channelsError, "fetch_all_channels");
+    errorLogger.dbError(channelsError, "fetch_subscribed_channels");
     throw channelsError;
   }
 
-  if (!channels || channels.length === 0) {
+  if (!subscriptionsData || subscriptionsData.length === 0) {
     throw new Error("NO_CHANNELS_FOUND");
   }
 
-  appLogger.info(`Found ${channels.length} channels to process`);
+  // Extract unique channels from subscriptions (remove duplicates)
+  const channelMap = new Map<string, { id: string; youtube_channel_id: string; name: string }>();
+  subscriptionsData.forEach(sub => {
+    const channel = sub.channels;
+    if (!channelMap.has(channel.id)) {
+      channelMap.set(channel.id, {
+        id: channel.id,
+        youtube_channel_id: channel.youtube_channel_id,
+        name: channel.name,
+      });
+    }
+  });
+
+  const channels = Array.from(channelMap.values());
+
+  appLogger.info(`Found ${channels.length} subscribed channels to process`);
 
   // 4. Create bulk generation record
   appLogger.debug("Creating bulk generation record...");
