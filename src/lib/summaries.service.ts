@@ -1266,17 +1266,31 @@ export async function startBulkSummaryGeneration(
 
   // 3. Fetch channels that have at least one active subscription
   appLogger.debug("Fetching subscribed channels...");
-  const { data: subscriptionsData, error: channelsError } = await supabase
+
+  // First get channel IDs that have subscriptions
+  const { data: subscribedChannelIds, error: subError } = await supabase
     .from("subscriptions")
-    .select(`
-      channels!inner(
-        id,
-        youtube_channel_id,
-        name,
-        created_at
-      )
-    `)
-    .order("channels.created_at", { ascending: false });
+    .select("channel_id");
+
+  if (subError) {
+    appLogger.error(`Failed to fetch subscriptions: ${subError.message} (code: ${subError.code})`);
+    errorLogger.dbError(subError, "fetch_subscriptions");
+    throw subError;
+  }
+
+  if (!subscribedChannelIds || subscribedChannelIds.length === 0) {
+    throw new Error("NO_CHANNELS_FOUND");
+  }
+
+  // Extract unique channel IDs
+  const uniqueChannelIds = [...new Set(subscribedChannelIds.map(s => s.channel_id))];
+
+  // Now fetch the channels
+  const { data: channels, error: channelsError } = await supabase
+    .from("channels")
+    .select("id, youtube_channel_id, name")
+    .in("id", uniqueChannelIds)
+    .order("created_at", { ascending: false });
 
   if (channelsError) {
     appLogger.error(`Failed to fetch channels: ${channelsError.message} (code: ${channelsError.code})`);
@@ -1284,24 +1298,9 @@ export async function startBulkSummaryGeneration(
     throw channelsError;
   }
 
-  if (!subscriptionsData || subscriptionsData.length === 0) {
+  if (!channels || channels.length === 0) {
     throw new Error("NO_CHANNELS_FOUND");
   }
-
-  // Extract unique channels from subscriptions (remove duplicates)
-  const channelMap = new Map<string, { id: string; youtube_channel_id: string; name: string }>();
-  subscriptionsData.forEach(sub => {
-    const channel = sub.channels;
-    if (!channelMap.has(channel.id)) {
-      channelMap.set(channel.id, {
-        id: channel.id,
-        youtube_channel_id: channel.youtube_channel_id,
-        name: channel.name,
-      });
-    }
-  });
-
-  const channels = Array.from(channelMap.values());
 
   appLogger.info(`Found ${channels.length} subscribed channels to process`);
 
