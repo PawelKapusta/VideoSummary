@@ -26,11 +26,18 @@ const VideosFilterBar: React.FC<VideosFilterBarProps> = ({ channels, activeFilte
       channelValue={activeFilters.channelId}
       onChannelChange={(channelId) => onFiltersChange({ channelId })}
       channels={channels}
+      dateRangeLabel="Publication Date"
+      fromDate={activeFilters.published_at_from}
+      toDate={activeFilters.published_at_to}
+      onFromDateChange={(date) => onFiltersChange({ published_at_from: date })}
+      onToDateChange={(date) => onFiltersChange({ published_at_to: date })}
       onClear={() =>
         onFiltersChange({
           channelId: "all",
           summaryStatus: "all",
           searchQuery: "",
+          published_at_from: undefined,
+          published_at_to: undefined,
         })
       }
       disabled={disabled}

@@ -16,14 +16,21 @@ export function useSummaries(filters: FilterOptions) {
   >({
     queryKey: ["summaries", filters],
     queryFn: async ({ pageParam }: { pageParam: PageParam }) => {
-      const params = {
-        ...filters,
+      const params: Record<string, string | number | boolean> = {
         limit: filters.limit ?? 20,
         offset: pageParam.offset,
         include_hidden: filters.include_hidden ?? false,
         hidden_only: filters.hidden_only ?? false,
-        sort: filters.sort ?? "published_at_desc",
+        sort: filters.sort ?? "generated_at_desc",
       };
+
+      // Add optional filters only if they have values
+      if (filters.search) params.search = filters.search;
+      if (filters.channel_id) params.channel_id = filters.channel_id;
+      if (filters.status) params.status = filters.status;
+      if (filters.generated_at_from) params.generated_at_from = filters.generated_at_from;
+      if (filters.generated_at_to) params.generated_at_to = filters.generated_at_to;
+
       const response = await api.get<PaginatedResponse<SummaryWithVideo>>("/api/summaries", { params });
       // API returns PaginatedResponse<SummaryWithVideo> which has { data: [], pagination: {} }
       // We need to return the full response for React Query infinite query

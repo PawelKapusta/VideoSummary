@@ -210,6 +210,14 @@ export async function getVideos(
     params.sort = filters.sort;
   }
 
+  if (filters.published_at_from) {
+    params.published_at_from = filters.published_at_from;
+  }
+
+  if (filters.published_at_to) {
+    params.published_at_to = filters.published_at_to;
+  }
+
   return authApiClient.get<PaginatedResponse<VideoSummary>>("/api/videos", { params });
 }
 

@@ -18,6 +18,8 @@ export async function listVideos(
     status?: "all" | "with" | "without";
     search?: string;
     sort: "published_at_desc" | "published_at_asc";
+    published_at_from?: string;
+    published_at_to?: string;
   }
 ): Promise<PaginatedResponse<VideoSummary>> {
   // Ensure sort has a default value
@@ -73,6 +75,13 @@ export async function listVideos(
   // Filter by search query (title)
   if (filters.search) {
     query = query.ilike("title", `%${filters.search}%`);
+  }
+
+  if (filters.published_at_from) {
+    query = query.gte("published_at", filters.published_at_from);
+  }
+  if (filters.published_at_to) {
+    query = query.lte("published_at", filters.published_at_to);
   }
 
   // Apply SQL sorting

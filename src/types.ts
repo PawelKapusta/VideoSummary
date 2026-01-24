@@ -429,6 +429,8 @@ export interface FilterOptions {
   include_hidden?: boolean;
   hidden_only?: boolean;
   limit?: number;
+  generated_at_from?: string;
+  generated_at_to?: string;
 }
 
 export interface SummaryData {
@@ -514,4 +516,6 @@ export interface VideosFilterState {
   summaryStatus: "all" | "with" | "without";
   searchQuery?: string;
   sort?: "published_at_desc" | "published_at_asc";
+  published_at_from?: string;
+  published_at_to?: string;
 }

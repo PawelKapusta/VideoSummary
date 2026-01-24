@@ -116,7 +116,9 @@ export const SummaryListFiltersSchema = z.object({
     if (val === "true" || val === "1") return true;
     return Boolean(val);
   }, z.boolean().default(false)),
-  search: z.string().min(3).optional(), // New: for title/channel search
+  search: z.string().min(3).optional(),
+  generated_at_from: z.string().datetime({ message: "Invalid ISO date format for generated_at_from" }).optional(),
+  generated_at_to: z.string().datetime({ message: "Invalid ISO date format for generated_at_to" }).optional(),
 });
 
 /**
@@ -127,4 +129,6 @@ export const VideoListFiltersSchema = PaginationSchema.extend({
   status: z.enum(["all", "with", "without"]).optional(),
   search: z.string().optional(),
   sort: z.enum(["published_at_desc", "published_at_asc"]).default("published_at_desc"),
+  published_at_from: z.string().datetime({ message: "Invalid ISO date format for published_at_from" }).optional(),
+  published_at_to: z.string().datetime({ message: "Invalid ISO date format for published_at_to" }).optional(),
 });

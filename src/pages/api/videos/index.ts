@@ -78,6 +78,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
     const rawStatus = urlParams.get("status");
     const rawSearch = urlParams.get("search");
     const rawSort = urlParams.get("sort");
+    const rawPublishedAtFrom = urlParams.get("published_at_from");
+    const rawPublishedAtTo = urlParams.get("published_at_to");
 
     const validationResult = VideoListFiltersSchema.safeParse({
       limit: rawLimit,
@@ -86,6 +88,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
       status: rawStatus || undefined,
       search: rawSearch || undefined,
       sort: rawSort || undefined,
+      published_at_from: rawPublishedAtFrom || undefined,
+      published_at_to: rawPublishedAtTo || undefined,
     });
 
     if (!validationResult.success) {

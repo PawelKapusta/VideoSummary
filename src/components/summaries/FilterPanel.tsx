@@ -39,6 +39,11 @@ const FilterPanel: React.FC<Props> = ({ filters, onFiltersChange, channels, disa
         onFiltersChange({ ...filters, channel_id: newChannelId });
       }}
       channels={channels}
+      dateRangeLabel="Generation Date"
+      fromDate={filters.generated_at_from}
+      toDate={filters.generated_at_to}
+      onFromDateChange={(date) => onFiltersChange({ ...filters, generated_at_from: date })}
+      onToDateChange={(date) => onFiltersChange({ ...filters, generated_at_to: date })}
       onClear={() => onFiltersChange({})}
       disabled={disabled}
     />

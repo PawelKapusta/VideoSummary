@@ -485,6 +485,8 @@ export async function listSummaries(
     include_hidden?: boolean;
     hidden_only?: boolean;
     search?: string;
+    generated_at_from?: string;
+    generated_at_to?: string;
   }
 ): Promise<PaginatedResponse<SummaryWithVideo>> {
   const { data: subs } = await supabase.from("subscriptions").select("channel_id").eq("user_id", userId);
@@ -557,6 +559,9 @@ export async function listSummaries(
   if (filters.channel_id) q = q.eq("videos.channel_id", filters.channel_id);
   if (filters.status) q = q.eq("status", filters.status);
   if (filters.search) q = q.ilike("videos.title", `%${filters.search}%`);
+
+  if (filters.generated_at_from) q = q.gte("generated_at", filters.generated_at_from);
+  if (filters.generated_at_to) q = q.lte("generated_at", filters.generated_at_to);
 
   appLogger.debug("Query before sorting and range applied", { userId, offset: filters.offset, limit: filters.limit });
 
