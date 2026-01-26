@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, ApiClientError } from "@/lib/api";
-import type { UserProfile } from "@/types";
+import type { UserProfile, ApiSuccess } from "@/types";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +10,8 @@ async function fetchProfile(): Promise<UserProfile> {
 }
 
 export function useProfile() {
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error, ...rest } = useQuery<UserProfile, Error>({
     queryKey: ["profile"],
     queryFn: fetchProfile,
@@ -32,10 +34,38 @@ export function useProfile() {
     }
   }, [error]);
 
+  const updateProfileMutation = useMutation<
+    UserProfile,
+    ApiClientError,
+    { username?: string }
+  >({
+    mutationFn: async (updates) => {
+      const response = await apiClient.put<ApiSuccess<UserProfile>>("/api/profile", updates);
+      return response.data!;
+    },
+    onSuccess: (updatedProfile) => {
+      // Update the cached profile data immediately
+      queryClient.setQueryData(["profile"], updatedProfile);
+      toast.success("Profile updated successfully!");
+    },
+    onError: (error) => {
+      if (error.code === "USERNAME_TAKEN") {
+        toast.error("Username is already taken. Please choose a different one.");
+      } else if (error.code === "INVALID_INPUT") {
+        toast.error("Invalid username format. Use only letters, numbers, underscores, and dashes (3-30 characters).");
+      } else {
+        toast.error(`Failed to update profile: ${error.message}`);
+      }
+    },
+  });
+
   return {
     profile: data,
     isLoading,
     error,
+    updateProfile: updateProfileMutation.mutate,
+    updateProfileAsync: updateProfileMutation.mutateAsync,
+    isUpdating: updateProfileMutation.isPending,
     ...rest,
   };
 }

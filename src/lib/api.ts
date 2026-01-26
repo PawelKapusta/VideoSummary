@@ -272,6 +272,25 @@ export const apiClient = {
     return data as T;
   },
 
+  async put<T>(path: string, body?: unknown): Promise<T> {
+    const response = await fetch(path, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      const errorData: ApiError = await response.json();
+      console.error("API Error:", errorData);
+      throw new ApiClientError(errorData.error.code, errorData.error.message, errorData.error.details);
+    }
+
+    const data = await response.json();
+    return data as T;
+  },
+
   async delete<T>(path: string): Promise<T> {
     const response = await fetch(path, {
       method: "DELETE",

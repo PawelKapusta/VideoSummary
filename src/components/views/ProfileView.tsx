@@ -20,6 +20,8 @@ interface UserHeaderProps {
 
 function UserHeader({ profile }: UserHeaderProps) {
   const joinDate = profile.created_at ? new Date(profile.created_at).toLocaleDateString() : "N/A";
+  const displayName = profile.username || profile.email || "Loading...";
+  const subtitle = profile.username ? profile.email : null;
 
   return (
     <Card className="mb-6 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-100 dark:to-gray-100 border-slate-200 dark:border-slate-300 shadow-lg">
@@ -28,14 +30,19 @@ function UserHeader({ profile }: UserHeaderProps) {
           <Avatar className="h-16 w-16 ring-4 ring-slate-300 dark:ring-slate-400 shadow-xl">
             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.email}`} />
             <AvatarFallback className="text-xl bg-slate-200 dark:bg-slate-300 text-slate-800 dark:text-slate-900 font-bold">
-              {profile.email?.charAt(0).toUpperCase() || "U"}
+              {displayName.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <div>
             <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-900">Your Insights</CardTitle>
             <CardDescription className="text-lg font-semibold text-slate-700 dark:text-slate-800">
-              {profile.email || "Loading..."}
+              {displayName}
             </CardDescription>
+            {subtitle && (
+              <p className="text-sm text-slate-600 dark:text-slate-700 mt-1">
+                {subtitle}
+              </p>
+            )}
             <p className="text-base font-medium text-slate-600 dark:text-slate-700 mt-1">Member since {joinDate}</p>
           </div>
         </div>

@@ -25,7 +25,9 @@ export type SummaryFull = Pick<
 >;
 
 /** Basic profile information */
-export type Profile = Pick<Tables<"profiles">, "id" | "created_at">;
+export type Profile = Pick<Tables<"profiles">, "id" | "created_at"> & {
+  username: string;
+};
 
 /** Subscription information */
 export type Subscription = Pick<Tables<"subscriptions">, "id" | "user_id" | "channel_id" | "created_at">;
@@ -139,6 +141,7 @@ export interface AuthResponse {
 export interface UserProfile {
   id: string;
   email: string;
+  username?: string;
   created_at: string;
   subscribed_channels: SubscriptionWithChannel[];
   subscription_count: number;

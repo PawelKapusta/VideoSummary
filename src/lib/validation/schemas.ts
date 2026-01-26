@@ -10,6 +10,18 @@ export const EmailSchema = z
   .max(254, { message: "Email is too long" }); // RFC 5321 limit
 
 /**
+ * Username validation schema - 3-30 characters, alphanumeric + underscore/dash only
+ */
+export const UsernameSchema = z
+  .string()
+  .min(3, { message: "Username must be at least 3 characters long" })
+  .max(30, { message: "Username must be at most 30 characters long" })
+  .regex(/^[a-zA-Z0-9_-]+$/, {
+    message: "Username can only contain letters, numbers, underscores, and dashes",
+  })
+  .optional();
+
+/**
  * Password validation schema - minimum 8 characters with complexity requirements
  */
 export const PasswordSchema = z
@@ -131,4 +143,30 @@ export const VideoListFiltersSchema = PaginationSchema.extend({
   sort: z.enum(["published_at_desc", "published_at_asc"]).default("published_at_desc"),
   published_at_from: z.string().datetime({ message: "Invalid ISO date format for published_at_from" }).optional(),
   published_at_to: z.string().datetime({ message: "Invalid ISO date format for published_at_to" }).optional(),
+});
+
+/**
+ * User profile update request validation schema
+ */
+export const UpdateProfileRequestSchema = z.object({
+  email: EmailSchema.optional(),
+  username: UsernameSchema.optional(),
+});
+
+/**
+ * Summary update request validation schema (admin only)
+ */
+export const UpdateSummaryRequestSchema = z.object({
+  tldr: z.string().min(10).max(500).optional(),
+  full_summary: z.any().optional(), // JSON summary data
+  status: z.enum(["pending", "in_progress", "completed", "failed"]).optional(),
+  error_code: z.enum(["TRANSCRIPT_NOT_AVAILABLE", "NO_SUBTITLES", "VIDEO_TOO_LONG", "AI_ERROR", "UNKNOWN_ERROR"]).optional(),
+});
+
+/**
+ * Subscription update request validation schema
+ */
+export const UpdateSubscriptionRequestSchema = z.object({
+  // Currently no fields to update, but structure ready for future extensions
+  // Example: notification preferences, auto-generate settings, etc.
 });

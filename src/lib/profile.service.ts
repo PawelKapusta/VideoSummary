@@ -3,6 +3,49 @@ import type { UserProfile, SubscriptionWithChannel } from "../types";
 import { errorLogger } from "./logger";
 
 /**
+ * Update user profile information
+ * @param supabase - Supabase client instance
+ * @param userId - User ID
+ * @param updates - Profile updates (username)
+ * @returns Updated UserProfile
+ */
+export async function updateUserProfile(
+  supabase: SupabaseClient,
+  userId: string,
+  updates: { username?: string }
+): Promise<UserProfile> {
+  // Update profile in database
+  const { data: updatedProfile, error: updateError } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId)
+    .select("id, created_at, username")
+    .single();
+
+  if (updateError || !updatedProfile) {
+    throw new Error(`Failed to update profile: ${updateError?.message || "Unknown error"}`);
+  }
+
+  // Get current user email
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("User not found");
+  }
+
+  // Get subscriptions (reuse existing logic)
+  const profile = await getUserProfile(supabase, userId);
+
+  return {
+    ...profile,
+    username: updatedProfile.username ?? undefined,
+  };
+}
+
+/**
  * Get user profile with subscription information
  * @param supabase - Supabase client instance
  * @param userId - User ID
@@ -12,12 +55,13 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
   // Query profile from profiles table (which has the same ID as auth.users)
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("id, created_at")
+    .select("id, created_at, username")
     .eq("id", userId)
     .single();
 
   let userCreatedAt: string;
   let userEmail: string;
+  let userUsername: string | undefined;
 
   // If profile doesn't exist, create it (fallback for when trigger doesn't work)
   if (profileError || !profileData) {
@@ -34,7 +78,7 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
     const { data: newProfile, error: createError } = await supabase
       .from("profiles")
       .insert({ id: userId, created_at: user.created_at })
-      .select("id, created_at")
+      .select("id, created_at, username")
       .single();
 
     if (createError || !newProfile) {
@@ -43,6 +87,7 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
 
     userCreatedAt = newProfile.created_at;
     userEmail = user.email || "";
+    userUsername = newProfile.username ?? undefined;
   } else {
     // Profile exists, get user email
     const {
@@ -56,6 +101,7 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
 
     userCreatedAt = profileData.created_at;
     userEmail = user.email || "";
+    userUsername = profileData.username ?? undefined;
   }
 
   // Query subscriptions with channel information
@@ -92,6 +138,7 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
       subscribedChannels = (subscriptions || []).map(
         (sub: {
           id: string;
+          created_at: string;
           channels: { id: string; youtube_channel_id: string; name: string; created_at: string };
         }) => ({
           subscription_id: sub.id,
@@ -119,6 +166,7 @@ export async function getUserProfile(supabase: SupabaseClient, userId: string): 
   return {
     id: userId,
     email: userEmail,
+    username: userUsername,
     created_at: userCreatedAt,
     subscribed_channels: subscribedChannels,
     subscription_count: subscribedChannels.length,

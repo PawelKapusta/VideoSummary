@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogClose,
@@ -14,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Sun, Bell, Shield, UserX, LogOut, EyeOff } from "lucide-react";
+import { Sun, Bell, Shield, UserX, LogOut, EyeOff, User, Save, X } from "lucide-react";
 import QueryProvider from "../providers/QueryProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { useLogout } from "@/hooks/useLogout";
@@ -23,12 +24,18 @@ import { toast } from "sonner";
 import AppLoader from "@/components/ui/AppLoader";
 
 const SettingsContent = () => {
-  const { isLoading, error } = useProfile();
+  const { profile, isLoading, error, updateProfileAsync, isUpdating } = useProfile();
   const { logout, isLoading: isLoggingOut } = useLogout();
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [summaryNotifications, setSummaryNotifications] = useState(true);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [username, setUsername] = useState("");
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+
+  useEffect(() => {
+    setUsername(profile?.username || "");
+  }, [profile]);
 
   if (isLoading) {
     return (
@@ -58,6 +65,26 @@ const SettingsContent = () => {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleSaveUsername = async () => {
+    const trimmedUsername = username.trim();
+    const finalUsername = trimmedUsername === "" ? undefined : trimmedUsername;
+    try {
+      await updateProfileAsync({ username: finalUsername });
+      // Update local state immediately to reflect the saved value
+      setUsername(trimmedUsername);
+      setIsEditingUsername(false);
+    } catch (error) {
+      // Error is handled by the hook, don't exit editing mode on error
+      console.error("Failed to save username:", error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    // Reset to current profile username
+    setUsername(profile?.username || "");
+    setIsEditingUsername(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -98,6 +125,82 @@ const SettingsContent = () => {
           Manage your account preferences, security settings, and customize your experience.
         </p>
       </div>
+
+      {/* Profile Settings */}
+      <Card className="bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Profile
+          </CardTitle>
+          <CardDescription>Manage your public profile and display name.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username" className="text-sm font-medium">
+              Username (optional)
+            </Label>
+            <div className="flex items-center gap-2">
+              {isEditingUsername ? (
+                <>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="flex-1"
+                    disabled={isUpdating}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveUsername}
+                    disabled={isUpdating}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isUpdating}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex-1 p-3 border rounded-md bg-gray-50 text-sm">
+                    {profile?.username || "No username set"}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditingUsername(true)}
+                  >
+                    Edit
+                  </Button>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Your username will be displayed instead of your email. Leave empty to use your email address.
+              Username must be 3-30 characters long and can only contain letters, numbers, underscores, and dashes.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Email</Label>
+            <div className="p-3 border rounded-md bg-gray-50 text-sm">
+              {profile?.email || "Loading..."}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Your email address cannot be changed here. Contact support if you need to update your email.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Account Actions */}
       <Card className="bg-white">
