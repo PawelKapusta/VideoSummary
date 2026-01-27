@@ -18,7 +18,7 @@ const gitignorePath = path.resolve(__dirname, ".gitignore");
 const baseConfig = tseslint.config({
   extends: [eslint.configs.recommended, tseslint.configs.strict, tseslint.configs.stylistic],
   rules: {
-    "no-console": "warn",
+    "no-console": "off",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",
@@ -66,7 +66,13 @@ const reactConfig = tseslint.config({
 });
 
 const nodeConfig = tseslint.config({
-  files: ["scripts/**/*.{js,ts}", "astro.config.mjs", "tailwind.config.mjs"],
+  files: [
+    "scripts/**/*.{js,ts}",
+    "astro.config.mjs",
+    "tailwind.config.mjs",
+    "src/middleware/**/*.ts",
+    "src/pages/api/**/*.ts",
+  ],
   languageOptions: {
     globals: {
       console: "readonly",

@@ -1,6 +1,29 @@
 import type { SupabaseClient } from "../db/supabase.client";
 import type { PaginatedResponse, VideoSummary } from "../types";
 
+interface VideoWithChannel {
+  id: string;
+  youtube_video_id: string;
+  title: string;
+  thumbnail_url: string | null;
+  published_at: string;
+  summary_id: string | null;
+  summary_status: string | null;
+  channels:
+    | {
+        id: string;
+        youtube_channel_id: string;
+        name: string;
+        created_at: string;
+      }
+    | {
+        id: string;
+        youtube_channel_id: string;
+        name: string;
+        created_at: string;
+      }[];
+}
+
 /**
  * List videos from user's subscribed channels with pagination, filtering, and sorting
  * @param supabase - Supabase client instance
@@ -98,34 +121,32 @@ export async function listVideos(
   }
 
   // Format videos according to VideoSummary type
-  const data: VideoSummary[] = (videos || []).map(
-    (video: any) => {
-      // Cast video.channels to handle potential array/single object ambiguity from SelectQuery normalization if needed,
-      // but here typed as Single object usually.
-      const channel = Array.isArray(video.channels) ? video.channels[0] : video.channels;
+  const data: VideoSummary[] = (videos || []).map((video: VideoWithChannel) => {
+    // Cast video.channels to handle potential array/single object ambiguity from SelectQuery normalization if needed,
+    // but here typed as Single object usually.
+    const channel = Array.isArray(video.channels) ? video.channels[0] : video.channels;
 
-      if (!channel) {
-        // Should not happen with valid data integrity
-        throw new Error(`Video ${video.id} has no channel data`);
-      }
-
-      return {
-        id: video.id || "",
-        youtube_video_id: video.youtube_video_id || "",
-        title: video.title || "",
-        thumbnail_url: video.thumbnail_url,
-        published_at: video.published_at,
-        channel: {
-          id: channel.id,
-          youtube_channel_id: channel.youtube_channel_id,
-          name: channel.name,
-          created_at: channel.created_at,
-        },
-        summary_id: video.summary_id,
-        summary_status: video.summary_status as VideoSummary["summary_status"],
-      };
+    if (!channel) {
+      // Should not happen with valid data integrity
+      throw new Error(`Video ${video.id} has no channel data`);
     }
-  );
+
+    return {
+      id: video.id || "",
+      youtube_video_id: video.youtube_video_id || "",
+      title: video.title || "",
+      thumbnail_url: video.thumbnail_url,
+      published_at: video.published_at,
+      channel: {
+        id: channel.id,
+        youtube_channel_id: channel.youtube_channel_id,
+        name: channel.name,
+        created_at: channel.created_at,
+      },
+      summary_id: video.summary_id,
+      summary_status: video.summary_status as VideoSummary["summary_status"],
+    };
+  });
 
   // Return paginated response
   return {

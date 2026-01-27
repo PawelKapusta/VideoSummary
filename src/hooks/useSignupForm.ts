@@ -103,13 +103,11 @@ export function useSignupForm({
       let newErrors = { ...prev.errors };
 
       if (newErrors[field as keyof RegisterFormErrors]) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [field as keyof RegisterFormErrors]: _, ...restErrors } = newErrors;
         newErrors = restErrors;
       }
 
       if (newErrors.form) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { form: _, ...restErrors } = newErrors;
         newErrors = restErrors;
       }

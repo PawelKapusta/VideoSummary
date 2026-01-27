@@ -202,11 +202,11 @@ describe("OpenRouter Error Classes", () => {
     it("should preserve error properties when thrown", () => {
       try {
         throw new AuthenticationError("Custom auth message");
-      } catch (error: any) {
+      } catch (error: unknown) {
         expect(error).toBeInstanceOf(AuthenticationError);
         expect(error).toBeInstanceOf(OpenRouterError);
         expect(error).toBeInstanceOf(Error);
-        expect(error.message).toBe("Custom auth message");
+        expect((error as Error).message).toBe("Custom auth message");
         expect(error.status).toBe(401);
         expect(error.name).toBe("AuthenticationError");
       }

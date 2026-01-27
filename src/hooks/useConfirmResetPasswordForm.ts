@@ -53,7 +53,6 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
 
       const newErrors = { ...prev.errors };
       if (newErrors[field as keyof ConfirmResetFormErrors]) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [field as keyof ConfirmResetFormErrors]: _, ...restErrors } = newErrors;
         return {
           ...prev,
@@ -157,7 +156,7 @@ export const useConfirmResetPasswordForm = (initialToken: string) => {
         return null;
       }
     },
-    [formState.isValid, formState.isSubmitting, formState.data.password, token, formState.errors]
+    [formState.isValid, formState.isSubmitting, formState.data.password, token]
   );
 
   return {

@@ -4,7 +4,6 @@ import type { AuthResponse } from "@/types";
  * NO-OP: Session is now managed via cookies by Supabase client.
  * Kept for backward compatibility during refactor.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function storeSession(_session: AuthResponse["session"]): void {
   // No-op
 }

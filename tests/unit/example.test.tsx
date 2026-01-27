@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-
 // Simple component for testing
 const TestComponent = ({ message }: { message: string }) => <div>{message}</div>;
 

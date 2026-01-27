@@ -107,9 +107,11 @@ test.describe("Home Page - Performance", () => {
 
     // Check the protocol used for the main document
     const navigationEntry = await page.evaluate(() => {
-      const entry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
+      const entry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming & {
+        nextHopProtocol?: string;
+      };
       return {
-        nextHopProtocol: (entry as any).nextHopProtocol,
+        nextHopProtocol: entry.nextHopProtocol,
       };
     });
 
@@ -128,7 +130,7 @@ test.describe("Home Page - Performance", () => {
     const cachedResources: string[] = [];
 
     page.on("response", (response) => {
-      if ((response as any).fromCache()) {
+      if ((response as typeof response & { fromCache?: () => boolean }).fromCache?.()) {
         cachedResources.push(response.url());
       }
     });
