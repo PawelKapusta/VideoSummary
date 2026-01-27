@@ -242,7 +242,7 @@ export async function subscribeToChannel(
   }
 
   // Type the JSON result properly
-  const subscriptionData: AtomicSubscriptionResult = subscription;
+  const subscriptionData = subscription as AtomicSubscriptionResult;
 
   // Return formatted subscription data
   return {

@@ -206,9 +206,10 @@ describe("OpenRouter Error Classes", () => {
         expect(error).toBeInstanceOf(AuthenticationError);
         expect(error).toBeInstanceOf(OpenRouterError);
         expect(error).toBeInstanceOf(Error);
-        expect((error as Error).message).toBe("Custom auth message");
-        expect(error.status).toBe(401);
-        expect(error.name).toBe("AuthenticationError");
+        const authError = error as AuthenticationError;
+        expect(authError.message).toBe("Custom auth message");
+        expect(authError.status).toBe(401);
+        expect(authError.name).toBe("AuthenticationError");
       }
     });
   });

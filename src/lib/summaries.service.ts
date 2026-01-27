@@ -196,7 +196,7 @@ export async function generateSummary(
     throw rpcErr;
   }
 
-  const summary = (rpcData as unknown[])[0];
+  const summary = (rpcData as { id: string }[])[0];
   if (!summary?.id) throw new Error("SUMMARY_CREATION_FAILED");
 
   // -------------------------------------------------
@@ -429,7 +429,7 @@ async function processSummaryGeneration(
       msg === "TRANSCRIPT_EMPTY";
 
     if (!isTranscriptError) {
-      errorLogger.appError(err, {
+      errorLogger.appError(err instanceof Error ? err : new Error(String(err)), {
         component: "processSummaryGeneration",
         operation: "summary_generation",
         summaryId,
@@ -460,7 +460,7 @@ async function processSummaryGeneration(
       appLogger.debug("Summary status updated to failed", { summaryId, errorCode: code });
     }
 
-    errorLogger.appError(err, {
+    errorLogger.appError(err instanceof Error ? err : new Error(String(err)), {
       service: "summaries_service",
       operation: "process_summary_generation",
       summary_id: summaryId,
@@ -591,27 +591,48 @@ export async function listSummaries(
     }
   });
 
-  const result: SummaryWithVideo[] = (data ?? []).map((row: unknown) => ({
-    id: row.id,
-    video: {
-      id: row.videos.id,
-      youtube_video_id: row.videos.youtube_video_id,
-      title: row.videos.title,
-      thumbnail_url: row.videos.thumbnail_url,
-      published_at: row.videos.published_at,
-    },
-    channel: {
-      id: row.videos.channels.id,
-      name: row.videos.channels.name,
-      youtube_channel_id: row.videos.channels.youtube_channel_id,
-      created_at: row.videos.channels.created_at,
-    },
-    tldr: row.tldr,
-    status: row.status,
-    generated_at: row.generated_at,
-    user_rating: userRatingMap.get(row.id) ?? null,
-    error_code: row.error_code,
-  }));
+  const result: SummaryWithVideo[] = (data ?? []).map(
+    (row: {
+      id: string;
+      tldr: string | null;
+      status: "pending" | "in_progress" | "completed" | "failed";
+      generated_at: string | null;
+      error_code: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG" | null;
+      videos: {
+        id: string;
+        youtube_video_id: string;
+        title: string;
+        thumbnail_url: string | null;
+        published_at: string | null;
+        channels: {
+          id: string;
+          name: string;
+          youtube_channel_id: string;
+          created_at: string;
+        };
+      };
+    }) => ({
+      id: row.id,
+      video: {
+        id: row.videos.id,
+        youtube_video_id: row.videos.youtube_video_id,
+        title: row.videos.title,
+        thumbnail_url: row.videos.thumbnail_url,
+        published_at: row.videos.published_at,
+      },
+      channel: {
+        id: row.videos.channels.id,
+        name: row.videos.channels.name,
+        youtube_channel_id: row.videos.channels.youtube_channel_id,
+        created_at: row.videos.channels.created_at,
+      },
+      tldr: row.tldr,
+      status: row.status,
+      generated_at: row.generated_at,
+      user_rating: userRatingMap.get(row.id) ?? null,
+      error_code: row.error_code,
+    })
+  );
 
   return {
     data: result,
@@ -796,7 +817,6 @@ async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number
 async function queueVideosForGeneration(
   supabase: SupabaseClient,
   channels: { id: string; youtube_channel_id: string; name: string }[],
-  bulkGenerationId: string,
   runtimeEnv?: RuntimeEnv
 ): Promise<{ queued: number; skipped: number; errors: string[] }> {
   const { todayStart, tomorrowStart } = getUTCDayBoundaries();
@@ -880,8 +900,9 @@ async function queueVideosForGeneration(
           }
         }
       } catch (ytError: unknown) {
-        appLogger.error(`Channel "${channel.name}": YouTube API error - ${ytError.message}`);
-        errors.push(`${channel.name}: ${ytError.message}`);
+        const errorMessage = ytError instanceof Error ? ytError.message : String(ytError);
+        appLogger.error(`Channel "${channel.name}": YouTube API error - ${errorMessage}`);
+        errors.push(`${channel.name}: ${errorMessage}`);
         continue;
       }
 
@@ -1207,7 +1228,16 @@ export async function processNextQueueItem(
     .maybeSingle();
 
   // Process the queue item (this can take several minutes for Gradio)
-  const result = await processQueueItem(supabase, queueItem, workerId, runtimeEnv);
+  const result = await processQueueItem(
+    supabase,
+    {
+      ...queueItem,
+      retry_count: queueItem.retry_count ?? 0,
+      max_retries: queueItem.max_retries ?? 3,
+    },
+    workerId,
+    runtimeEnv
+  );
 
   return {
     processed: true,
@@ -1235,7 +1265,8 @@ export async function startBulkSummaryGeneration(
     await cleanupStaleGenerations(supabase);
     appLogger.debug("Stale cleanup completed");
   } catch (cleanupErr: unknown) {
-    appLogger.warn("Stale cleanup failed (continuing anyway)", { error: cleanupErr.message });
+    const errorMessage = cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr);
+    appLogger.warn("Stale cleanup failed (continuing anyway)", { error: errorMessage });
   }
 
   // 2. Check if bulk generation is already in progress
@@ -1318,7 +1349,7 @@ export async function startBulkSummaryGeneration(
   }
 
   // 5. Queue videos for generation
-  const queueResult = await queueVideosForGeneration(supabase, channels, bulkGeneration.id, runtimeEnv);
+  const queueResult = await queueVideosForGeneration(supabase, channels, runtimeEnv);
 
   appLogger.info(
     `Videos queued: ${queueResult.queued} queued, ${queueResult.skipped} skipped, ${queueResult.errors.length} errors`

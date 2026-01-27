@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient, ApiClientError } from "@/lib/api";
 
-async function removeChannel(subscriptionId: string): Promise<void> {
+async function removeChannel(subscriptionId: string): Promise<undefined> {
   // Assuming a DELETE request to /api/profile/channels/:id
   await apiClient.delete(`/api/profile/channels/${subscriptionId}`);
 }
@@ -10,7 +10,7 @@ async function removeChannel(subscriptionId: string): Promise<void> {
 export function useRemoveChannel() {
   const queryClient = useQueryClient();
 
-  return useMutation<never, Error, string>({
+  return useMutation<undefined, Error, string>({
     mutationFn: removeChannel,
     onSuccess: () => {
       toast.success("Successfully unsubscribed from the channel.");

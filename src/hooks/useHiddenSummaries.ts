@@ -24,8 +24,10 @@ export function useHiddenSummaries(filters: FilterOptions = {}) {
         ...filters, // Spread filters into params
       };
 
-      // Remove undefined values
-      const cleanParams = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ""));
+      // Remove undefined, empty string, and null values
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== "" && v !== null)
+      ) as Record<string, string | number | boolean>;
 
       const response = await api.get<PaginatedResponse<SummaryWithVideo>>("/api/summaries", { params: cleanParams });
       return response;

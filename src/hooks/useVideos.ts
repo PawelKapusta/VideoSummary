@@ -71,7 +71,8 @@ export const useVideos = () => {
 
   return {
     videos: processedVideos,
-    isLoading: status === "pending" || isFetching,
+    isLoading: status === "pending",
+    isRefetching: isFetching && status !== "pending",
     isError: status === "error",
     error,
     hasNextPage,

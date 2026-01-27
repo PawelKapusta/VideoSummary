@@ -10,6 +10,7 @@ const VideosContent = () => {
   const {
     videos,
     isLoading,
+    isRefetching,
     isError,
     error,
     hasNextPage,
@@ -54,7 +55,12 @@ const VideosContent = () => {
       </div>
 
       {/* Filters - always visible */}
-      <VideosFilterBar channels={channels} activeFilters={filters} onFiltersChange={setFilters} disabled={isLoading} />
+      <VideosFilterBar
+        channels={channels}
+        activeFilters={filters}
+        onFiltersChange={setFilters}
+        disabled={isRefetching}
+      />
 
       <VideosGrid
         videos={videos}

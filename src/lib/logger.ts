@@ -157,7 +157,7 @@ export async function initializeLogging(): Promise<void> {
   const isTest = process.env.NODE_ENV === "test";
 
   // Only use console sink (Cloudflare doesn't support filesystem)
-  const sinks: Record<string, unknown> = {
+  const sinks = {
     console: redactByField(getConsoleSink(), SENSITIVE_FIELDS_MUTABLE),
   };
 
@@ -293,7 +293,7 @@ export const performanceLogger = {
    */
   slowOperation: (data: PerformanceData) => {
     if (data.duration > (data.threshold || 1000)) {
-      appLogger.warning("Slow operation detected", toLogProperties(data));
+      appLogger.warning("Slow operation detected", toLogProperties(data as unknown as Record<string, unknown>));
     }
   },
 
@@ -316,7 +316,7 @@ export const performanceLogger = {
    */
   logPerformance: (data: PerformanceData) => {
     const level = data.performance_issue ? "warning" : "debug";
-    appLogger[level]("Performance metric", toLogProperties(data));
+    appLogger[level]("Performance metric", toLogProperties(data as unknown as Record<string, unknown>));
   },
 };
 

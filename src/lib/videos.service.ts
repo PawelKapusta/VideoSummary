@@ -2,13 +2,13 @@ import type { SupabaseClient } from "../db/supabase.client";
 import type { PaginatedResponse, VideoSummary } from "../types";
 
 interface VideoWithChannel {
-  id: string;
-  youtube_video_id: string;
-  title: string;
+  id: string | null;
+  youtube_video_id: string | null;
+  title: string | null;
   thumbnail_url: string | null;
-  published_at: string;
+  published_at: string | null;
   summary_id: string | null;
-  summary_status: string | null;
+  summary_status: "pending" | "in_progress" | "completed" | "failed" | null;
   channels:
     | {
         id: string;
@@ -21,7 +21,8 @@ interface VideoWithChannel {
         youtube_channel_id: string;
         name: string;
         created_at: string;
-      }[];
+      }[]
+    | null;
 }
 
 /**
@@ -124,17 +125,17 @@ export async function listVideos(
   const data: VideoSummary[] = (videos || []).map((video: VideoWithChannel) => {
     // Cast video.channels to handle potential array/single object ambiguity from SelectQuery normalization if needed,
     // but here typed as Single object usually.
-    const channel = Array.isArray(video.channels) ? video.channels[0] : video.channels;
+    const channel = Array.isArray(video.channels) ? video.channels?.[0] : video.channels;
 
-    if (!channel) {
+    if (!channel || !video.id || !video.youtube_video_id || !video.title || video.published_at === null) {
       // Should not happen with valid data integrity
-      throw new Error(`Video ${video.id} has no channel data`);
+      throw new Error(`Video ${video.id} has incomplete data`);
     }
 
     return {
-      id: video.id || "",
-      youtube_video_id: video.youtube_video_id || "",
-      title: video.title || "",
+      id: video.id,
+      youtube_video_id: video.youtube_video_id,
+      title: video.title,
       thumbnail_url: video.thumbnail_url,
       published_at: video.published_at,
       channel: {
