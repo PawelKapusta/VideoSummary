@@ -7,6 +7,7 @@ This document outlines the implementation plan for the "Summary Details" view. T
 ## 2. View Routing
 
 The view will be accessible at the following dynamic path:
+
 - **Path:** `/summaries/[summaryId]`
 - **Example:** `/summaries/123e4567-e89b-12d3-a456-426614174000`
 
@@ -101,17 +102,21 @@ src/pages/summaries/[summaryId].astro
 ## 5. Types
 
 ### `FullSummaryContent`
+
 A new type to provide a strict structure for the `full_summary` JSON object.
+
 ```typescript
 interface FullSummaryContent {
-  summary: string;      // The main, detailed summary text.
-  conclusions: string[];// An array of concluding points.
+  summary: string; // The main, detailed summary text.
+  conclusions: string[]; // An array of concluding points.
   key_points: string[]; // An array of key takeaways.
 }
 ```
 
 ### `SummaryDetailsViewModel`
+
 A comprehensive ViewModel to represent the complete state of the view, derived from the `DetailedSummary` DTO for easier use within components.
+
 ```typescript
 interface SummaryDetailsViewModel {
   id: string;
@@ -142,6 +147,7 @@ interface SummaryDetailsViewModel {
 State will be managed within the `SummaryDetailsView.tsx` component, encapsulated and controlled by a custom hook, `useSummaryDetails`.
 
 ### `useSummaryDetails(summaryId: string)` Custom Hook
+
 - **Purpose:** To abstract all business logic from the view component. This includes data fetching, state management (loading, error), and handling API calls for user actions (rating, hiding).
 - **Exposed Values:**
   - `summary: SummaryDetailsViewModel | null`: The processed data for the view.

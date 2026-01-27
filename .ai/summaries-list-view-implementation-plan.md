@@ -24,19 +24,19 @@ The hierarchy focuses on a clean separation: SummariesView orchestrates data fet
 ### SummariesView
 
 - **Component description**: The top-level React component for the summaries list page, responsible for fetching summaries data based on applied filters, managing global state (e.g., loading, error, current filters), rendering the filter panel, summary list or empty state, and handling navigation to detailed summary pages. It integrates with React Query for infinite data fetching and uses Shadcn/ui components for layout.
-- **Main elements**: 
+- **Main elements**:
   - Main container div with Tailwind classes for full-width responsive layout.
   - Header section with page title (e.g., "Your Summaries") and summary count.
   - FilterPanel component for user inputs.
   - SummaryList component as the primary content area.
   - Conditional EmptyState if no data after filters.
   - Integrates Sonner for toast notifications.
-- **Handled interactions**: 
+- **Handled interactions**:
   - Initial data load on mount with default filters.
   - Filter changes trigger refetch.
   - Error retries.
   - Navigation on card clicks (using Astro's client-side routing or React Router if extended).
-- **Handled validation**: 
+- **Handled validation**:
   - Ensures user is authenticated (handled by middleware, but check session).
   - Validates API response structure against PaginatedResponse<SummaryWithVideo>.
   - Handles pagination params (limit=20, offset based on infinite query).
@@ -47,24 +47,24 @@ The hierarchy focuses on a clean separation: SummariesView orchestrates data fet
 ### FilterPanel
 
 - **Component description**: A component providing UI controls for filtering summaries, including a search input for title/keywords, dropdown for channel selection (from user's subscriptions), and select for status. It updates the filter state and triggers query refetch on changes.
-- **Main elements**: 
+- **Main elements**:
   - Form-like container with Tailwind for horizontal layout on desktop, stacked on mobile.
   - Input from shadcn/ui for search (debounced).
   - Select for status (options: all, pending, in_progress, completed, failed).
   - Combobox or Select for channels (fetched from user's subscriptions via separate query).
   - Clear filters button.
   - Apply filters button (or auto-apply on change).
-- **Handled interactions**: 
+- **Handled interactions**:
   - Input change: Debounce search and update filters.
   - Dropdown/Select change: Update channel_id or status filter.
   - Clear: Reset all filters and refetch.
   - Debounce: 300ms delay for search to avoid excessive API calls.
-- **Handled validation**: 
+- **Handled validation**:
   - Channel options limited to user's subscribed channels (validate against subscriptions API).
   - Status must match SummaryStatus enum.
   - Search string length min=3 for activation.
 - **Types**: FilterOptions, SummaryStatus, Channel[] (for dropdown).
-- **Props**: 
+- **Props**:
   - filters: FilterOptions
   - onFiltersChange: (filters: FilterOptions) => void
   - channels: Channel[] (user's subscribed channels)
@@ -72,22 +72,22 @@ The hierarchy focuses on a clean separation: SummariesView orchestrates data fet
 ### SummaryList
 
 - **Component description**: A container component that renders a responsive grid or list of SummaryCard components based on fetched data. It manages infinite scrolling to load more batches of 20 summaries, applies current filters to the query, and handles loading skeletons during fetches or while scrolling.
-- **Main elements**: 
+- **Main elements**:
   - Grid container using Tailwind (e.g., grid-cols-1 md:grid-cols-2 lg:grid-cols-3).
   - SummaryCard components mapped from flattened infinite query data.
   - Loading skeletons (SummaryCardSkeleton) for initial load, filtering, or infinite scroll.
   - IntersectionObserver sentinel at bottom for triggering next page fetch.
   - "No more summaries" message if !hasNextPage.
-- **Handled interactions**: 
+- **Handled interactions**:
   - Infinite scroll: Observer detects viewport entry → fetchNextPage.
   - Filter updates from parent: Reset pages and refetch.
   - Refresh on pull-to-refresh (mobile) or manual button.
-- **Handled validation**: 
+- **Handled validation**:
   - Ensures data is array of SummaryWithVideo; fallback to empty if malformed.
   - Checks if pages.length > 0 and last page has full limit for hasNextPage.
   - Default params: include_hidden=false, sort="published_at_desc", limit=20.
 - **Types**: SummaryWithVideo[], PaginationMeta, SummaryStatus, InfiniteData<PaginatedResponse<SummaryWithVideo>>.
-- **Props**: 
+- **Props**:
   - data: InfiniteData<PaginatedResponse<SummaryWithVideo>> | undefined
   - isLoading: boolean
   - isFetchingNextPage: boolean
@@ -100,25 +100,25 @@ The hierarchy focuses on a clean separation: SummariesView orchestrates data fet
 ### SummaryCard
 
 - **Component description**: A card component displaying a single summary preview using Shadcn/ui Card. It shows video title, channel name, publish date, TL;DR, thumbnail, status badge, and user rating icons. Includes actions for hiding and quick rating.
-- **Main elements**: 
+- **Main elements**:
   - Card from shadcn/ui with image (thumbnail), body (title, channel, date, TL;DR).
   - Badge for status (e.g., "completed", "failed").
   - Thumbs up/down icons for completed summaries.
   - Hide button (icon or text) with confirmation dialog.
   - For **failed** summaries: "Try Again" and "Hide" buttons directly in the error box.
   - Link wrapper for navigation to /summaries/[id] (full card clickable).
-- **Handled interactions**: 
+- **Handled interactions**:
   - Click card to navigate to detailed view.
   - Click rating icons to submit rating (optimistic update).
   - Click "Try Again" on failed cards to re-open generation dialog.
   - Click "Hide" to confirm and call hide API.
   - Hover effects for interactivity.
-- **Handled validation**: 
+- **Handled validation**:
   - If status="failed", show error_code message instead of TL;DR.
   - Disable actions if status="pending" or "in_progress".
   - Ensure thumbnail_url is valid; fallback to placeholder.
 - **Types**: SummaryWithVideo, SummaryStatus, SummaryErrorCode, RatingStats (for display).
-- **Props**: 
+- **Props**:
   - summary: SummaryWithVideo
   - onHide: (id: string) => void
   - onRate: (id: string, rating: boolean) => void
@@ -127,14 +127,14 @@ The hierarchy focuses on a clean separation: SummariesView orchestrates data fet
 ### EmptyState
 
 - **Component description**: A simple component shown when no summaries are available after applying filters, encouraging actions like subscribing to channels or manual generation, or adjusting filters.
-- **Main elements**: 
+- **Main elements**:
   - Centered div with icon (e.g., empty box), heading ("No summaries match your filters"), description, and CTA buttons (e.g., "Clear Filters", "Subscribe to channels").
-- **Handled interactions**: 
+- **Handled interactions**:
   - "Clear Filters" click: Reset filters and refetch.
   - CTA click: Navigate to profile/subscriptions page.
 - **Handled validation**: None.
 - **Types**: None specific.
-- **Props**: 
+- **Props**:
   - message?: string (customizable, e.g., based on filters)
   - onClearFilters?: () => void
 
@@ -142,14 +142,14 @@ The hierarchy focuses on a clean separation: SummariesView orchestrates data fet
 
 All types leverage existing definitions from `src/types.ts`. No new database types needed, but the following are key for the view. Add a new type for filters:
 
-- **FilterOptions** (new): 
+- **FilterOptions** (new):
   - search?: string (optional search term for title/channel, min length 3)
   - channel_id?: string (UUID of selected channel or null for all)
   - status?: SummaryStatus (selected status or undefined for all)
   - sort?: string (default 'published_at_desc'; options as per API)
   - include_hidden?: boolean (default false)
 
-- **SummaryWithVideo** (existing): 
+- **SummaryWithVideo** (existing):
   - id: string (UUID of summary)
   - video: VideoBasic { id: string, youtube_video_id: string, title: string, thumbnail_url: string | null, published_at: string | null }
   - channel: Channel { id: string, name: string, youtube_channel_id: string, created_at: string }
@@ -158,7 +158,7 @@ All types leverage existing definitions from `src/types.ts`. No new database typ
   - generated_at: string | null
   - user_rating: boolean | null (user's personal rating)
 
-- **PaginatedResponse<SummaryWithVideo>** (existing, generic): 
+- **PaginatedResponse<SummaryWithVideo>** (existing, generic):
   - data: SummaryWithVideo[]
   - pagination: PaginationMeta { total: number, limit: number, offset: number }
 
@@ -169,6 +169,7 @@ All types leverage existing definitions from `src/types.ts`. No new database typ
 - **InfiniteData<PaginatedResponse<SummaryWithVideo>>** (from React Query): For useInfiniteQuery result, with pages: PaginatedResponse[] and pageParams.
 
 For API requests (if adding hide/rate):
+
 - HideRequest: { summary_id: string, hide: boolean } (for toggle)
 - RateRequest: { rating: boolean }
 
@@ -179,7 +180,7 @@ Search filtering: Backend may need extension for search param; assume added as q
 State is managed using React Query (via QueryProvider in `src/components/providers/QueryProvider.tsx`) for server-state data fetching, caching, and synchronization. A custom hook `useSummaries` will encapsulate the infinite query logic with filter support:
 
 - Purpose: Uses `useInfiniteQuery` to fetch paginated summaries in batches of 20, with default filters (include_hidden=false, sort='published_at_desc'). Supports dynamic filters by keying the query on filter values, resetting pages on filter changes.
-- Usage: 
+- Usage:
   ```tsx
   const { data, isLoading, error, fetchNextPage, hasNextPage, refetch, isFetching } = useSummaries(filters);
   // data?.pages.flatMap(p => p.data) for flattened list
@@ -197,13 +198,13 @@ On filter change: Set filters state, which triggers query refetch and resets inf
 
 Integrate with the GET `/api/summaries` endpoint using fetch or Axios (via `src/lib/api.ts` utility). Extend backend if needed for 'search' param.
 
-- **Request**: 
+- **Request**:
   - Method: GET
   - Headers: Authorization: Bearer <token> (from session)
   - Query Params: limit=20 (fixed batch size), offset= (calculated per page), channel_id (from filters), status (from filters), sort='published_at_desc' (from filters), include_hidden=false, search? (for title/channel fuzzy match, if backend supports)
   - Type: No body; validated via SummaryListFiltersSchema (backend, extend for search if needed)
 
-- **Response**: 
+- **Response**:
   - Success (200): PaginatedResponse<SummaryWithVideo> – array of summaries with video/channel details, pagination meta.
   - Errors: ApiError { error: { code: string, message: string } } – e.g., 'INVALID_INPUT' (400), 'UNAUTHORIZED' (401), 'INTERNAL_ERROR' (500)
   - Handled in hook: isError state, show toast on failure. For infinite: Separate error for next pages.
@@ -231,7 +232,7 @@ All interactions trigger toasts for feedback (success/error), e.g., "Applied fil
 - **Authentication**: Verified by middleware; if unauth, redirect to login. Component checks session presence before queries.
 - **Data Validation**: On API response, ensure data is PaginatedResponse<SummaryWithVideo>; type-guard and log malformed. For each card: If status='failed', display error_code; if no tldr, show placeholder.
 - **Pagination/Infinite Scroll Conditions**: If total pages exhausted (!hasNextPage), hide loader and show "No more summaries". Load next only if current page has full 20 items.
-- **Filter Conditions**: 
+- **Filter Conditions**:
   - Search: Activate if length >=3; backend fuzzy matches title/channel.
   - Channel: Options from user's subscriptions (fetch and validate UUIDs); if invalid, ignore or error toast.
   - Status: Must be valid SummaryStatus; 'all' or undefined shows all.

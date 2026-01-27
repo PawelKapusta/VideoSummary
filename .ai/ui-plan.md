@@ -104,11 +104,11 @@ Nawigacja opiera się na stałym górnym headerze z logo po lewej, globalnym wys
 
 ## 5. Kluczowe komponenty
 
-- **Header**: Stały pasek nawigacyjny z logo, wyszukiwaniem i menu użytkownika; responsywny z hamburgerem na mobile.  
-- **SummaryCard**: Karta z miniaturą, tytułem, TL;DR i akcjami (klik do szczegółów, ukryj); ARIA dla interaktywności.  
-- **RatingButtons**: Ikony kciuków w górę/dół z wizualnym potwierdzeniem; obsługa mutacji z optimistic updates.  
-- **ToastNotifications**: Globalne powiadomienia (Sonner) dla sukcesów/błędów (np. "Generowanie w toku"); auto-zamykające się.  
-- **ConfirmModal**: Modal potwierdzenia dla destrukcyjnych akcji (ukryj, usuń subskrypcję); klawiatura ESC do anulowania.  
-- **FormInput**: Walidowane pola (Zod) z debounce dla URL/wyszukiwania; etykiety ARIA i focus management.  
-- **LoadingSkeleton**: Placeholder'y dla list i szczegółów podczas ładowania; redukcja perceived latency.  
+- **Header**: Stały pasek nawigacyjny z logo, wyszukiwaniem i menu użytkownika; responsywny z hamburgerem na mobile.
+- **SummaryCard**: Karta z miniaturą, tytułem, TL;DR i akcjami (klik do szczegółów, ukryj); ARIA dla interaktywności.
+- **RatingButtons**: Ikony kciuków w górę/dół z wizualnym potwierdzeniem; obsługa mutacji z optimistic updates.
+- **ToastNotifications**: Globalne powiadomienia (Sonner) dla sukcesów/błędów (np. "Generowanie w toku"); auto-zamykające się.
+- **ConfirmModal**: Modal potwierdzenia dla destrukcyjnych akcji (ukryj, usuń subskrypcję); klawiatura ESC do anulowania.
+- **FormInput**: Walidowane pola (Zod) z debounce dla URL/wyszukiwania; etykiety ARIA i focus management.
+- **LoadingSkeleton**: Placeholder'y dla list i szczegółów podczas ładowania; redukcja perceived latency.
 - **EmptyState**: Ilustrowany komunikat z CTA dla pustych list (np. "Dodaj kanał"); motywujący UX.

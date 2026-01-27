@@ -4,7 +4,10 @@ interface LegalFooterProps {
 
 export function LegalFooter({ activePage }: LegalFooterProps = {}) {
   return (
-    <footer data-testid="legal-footer" className="relative bg-gradient-to-b from-background/95 via-background/90 to-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 mt-16 overflow-hidden shadow-2xl shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.15),0_-4px_16px_-4px_rgba(0,0,0,0.1)] w-full">
+    <footer
+      data-testid="legal-footer"
+      className="relative bg-gradient-to-b from-background/95 via-background/90 to-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 mt-16 overflow-hidden shadow-2xl shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.15),0_-4px_16px_-4px_rgba(0,0,0,0.1)] w-full"
+    >
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px] [mask-image:radial-gradient(white,transparent_85%)]" />
 

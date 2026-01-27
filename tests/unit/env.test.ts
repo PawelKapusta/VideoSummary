@@ -128,7 +128,7 @@ describe("Environment Variables Utilities", () => {
     it("should return custom HTTPS URL in production", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: "https://myapp.com"
+        SITE_URL: "https://myapp.com",
       };
 
       const result = getSiteUrl(runtimeEnv);
@@ -138,7 +138,7 @@ describe("Environment Variables Utilities", () => {
     it("should add trailing slash to custom URL", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: "https://myapp.com"
+        SITE_URL: "https://myapp.com",
       };
 
       const result = getSiteUrl(runtimeEnv);
@@ -148,7 +148,7 @@ describe("Environment Variables Utilities", () => {
     it("should not add extra trailing slash if already present", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: "https://myapp.com/"
+        SITE_URL: "https://myapp.com/",
       };
 
       const result = getSiteUrl(runtimeEnv);
@@ -158,11 +158,11 @@ describe("Environment Variables Utilities", () => {
     it("should reject HTTP URL in production and use fallback", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: "http://myapp.com"
+        SITE_URL: "http://myapp.com",
       };
 
       // Mock console.warn to verify it's called
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       const result = getSiteUrl(runtimeEnv);
       expect(result).toBe("https://video-summary.pages.dev/");
@@ -174,11 +174,11 @@ describe("Environment Variables Utilities", () => {
     it("should handle malformed URL and use fallback", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: "not-a-url"
+        SITE_URL: "not-a-url",
       };
 
       // Mock console.error to verify it's called
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
       const result = getSiteUrl(runtimeEnv);
       expect(result).toBe("https://video-summary.pages.dev/");
@@ -189,7 +189,7 @@ describe("Environment Variables Utilities", () => {
 
     it("should use fallback when no SITE_URL provided in production", () => {
       const runtimeEnv: RuntimeEnv = {
-        NODE_ENV: "production"
+        NODE_ENV: "production",
       };
 
       const result = getSiteUrl(runtimeEnv);
@@ -199,7 +199,7 @@ describe("Environment Variables Utilities", () => {
     it("should use fallback when SITE_URL is empty in production", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: ""
+        SITE_URL: "",
       };
 
       const result = getSiteUrl(runtimeEnv);
@@ -223,7 +223,7 @@ describe("Environment Variables Utilities", () => {
     it("should handle URL with port number", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: "https://myapp.com:8080"
+        SITE_URL: "https://myapp.com:8080",
       };
 
       const result = getSiteUrl(runtimeEnv);
@@ -233,7 +233,7 @@ describe("Environment Variables Utilities", () => {
     it("should handle URL with path", () => {
       const runtimeEnv: RuntimeEnv = {
         NODE_ENV: "production",
-        SITE_URL: "https://myapp.com/api"
+        SITE_URL: "https://myapp.com/api",
       };
 
       const result = getSiteUrl(runtimeEnv);

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, act } from "@testing-library/react";
-import React, { useState } from "react";
+
 import { useDebounce } from "@/hooks/useDebounce";
 
 describe("useDebounce", () => {
@@ -192,7 +192,7 @@ describe("useDebounce", () => {
   });
 
   it("should handle component unmounting", () => {
-    const { getByTestId, rerender, unmount } = render(<TestComponent value="initial" delay={500} />);
+    const { rerender, unmount } = render(<TestComponent value="initial" delay={500} />);
 
     rerender(<TestComponent value="updated" delay={500} />);
 

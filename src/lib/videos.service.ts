@@ -99,26 +99,7 @@ export async function listVideos(
 
   // Format videos according to VideoSummary type
   const data: VideoSummary[] = (videos || []).map(
-    (video: {
-      id: string;
-      youtube_video_id: string;
-      title: string | null;
-      thumbnail_url: string | null;
-      published_at: string | null;
-      summary_id: string | null;
-      summary_status: string | null;
-      channels: {
-        id: string;
-        youtube_channel_id: string;
-        name: string;
-        created_at: string;
-      };
-    }) => {
-      // Ensure all required fields are present (though DB schema guarantees most)
-      // and handle potential join nulls if relationship is optional (though here it should be present)
-
-      // Safety check for channel, though the join should ensure it exists if video exists
-      // (INNER JOIN behavior depends on supabase-js handling, usually it returns null if relation missing but foreign key is non-nullable)
+    (video: any) => {
       // Cast video.channels to handle potential array/single object ambiguity from SelectQuery normalization if needed,
       // but here typed as Single object usually.
       const channel = Array.isArray(video.channels) ? video.channels[0] : video.channels;
@@ -141,7 +122,7 @@ export async function listVideos(
           created_at: channel.created_at,
         },
         summary_id: video.summary_id,
-        summary_status: video.summary_status,
+        summary_status: video.summary_status as VideoSummary["summary_status"],
       };
     }
   );
@@ -209,11 +190,11 @@ export async function getVideoDetails(supabase: SupabaseClient, videoId: string)
       created_at: video.channels.created_at,
     },
     summary:
-      video.summary_id && video.summary_status === "completed"
+      video.summaries && video.summaries.status === "completed"
         ? {
-            id: video.summary_id,
-            status: video.summary_status,
-            generated_at: null, // Not available in flat view
+            id: video.summaries.id,
+            status: video.summaries.status,
+            generated_at: video.summaries.generated_at,
           }
         : null,
   };

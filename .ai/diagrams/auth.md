@@ -38,7 +38,7 @@ sequenceDiagram
     activate Supabase
     Supabase-->>Browser: Session { access_token, user }
     deactivate Supabase
-    
+
     Browser->>Browser: Zapisz tokeny w Cookies (sb-*)
     Browser->>Browser: Przekierowanie na /dashboard
     deactivate Browser
@@ -52,7 +52,7 @@ sequenceDiagram
     activate Supabase
     Supabase-->>Middleware: User Object / Error
     deactivate Supabase
-    
+
     alt Token Ważny
         Middleware-->>Browser: Renderuj Dashboard (HTML)
     else Token Nieważny / Brak
@@ -78,15 +78,15 @@ sequenceDiagram
     Supabase-->>Browser: Potwierdzenie wysłania
     deactivate Supabase
     deactivate Browser
-    
+
     Note right of Browser: Użytkownik klika w link z emaila
-    
+
     Browser->>Supabase: Auth Callback (wymiana kodu)
     activate Supabase
     Supabase-->>Browser: Session (Zalogowany)
     deactivate Supabase
     Browser->>Browser: Przekierowanie na /update-password
-    
+
     activate Browser
     Browser->>Supabase: updateUser({ password })
     activate Supabase

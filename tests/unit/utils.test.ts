@@ -37,12 +37,9 @@ describe("cn (className utility)", () => {
   it("should handle conditional classes", () => {
     const isActive = true;
     const isDisabled = false;
-    expect(cn(
-      "btn",
-      isActive && "btn-active",
-      isDisabled && "btn-disabled",
-      "text-center"
-    )).toBe("btn btn-active text-center");
+    expect(cn("btn", isActive && "btn-active", isDisabled && "btn-disabled", "text-center")).toBe(
+      "btn btn-active text-center"
+    );
   });
 
   it("should handle important modifier classes", () => {

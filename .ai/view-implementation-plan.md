@@ -19,9 +19,11 @@ This document provides comprehensive implementation plans for all REST API endpo
 ### 1.1. Register New User
 
 #### Endpoint Overview
+
 Creates a new user account with email and password. Upon successful registration, automatically creates a user profile and returns session tokens for immediate authentication.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/auth/register`
 - **Authentication:** None (public endpoint)
@@ -29,6 +31,7 @@ Creates a new user account with email and password. Upon successful registration
   - Required: None (body only)
   - Optional: None
 - **Request Body:**
+
 ```typescript
 {
   email: string;
@@ -37,12 +40,15 @@ Creates a new user account with email and password. Upon successful registration
 ```
 
 #### Used Types
+
 - **Request DTO:** `RegisterRequest`
 - **Response DTO:** `AuthResponse`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (201 Created):**
+
 ```json
 {
   "user": {
@@ -59,6 +65,7 @@ Creates a new user account with email and password. Upon successful registration
 ```
 
 #### Data Flow
+
 1. Receive and parse request body
 2. Validate email format and password strength using Zod schema
 3. Call `supabase.auth.signUp()` with email and password
@@ -68,6 +75,7 @@ Creates a new user account with email and password. Upon successful registration
 7. If error, return appropriate error response
 
 #### Security Considerations
+
 - **Input Validation:**
   - Email: RFC 5322 compliant format
   - Password: Minimum 8 characters, at least one uppercase, one lowercase, one number
@@ -77,6 +85,7 @@ Creates a new user account with email and password. Upon successful registration
 - **Password Security:** Never log or expose passwords; handled securely by Supabase Auth
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid email format
   - Password doesn't meet strength requirements
@@ -94,12 +103,14 @@ Creates a new user account with email and password. Upon successful registration
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Email validation is O(1) with regex
 - Password hashing handled by Supabase Auth (bcrypt)
 - Profile creation via trigger is atomic with user creation
 - Response time target: <500ms
 
 #### Implementation Steps
+
 1. Create Zod schema for request validation (`RegisterRequestSchema`)
 2. Create API route handler at `src/pages/api/auth/register.ts`
 3. Parse and validate request body using Zod
@@ -115,9 +126,11 @@ Creates a new user account with email and password. Upon successful registration
 ### 1.2. Login
 
 #### Endpoint Overview
+
 Authenticates an existing user with email and password credentials and returns session tokens.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/auth/login`
 - **Authentication:** None (public endpoint)
@@ -125,6 +138,7 @@ Authenticates an existing user with email and password credentials and returns s
   - Required: None (body only)
   - Optional: None
 - **Request Body:**
+
 ```typescript
 {
   email: string;
@@ -133,12 +147,15 @@ Authenticates an existing user with email and password credentials and returns s
 ```
 
 #### Used Types
+
 - **Request DTO:** `LoginRequest`
 - **Response DTO:** `AuthResponse`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "user": {
@@ -155,6 +172,7 @@ Authenticates an existing user with email and password credentials and returns s
 ```
 
 #### Data Flow
+
 1. Receive and parse request body
 2. Validate email and password presence using Zod schema
 3. Call `supabase.auth.signInWithPassword({ email, password })`
@@ -163,6 +181,7 @@ Authenticates an existing user with email and password credentials and returns s
 6. Log failed login attempts for security monitoring
 
 #### Security Considerations
+
 - **Authentication:** Credentials validated by Supabase Auth
 - **Rate Limiting:** 5 failed login attempts per 15 minutes per email (Supabase default)
 - **Brute Force Protection:** Consider implementing additional IP-based rate limiting
@@ -170,6 +189,7 @@ Authenticates an existing user with email and password credentials and returns s
 - **Account Enumeration:** Consider returning generic error message for both invalid email and password
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Missing email or password
   - Error code: `INVALID_INPUT`
@@ -185,11 +205,13 @@ Authenticates an existing user with email and password credentials and returns s
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Password verification is O(1) with bcrypt
 - Response time target: <300ms
 - Failed login attempts should take similar time as successful ones (timing attack prevention)
 
 #### Implementation Steps
+
 1. Create Zod schema for request validation (`LoginRequestSchema`)
 2. Create API route handler at `src/pages/api/auth/login.ts`
 3. Parse and validate request body using Zod
@@ -205,9 +227,11 @@ Authenticates an existing user with email and password credentials and returns s
 ### 1.3. Logout
 
 #### Endpoint Overview
+
 Terminates the current authenticated user session by invalidating the access token.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/auth/logout`
 - **Authentication:** Required (Bearer token)
@@ -217,12 +241,15 @@ Terminates the current authenticated user session by invalidating the access tok
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None
 - **Response DTO:** `ApiSuccess<void>`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "message": "Successfully logged out"
@@ -230,6 +257,7 @@ Terminates the current authenticated user session by invalidating the access tok
 ```
 
 #### Data Flow
+
 1. Extract JWT token from Authorization header
 2. Verify token is valid (handled by middleware)
 3. Call `supabase.auth.signOut()`
@@ -237,12 +265,14 @@ Terminates the current authenticated user session by invalidating the access tok
 5. Return success message
 
 #### Security Considerations
+
 - **Authentication Required:** Endpoint protected by middleware checking `auth.uid()`
 - **Token Invalidation:** Supabase Auth handles token blacklisting
 - **Session Cleanup:** All active sessions for the user can be terminated
 - **CSRF Protection:** Use standard CSRF tokens for state-changing operations
 
 #### Error Handling
+
 - **401 Unauthorized:**
   - Missing or invalid Bearer token
   - Token expired
@@ -252,11 +282,13 @@ Terminates the current authenticated user session by invalidating the access tok
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Token validation is O(1) operation
 - Response time target: <200ms
 - No database queries required (handled by Supabase Auth)
 
 #### Implementation Steps
+
 1. Create API route handler at `src/pages/api/auth/logout.ts`
 2. Verify authentication in middleware (check `context.locals.supabase.auth.getUser()`)
 3. Call `context.locals.supabase.auth.signOut()`
@@ -269,9 +301,11 @@ Terminates the current authenticated user session by invalidating the access tok
 ### 1.4. Request Password Reset
 
 #### Endpoint Overview
+
 Initiates the password reset process by sending an email with a time-limited, single-use reset link to the user.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/auth/reset-password`
 - **Authentication:** None (public endpoint)
@@ -279,6 +313,7 @@ Initiates the password reset process by sending an email with a time-limited, si
   - Required: None (body only)
   - Optional: None
 - **Request Body:**
+
 ```typescript
 {
   email: string;
@@ -286,12 +321,15 @@ Initiates the password reset process by sending an email with a time-limited, si
 ```
 
 #### Used Types
+
 - **Request DTO:** `ResetPasswordRequest`
 - **Response DTO:** `ApiSuccess<void>`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "message": "Password reset email sent"
@@ -299,6 +337,7 @@ Initiates the password reset process by sending an email with a time-limited, si
 ```
 
 #### Data Flow
+
 1. Receive and parse request body
 2. Validate email format using Zod schema
 3. Call `supabase.auth.resetPasswordForEmail(email, { redirectTo })`
@@ -307,6 +346,7 @@ Initiates the password reset process by sending an email with a time-limited, si
 6. Log request for security monitoring
 
 #### Security Considerations
+
 - **Account Enumeration Prevention:** Always return 200 OK, even if email doesn't exist
 - **Rate Limiting:** Implement strict rate limiting (e.g., 3 requests per hour per email)
 - **Token Expiration:** Reset tokens should expire quickly (default: 1 hour)
@@ -314,6 +354,7 @@ Initiates the password reset process by sending an email with a time-limited, si
 - **Email Validation:** Sanitize and validate email input
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid email format
   - Error code: `INVALID_INPUT`
@@ -326,12 +367,14 @@ Initiates the password reset process by sending an email with a time-limited, si
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Email validation is O(1) with regex
 - Email sending is asynchronous (doesn't block response)
 - Response time target: <300ms
 - Consider queueing email sending for better performance
 
 #### Implementation Steps
+
 1. Create Zod schema for request validation (`ResetPasswordRequestSchema`)
 2. Create API route handler at `src/pages/api/auth/reset-password.ts`
 3. Parse and validate request body using Zod
@@ -347,9 +390,11 @@ Initiates the password reset process by sending an email with a time-limited, si
 ### 1.5. Confirm Password Reset
 
 #### Endpoint Overview
+
 Completes the password reset process by verifying the reset token from email and updating the user's password.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/auth/reset-password/confirm`
 - **Authentication:** None (uses reset token)
@@ -357,6 +402,7 @@ Completes the password reset process by verifying the reset token from email and
   - Required: None (body only)
   - Optional: None
 - **Request Body:**
+
 ```typescript
 {
   token: string;
@@ -365,12 +411,15 @@ Completes the password reset process by verifying the reset token from email and
 ```
 
 #### Used Types
+
 - **Request DTO:** `ConfirmResetPasswordRequest`
 - **Response DTO:** `ApiSuccess<void>`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "message": "Password successfully reset"
@@ -378,6 +427,7 @@ Completes the password reset process by verifying the reset token from email and
 ```
 
 #### Data Flow
+
 1. Receive and parse request body
 2. Validate token and password using Zod schema
 3. Verify password meets strength requirements
@@ -387,6 +437,7 @@ Completes the password reset process by verifying the reset token from email and
 7. Return success message
 
 #### Security Considerations
+
 - **Token Validation:** Verify token is valid, not expired, and not previously used
 - **Password Strength:** Enforce same password policy as registration
 - **Token Expiration:** Reset tokens expire after 1 hour (Supabase default)
@@ -394,6 +445,7 @@ Completes the password reset process by verifying the reset token from email and
 - **Rate Limiting:** Prevent brute force attacks on token
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid or expired token
   - Weak password that doesn't meet requirements
@@ -409,11 +461,13 @@ Completes the password reset process by verifying the reset token from email and
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Token verification is O(1) operation
 - Password hashing is O(1) with bcrypt
 - Response time target: <500ms
 
 #### Implementation Steps
+
 1. Create Zod schema for request validation (`ConfirmResetPasswordRequestSchema`)
 2. Create API route handler at `src/pages/api/auth/reset-password/confirm.ts`
 3. Parse and validate request body using Zod
@@ -431,9 +485,11 @@ Completes the password reset process by verifying the reset token from email and
 ### 2.1. Get Current User Profile
 
 #### Endpoint Overview
+
 Retrieves the authenticated user's profile information including their subscribed channels and subscription count.
 
 #### Request Details
+
 - **HTTP Method:** `GET`
 - **URL Structure:** `/api/profile`
 - **Authentication:** Required (Bearer token)
@@ -443,13 +499,16 @@ Retrieves the authenticated user's profile information including their subscribe
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None
 - **Response DTO:** `UserProfile`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `Profile`, `SubscriptionWithChannel`, `Channel`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "id": "uuid",
@@ -472,6 +531,7 @@ Retrieves the authenticated user's profile information including their subscribe
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session (`auth.uid()`)
 2. Query `auth.users` table for user email and created_at
 3. Query `subscriptions` table joined with `channels` for user's subscriptions
@@ -480,12 +540,14 @@ Retrieves the authenticated user's profile information including their subscribe
 6. Return profile data
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware checking `auth.uid()`
 - **RLS Protection:** User can only access their own profile
 - **Data Minimization:** Only return necessary profile fields
 - **No Sensitive Data:** Never expose password or internal tokens
 
 #### Error Handling
+
 - **401 Unauthorized:**
   - Missing or invalid Bearer token
   - Token expired
@@ -499,6 +561,7 @@ Retrieves the authenticated user's profile information including their subscribe
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Single query with JOIN is more efficient than multiple queries
 - RLS policies automatically filter subscriptions
 - Index on `subscriptions(user_id)` ensures fast lookup
@@ -506,6 +569,7 @@ Retrieves the authenticated user's profile information including their subscribe
 - Consider caching profile data for 5 minutes
 
 #### Implementation Steps
+
 1. Create service function `getUserProfile(userId: string)` in `src/lib/profile.service.ts`
 2. Create API route handler at `src/pages/api/profile.ts`
 3. Verify authentication in middleware
@@ -514,9 +578,9 @@ Retrieves the authenticated user's profile information including their subscribe
 6. Query subscriptions with channel data using Supabase query builder:
    ```typescript
    const { data: subscriptions } = await supabase
-     .from('subscriptions')
-     .select('id, created_at, channels(*)')
-     .eq('user_id', userId)
+     .from("subscriptions")
+     .select("id, created_at, channels(*)")
+     .eq("user_id", userId);
    ```
 7. Format response according to `UserProfile` type
 8. Return 200 OK with profile data
@@ -530,9 +594,11 @@ Retrieves the authenticated user's profile information including their subscribe
 ### 3.1. List Subscribed Channels
 
 #### Endpoint Overview
+
 Retrieves all YouTube channels that the authenticated user is subscribed to, with pagination support.
 
 #### Request Details
+
 - **HTTP Method:** `GET`
 - **URL Structure:** `/api/subscriptions`
 - **Authentication:** Required (Bearer token)
@@ -544,13 +610,16 @@ Retrieves all YouTube channels that the authenticated user is subscribed to, wit
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (query params only)
 - **Response DTO:** `PaginatedResponse<SubscriptionWithChannel>`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `Subscription`, `Channel`, `PaginationMeta`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "data": [
@@ -574,6 +643,7 @@ Retrieves all YouTube channels that the authenticated user is subscribed to, wit
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Parse and validate query parameters (limit, offset)
 3. Query `subscriptions` table with JOIN to `channels`
@@ -583,12 +653,14 @@ Retrieves all YouTube channels that the authenticated user is subscribed to, wit
 7. Return paginated list
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** User can only see their own subscriptions via RLS policy
 - **Input Validation:** Validate limit and offset to prevent abuse
 - **Pagination Limits:** Enforce maximum page size (100) to prevent performance issues
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid limit or offset value (negative, non-numeric)
   - Limit exceeds maximum (100)
@@ -601,12 +673,14 @@ Retrieves all YouTube channels that the authenticated user is subscribed to, wit
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Use index on `subscriptions(user_id)` for fast filtering
 - Total count query can be cached for 1 minute
 - Response time target: <200ms
 - Consider using `SELECT count(*) OVER()` to get total in single query
 
 #### Implementation Steps
+
 1. Create Zod schema for query parameter validation
 2. Create service function `listUserSubscriptions(userId, limit, offset)` in `src/lib/subscriptions.service.ts`
 3. Create API route handler at `src/pages/api/subscriptions/index.ts`
@@ -615,10 +689,10 @@ Retrieves all YouTube channels that the authenticated user is subscribed to, wit
 6. Call service function with Supabase query:
    ```typescript
    const { data, count } = await supabase
-     .from('subscriptions')
-     .select('id, created_at, channels(*)', { count: 'exact' })
-     .eq('user_id', userId)
-     .range(offset, offset + limit - 1)
+     .from("subscriptions")
+     .select("id, created_at, channels(*)", { count: "exact" })
+     .eq("user_id", userId)
+     .range(offset, offset + limit - 1);
    ```
 7. Format response with pagination metadata
 8. Return 200 OK with data
@@ -629,9 +703,11 @@ Retrieves all YouTube channels that the authenticated user is subscribed to, wit
 ### 3.2. Subscribe to Channel
 
 #### Endpoint Overview
+
 Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist in the database, it fetches metadata from YouTube API and creates a new channel record before creating the subscription.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/subscriptions`
 - **Authentication:** Required (Bearer token)
@@ -639,6 +715,7 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
   - Required: None (body only)
   - Optional: None
 - **Request Body:**
+
 ```typescript
 {
   channel_url: string; // YouTube channel URL
@@ -646,13 +723,16 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
 ```
 
 #### Used Types
+
 - **Request DTO:** `SubscribeRequest`
 - **Response DTO:** `ApiSuccess<SubscriptionWithChannel>`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `ChannelInsert`, `SubscriptionInsert`
 
 #### Response Details
+
 - **Success (201 Created):**
+
 ```json
 {
   "subscription_id": "uuid",
@@ -668,6 +748,7 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Parse and validate request body
 3. Validate YouTube channel URL format
@@ -682,6 +763,7 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
 10. Return subscription details with channel information
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **URL Validation:** Validate YouTube channel URL format to prevent injection
 - **Subscription Limit:** Enforce 10-channel limit (also enforced by database trigger)
@@ -690,6 +772,7 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
 - **Rate Limiting:** Protect against subscription spam
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid YouTube channel URL format
   - Malformed request body
@@ -714,6 +797,7 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - YouTube API call may add latency (500-1000ms)
 - Cache channel metadata to avoid repeated API calls
 - Use transaction for channel creation + subscription creation
@@ -721,6 +805,7 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
 - Index on `channels(youtube_channel_id)` for fast lookup
 
 #### Implementation Steps
+
 1. Create Zod schema for request validation (`SubscribeRequestSchema`)
 2. Create utility function `extractYouTubeChannelId(url: string)` in `src/lib/youtube.utils.ts`
 3. Create service function `subscribeToChannel(userId, channelUrl)` in `src/lib/subscriptions.service.ts`
@@ -731,9 +816,9 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
 8. Check subscription count for user:
    ```typescript
    const { count } = await supabase
-     .from('subscriptions')
-     .select('*', { count: 'exact', head: true })
-     .eq('user_id', userId)
+     .from("subscriptions")
+     .select("*", { count: "exact", head: true })
+     .eq("user_id", userId);
    ```
 9. If count >= 10, return 422 error
 10. Check if channel exists in database
@@ -749,9 +834,11 @@ Adds a YouTube channel to the user's subscriptions. If the channel doesn't exist
 ### 3.3. Unsubscribe from Channel
 
 #### Endpoint Overview
+
 Removes a channel from the user's subscriptions. This triggers automatic cleanup of the user's hidden summaries for that channel but preserves the channel, videos, and summaries for other users.
 
 #### Request Details
+
 - **HTTP Method:** `DELETE`
 - **URL Structure:** `/api/subscriptions/:subscriptionId`
 - **Authentication:** Required (Bearer token)
@@ -762,12 +849,15 @@ Removes a channel from the user's subscriptions. This triggers automatic cleanup
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (path param only)
 - **Response DTO:** `ApiSuccess<void>`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "message": "Successfully unsubscribed from channel"
@@ -775,6 +865,7 @@ Removes a channel from the user's subscriptions. This triggers automatic cleanup
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract subscription ID from URL path
 3. Validate subscription ID format (UUID)
@@ -789,6 +880,7 @@ Removes a channel from the user's subscriptions. This triggers automatic cleanup
 8. Return success message
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **Authorization:** User can only delete their own subscriptions
 - **RLS Protection:** DELETE policy checks `auth.uid() = user_id`
@@ -796,6 +888,7 @@ Removes a channel from the user's subscriptions. This triggers automatic cleanup
 - **UUID Validation:** Validate subscription ID format
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid subscription ID format (not a UUID)
   - Error code: `INVALID_INPUT`
@@ -815,12 +908,14 @@ Removes a channel from the user's subscriptions. This triggers automatic cleanup
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - UUID lookup with index is O(1)
 - Trigger cleanup is async and doesn't block response
 - Response time target: <200ms
 - Deletion cascades handled by database efficiently
 
 #### Implementation Steps
+
 1. Create Zod schema for path parameter validation
 2. Create service function `unsubscribeFromChannel(userId, subscriptionId)` in `src/lib/subscriptions.service.ts`
 3. Create API route handler at `src/pages/api/subscriptions/[subscriptionId].ts`
@@ -829,20 +924,16 @@ Removes a channel from the user's subscriptions. This triggers automatic cleanup
 6. Verify subscription exists and belongs to user:
    ```typescript
    const { data: subscription } = await supabase
-     .from('subscriptions')
-     .select('*')
-     .eq('id', subscriptionId)
-     .eq('user_id', userId)
-     .single()
+     .from("subscriptions")
+     .select("*")
+     .eq("id", subscriptionId)
+     .eq("user_id", userId)
+     .single();
    ```
 7. If not found or wrong user, return appropriate error
 8. Delete subscription:
    ```typescript
-   await supabase
-     .from('subscriptions')
-     .delete()
-     .eq('id', subscriptionId)
-     .eq('user_id', userId)
+   await supabase.from("subscriptions").delete().eq("id", subscriptionId).eq("user_id", userId);
    ```
 9. Return 200 OK with success message
 10. Test with valid subscription, invalid ID, another user's subscription
@@ -854,9 +945,11 @@ Removes a channel from the user's subscriptions. This triggers automatic cleanup
 ### 4.1. List Videos from Subscribed Channels
 
 #### Endpoint Overview
+
 Retrieves videos from the user's subscribed channels with pagination, filtering, and sorting options. Only returns videos from channels the user is subscribed to (enforced by RLS).
 
 #### Request Details
+
 - **HTTP Method:** `GET`
 - **URL Structure:** `/api/videos`
 - **Authentication:** Required (Bearer token)
@@ -870,13 +963,16 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (query params only)
 - **Response DTO:** `PaginatedResponse<VideoSummary>`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `VideoBasic`, `Channel`, `PaginationMeta`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "data": [
@@ -903,6 +999,7 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Parse and validate query parameters
 3. Build query with filters:
@@ -917,6 +1014,7 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
 8. Return paginated list
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** Videos filtered by subscription via RLS policy
 - **Channel Filter:** If non-subscribed channel_id provided, returns empty list (not 403)
@@ -924,6 +1022,7 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
 - **SQL Injection:** Use parameterized queries (Supabase handles this)
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid limit, offset, or sort value
   - Invalid channel_id format (not UUID)
@@ -937,6 +1036,7 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Index on `videos(published_at DESC)` for sorting
 - Index on `videos(channel_id)` for filtering
 - RLS policy uses indexed subscription lookup
@@ -945,16 +1045,17 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
 - Use `SELECT count(*) OVER()` for single-query pagination
 
 #### Implementation Steps
+
 1. Create Zod schema for query parameter validation
 2. Create service function `listVideos(userId, filters)` in `src/lib/videos.service.ts`
 3. Create API route handler at `src/pages/api/videos/index.ts`
 4. Verify authentication and extract user ID
 5. Parse and validate query parameters
 6. Build Supabase query:
+
    ```typescript
-   let query = supabase
-     .from('videos')
-     .select(`
+   let query = supabase.from("videos").select(
+     `
        id,
        youtube_video_id,
        title,
@@ -962,18 +1063,21 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
        published_at,
        channels (id, name, youtube_channel_id),
        summaries (id)
-     `, { count: 'exact' })
-   
+     `,
+     { count: "exact" }
+   );
+
    if (channel_id) {
-     query = query.eq('channel_id', channel_id)
+     query = query.eq("channel_id", channel_id);
    }
-   
-   const orderColumn = 'published_at'
-   const ascending = sort === 'published_at_asc'
-   query = query.order(orderColumn, { ascending })
-   
-   query = query.range(offset, offset + limit - 1)
+
+   const orderColumn = "published_at";
+   const ascending = sort === "published_at_asc";
+   query = query.order(orderColumn, { ascending });
+
+   query = query.range(offset, offset + limit - 1);
    ```
+
 7. Map results to VideoSummary type (set has_summary based on summaries presence)
 8. Format response with pagination metadata
 9. Return 200 OK with data
@@ -984,9 +1088,11 @@ Retrieves videos from the user's subscribed channels with pagination, filtering,
 ### 4.2. Get Video Details
 
 #### Endpoint Overview
+
 Retrieves detailed information about a specific video, including its channel and summary status. User must be subscribed to the video's channel to access it.
 
 #### Request Details
+
 - **HTTP Method:** `GET`
 - **URL Structure:** `/api/videos/:videoId`
 - **Authentication:** Required (Bearer token)
@@ -997,13 +1103,16 @@ Retrieves detailed information about a specific video, including its channel and
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (path param only)
 - **Response DTO:** `DetailedVideo`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `Channel`, `SummaryBasic`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "id": "uuid",
@@ -1026,6 +1135,7 @@ Retrieves detailed information about a specific video, including its channel and
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract video ID from URL path
 3. Validate video ID format (UUID)
@@ -1036,12 +1146,14 @@ Retrieves detailed information about a specific video, including its channel and
 8. Return video details
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** Video only accessible if user subscribed to channel
 - **Authorization Check:** 403 if video belongs to non-subscribed channel
 - **UUID Validation:** Validate video ID format
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid video ID format (not UUID)
   - Error code: `INVALID_INPUT`
@@ -1059,12 +1171,14 @@ Retrieves detailed information about a specific video, including its channel and
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - UUID lookup with index is O(1)
 - Single query with JOINs is efficient
 - RLS policy check is indexed
 - Response time target: <200ms
 
 #### Implementation Steps
+
 1. Create Zod schema for path parameter validation
 2. Create service function `getVideoDetails(videoId)` in `src/lib/videos.service.ts`
 3. Create API route handler at `src/pages/api/videos/[videoId].ts`
@@ -1073,14 +1187,16 @@ Retrieves detailed information about a specific video, including its channel and
 6. Query video with joins:
    ```typescript
    const { data: video } = await supabase
-     .from('videos')
-     .select(`
+     .from("videos")
+     .select(
+       `
        *,
        channels (id, name, youtube_channel_id),
        summaries (id, status, generated_at)
-     `)
-     .eq('id', videoId)
-     .single()
+     `
+     )
+     .eq("id", videoId)
+     .single();
    ```
 7. If no data returned, check if video exists at all:
    - If exists (query without RLS), return 403 Forbidden
@@ -1096,9 +1212,11 @@ Retrieves detailed information about a specific video, including its channel and
 ### 5.1. List Summaries
 
 #### Endpoint Overview
+
 Retrieves summaries for videos from the user's subscribed channels with pagination, filtering, and sorting. By default excludes hidden summaries unless explicitly requested.
 
 #### Request Details
+
 - **HTTP Method:** `GET`
 - **URL Structure:** `/api/summaries`
 - **Authentication:** Required (Bearer token)
@@ -1114,13 +1232,16 @@ Retrieves summaries for videos from the user's subscribed channels with paginati
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (query params only)
 - **Response DTO:** `PaginatedResponse<SummaryWithVideo>`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `VideoBasic`, `Channel`, `SummaryStatus`, `PaginationMeta`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "data": [
@@ -1152,6 +1273,7 @@ Retrieves summaries for videos from the user's subscribed channels with paginati
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Parse and validate query parameters
 3. Build query with filters:
@@ -1168,6 +1290,7 @@ Retrieves summaries for videos from the user's subscribed channels with paginati
 8. Return paginated list
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** Summaries filtered by subscription via RLS
 - **Hidden Summaries:** By default excludes user's hidden summaries
@@ -1175,6 +1298,7 @@ Retrieves summaries for videos from the user's subscribed channels with paginati
 - **Channel Filter:** If non-subscribed channel_id, returns empty list
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid query parameters
   - Invalid status value
@@ -1188,6 +1312,7 @@ Retrieves summaries for videos from the user's subscribed channels with paginati
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Complex query with multiple JOINs
 - Index on `summaries(video_id)` for video lookup
 - Index on `hidden_summaries(user_id, summary_id)` for exclusion
@@ -1196,39 +1321,47 @@ Retrieves summaries for videos from the user's subscribed channels with paginati
 - Cache results for 1 minute
 
 #### Implementation Steps
+
 1. Create Zod schema for query parameter validation
 2. Create service function `listSummaries(userId, filters)` in `src/lib/summaries.service.ts`
 3. Create API route handler at `src/pages/api/summaries/index.ts`
 4. Verify authentication and extract user ID
 5. Parse and validate query parameters
 6. Build complex Supabase query:
+
    ```typescript
-   let query = supabase
-     .from('summaries')
-     .select(`
+   let query = supabase.from("summaries").select(
+     `
        id,
        tldr,
        status,
        generated_at,
        videos (id, youtube_video_id, title, thumbnail_url, published_at, channel_id),
        channels:videos(channels(id, name))
-     `, { count: 'exact' })
-   
+     `,
+     { count: "exact" }
+   );
+
    // Filter by status if provided
    if (status) {
-     query = query.eq('status', status)
+     query = query.eq("status", status);
    }
-   
+
    // Exclude hidden summaries unless include_hidden=true
    if (!include_hidden) {
-     query = query.not('id', 'in', `(
+     query = query.not(
+       "id",
+       "in",
+       `(
        SELECT summary_id FROM hidden_summaries WHERE user_id = '${userId}'
-     )`)
+     )`
+     );
    }
-   
+
    // Apply sorting
    // Apply pagination
    ```
+
 7. Fetch user's ratings for returned summaries in separate query
 8. Merge rating data with summary data
 9. Format response with pagination metadata
@@ -1240,9 +1373,11 @@ Retrieves summaries for videos from the user's subscribed channels with paginati
 ### 5.2. Get Summary Details
 
 #### Endpoint Overview
+
 Retrieves complete details of a specific summary including full summary content, video information, rating statistics, and the user's personal rating.
 
 #### Request Details
+
 - **HTTP Method:** `GET`
 - **URL Structure:** `/api/summaries/:summaryId`
 - **Authentication:** Required (Bearer token)
@@ -1253,13 +1388,16 @@ Retrieves complete details of a specific summary including full summary content,
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (path param only)
 - **Response DTO:** `DetailedSummary`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `VideoWithUrl`, `Channel`, `RatingStats`, `SummaryStatus`, `SummaryErrorCode`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "id": "uuid",
@@ -1294,6 +1432,7 @@ Retrieves complete details of a specific summary including full summary content,
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract summary ID from URL path
 3. Validate summary ID format (UUID)
@@ -1306,6 +1445,7 @@ Retrieves complete details of a specific summary including full summary content,
 10. Return complete summary details
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** Summary only accessible if user subscribed to channel
 - **Authorization Check:** 403 if summary belongs to non-subscribed channel
@@ -1313,6 +1453,7 @@ Retrieves complete details of a specific summary including full summary content,
 - **Hidden Summaries:** User can still access hidden summary by direct ID (intentional)
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid summary ID format (not UUID)
   - Error code: `INVALID_INPUT`
@@ -1330,6 +1471,7 @@ Retrieves complete details of a specific summary including full summary content,
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - UUID lookup with index is O(1)
 - Rating aggregation uses indexed columns
 - Single query with JOINs is efficient
@@ -1337,6 +1479,7 @@ Retrieves complete details of a specific summary including full summary content,
 - Consider caching summary details for 5 minutes
 
 #### Implementation Steps
+
 1. Create Zod schema for path parameter validation
 2. Create service function `getSummaryDetails(summaryId, userId)` in `src/lib/summaries.service.ts`
 3. Create API route handler at `src/pages/api/summaries/[summaryId].ts`
@@ -1345,32 +1488,33 @@ Retrieves complete details of a specific summary including full summary content,
 6. Query summary with all related data:
    ```typescript
    const { data: summary } = await supabase
-     .from('summaries')
-     .select(`
+     .from("summaries")
+     .select(
+       `
        *,
        videos (*, channels (*))
-     `)
-     .eq('id', summaryId)
-     .single()
+     `
+     )
+     .eq("id", summaryId)
+     .single();
    ```
 7. Calculate rating statistics:
+
    ```typescript
-   const { data: ratings } = await supabase
-     .from('summary_ratings')
-     .select('rating')
-     .eq('summary_id', summaryId)
-   
-   const upvotes = ratings.filter(r => r.rating === true).length
-   const downvotes = ratings.filter(r => r.rating === false).length
+   const { data: ratings } = await supabase.from("summary_ratings").select("rating").eq("summary_id", summaryId);
+
+   const upvotes = ratings.filter((r) => r.rating === true).length;
+   const downvotes = ratings.filter((r) => r.rating === false).length;
    ```
+
 8. Get user's rating:
    ```typescript
    const { data: userRating } = await supabase
-     .from('summary_ratings')
-     .select('rating')
-     .eq('summary_id', summaryId)
-     .eq('user_id', userId)
-     .maybeSingle()
+     .from("summary_ratings")
+     .select("rating")
+     .eq("summary_id", summaryId)
+     .eq("user_id", userId)
+     .maybeSingle();
    ```
 9. Construct YouTube URL: `https://www.youtube.com/watch?v=${youtube_video_id}`
 10. Format response according to DetailedSummary type
@@ -1383,9 +1527,11 @@ Retrieves complete details of a specific summary including full summary content,
 ### 5.3. Generate Summary (Manual)
 
 #### Endpoint Overview
+
 Manually initiates summary generation for a YouTube video. Enforces global daily rate limit (1 successful summary per channel per day). Validates video constraints and user subscription status.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/summaries`
 - **Authentication:** Required (Bearer token)
@@ -1393,6 +1539,7 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
   - Required: None (body only)
   - Optional: None
 - **Request Body:**
+
 ```typescript
 {
   video_url: string; // YouTube video URL
@@ -1400,13 +1547,16 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
 ```
 
 #### Used Types
+
 - **Request DTO:** `GenerateSummaryRequest`
 - **Response DTO:** `ApiSuccess<{ id: string; video: { id: string; youtube_video_id: string; title: string }; status: string }>`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `VideoInsert`, `SummaryInsert`, `GenerationRequestInsert`
 
 #### Response Details
+
 - **Success (202 Accepted):**
+
 ```json
 {
   "id": "uuid",
@@ -1421,6 +1571,7 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Parse and validate request body
 3. Validate YouTube video URL format
@@ -1447,6 +1598,7 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
 9. Return 202 Accepted with summary ID
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **Subscription Check:** User must be subscribed to video's channel
 - **URL Validation:** Validate and sanitize YouTube video URL
@@ -1456,6 +1608,7 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
 - **Idempotency:** Handle duplicate requests gracefully
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid YouTube video URL format
   - Malformed request body
@@ -1487,6 +1640,7 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - YouTube API calls add significant latency (500-1500ms)
 - Advisory lock prevents concurrent generation attempts
 - Transaction ensures atomicity of rate limit check
@@ -1495,6 +1649,7 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
 - Cache video metadata to avoid repeated API calls
 
 #### Implementation Steps
+
 1. Create Zod schema for request validation (`GenerateSummaryRequestSchema`)
 2. Create utility function `extractYouTubeVideoId(url: string)` in `src/lib/youtube.utils.ts`
 3. Create utility function `fetchYouTubeVideoMetadata(videoId: string)` in `src/lib/youtube.service.ts`
@@ -1505,53 +1660,57 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
 8. Extract YouTube video ID from URL
 9. Check if video exists in database
 10. If not, fetch from YouTube API:
+
     ```typescript
-    const metadata = await fetchYouTubeVideoMetadata(videoId)
-    
+    const metadata = await fetchYouTubeVideoMetadata(videoId);
+
     // Validate constraints
     if (metadata.duration > 2700) {
-      return error(422, 'VIDEO_TOO_LONG')
+      return error(422, "VIDEO_TOO_LONG");
     }
     if (!metadata.hasSubtitles) {
-      return error(422, 'NO_SUBTITLES')
+      return error(422, "NO_SUBTITLES");
     }
     if (metadata.isPrivate) {
-      return error(422, 'VIDEO_PRIVATE')
+      return error(422, "VIDEO_PRIVATE");
     }
-    
+
     // Create video record
     const { data: video } = await supabase
-      .from('videos')
+      .from("videos")
       .insert({
         youtube_video_id: videoId,
         channel_id: metadata.channelId,
         title: metadata.title,
         thumbnail_url: metadata.thumbnail,
-        published_at: metadata.publishedAt
+        published_at: metadata.publishedAt,
       })
       .select()
-      .single()
+      .single();
     ```
+
 11. Verify user is subscribed to video's channel
 12. Start database transaction with advisory lock:
     ```typescript
-    await supabase.rpc('pg_advisory_xact_lock', { key: hashChannelId(channelId) })
+    await supabase.rpc("pg_advisory_xact_lock", { key: hashChannelId(channelId) });
     ```
 13. Check for successful summaries today:
+
     ```typescript
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().split("T")[0];
     const { data: existingSummaries } = await supabase
-      .from('summaries')
-      .select('id')
-      .eq('channel_id', channelId)
-      .eq('status', 'completed')
-      .gte('generated_at', `${today}T00:00:00Z`)
-      .lte('generated_at', `${today}T23:59:59Z`)
-    
+      .from("summaries")
+      .select("id")
+      .eq("channel_id", channelId)
+      .eq("status", "completed")
+      .gte("generated_at", `${today}T00:00:00Z`)
+      .lte("generated_at", `${today}T23:59:59Z`);
+
     if (existingSummaries.length > 0) {
-      return error(429, 'GENERATION_LIMIT_REACHED')
+      return error(429, "GENERATION_LIMIT_REACHED");
     }
     ```
+
 14. Check if summary exists for this video
 15. Create generation_requests record
 16. Create or update summaries record
@@ -1565,9 +1724,11 @@ Manually initiates summary generation for a YouTube video. Enforces global daily
 ### 5.4. Hide Summary
 
 #### Endpoint Overview
+
 Hides a summary from the user's dashboard without deleting it from the database. Since summaries are shared resources, this allows personalization without affecting other users.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/summaries/:summaryId/hide`
 - **Authentication:** Required (Bearer token)
@@ -1578,13 +1739,16 @@ Hides a summary from the user's dashboard without deleting it from the database.
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (path param only)
 - **Response DTO:** `ApiSuccess<void>`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `HiddenSummaryInsert`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "message": "Summary hidden from your dashboard"
@@ -1592,6 +1756,7 @@ Hides a summary from the user's dashboard without deleting it from the database.
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract summary ID from URL path
 3. Validate summary ID format (UUID)
@@ -1602,12 +1767,14 @@ Hides a summary from the user's dashboard without deleting it from the database.
 8. Return success message
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** Can only hide summaries from subscribed channels
 - **Authorization:** User can only hide summaries for themselves
 - **UUID Validation:** Validate summary ID format
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid summary ID format (not UUID)
   - Error code: `INVALID_INPUT`
@@ -1628,11 +1795,13 @@ Hides a summary from the user's dashboard without deleting it from the database.
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - UUID lookup with index is O(1)
 - Duplicate check is efficient with unique constraint
 - Response time target: <200ms
 
 #### Implementation Steps
+
 1. Create Zod schema for path parameter validation
 2. Create service function `hideSummary(userId, summaryId)` in `src/lib/summaries.service.ts`
 3. Create API route handler at `src/pages/api/summaries/[summaryId]/hide.ts`
@@ -1641,32 +1810,32 @@ Hides a summary from the user's dashboard without deleting it from the database.
 6. Verify summary exists and user has access:
    ```typescript
    const { data: summary } = await supabase
-     .from('summaries')
-     .select('id, videos(channel_id)')
-     .eq('id', summaryId)
-     .single()
+     .from("summaries")
+     .select("id, videos(channel_id)")
+     .eq("id", summaryId)
+     .single();
    ```
 7. Check if already hidden:
+
    ```typescript
    const { data: existing } = await supabase
-     .from('hidden_summaries')
-     .select('id')
-     .eq('user_id', userId)
-     .eq('summary_id', summaryId)
-     .maybeSingle()
-   
+     .from("hidden_summaries")
+     .select("id")
+     .eq("user_id", userId)
+     .eq("summary_id", summaryId)
+     .maybeSingle();
+
    if (existing) {
-     return error(409, 'ALREADY_HIDDEN')
+     return error(409, "ALREADY_HIDDEN");
    }
    ```
+
 8. Create hidden_summaries record:
    ```typescript
-   await supabase
-     .from('hidden_summaries')
-     .insert({
-       user_id: userId,
-       summary_id: summaryId
-     })
+   await supabase.from("hidden_summaries").insert({
+     user_id: userId,
+     summary_id: summaryId,
+   });
    ```
 9. Return 200 OK with success message
 10. Test with valid summary, non-subscribed channel, already hidden
@@ -1676,9 +1845,11 @@ Hides a summary from the user's dashboard without deleting it from the database.
 ### 5.5. Unhide Summary
 
 #### Endpoint Overview
+
 Removes a summary from the user's hidden list, making it appear in their dashboard again.
 
 #### Request Details
+
 - **HTTP Method:** `DELETE`
 - **URL Structure:** `/api/summaries/:summaryId/hide`
 - **Authentication:** Required (Bearer token)
@@ -1689,12 +1860,15 @@ Removes a summary from the user's hidden list, making it appear in their dashboa
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (path param only)
 - **Response DTO:** `ApiSuccess<void>`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "message": "Summary restored to your dashboard"
@@ -1702,6 +1876,7 @@ Removes a summary from the user's hidden list, making it appear in their dashboa
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract summary ID from URL path
 3. Validate summary ID format (UUID)
@@ -1711,11 +1886,13 @@ Removes a summary from the user's hidden list, making it appear in their dashboa
 7. Return success message
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** User can only unhide their own hidden summaries
 - **UUID Validation:** Validate summary ID format
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid summary ID format (not UUID)
   - Error code: `INVALID_INPUT`
@@ -1730,27 +1907,31 @@ Removes a summary from the user's hidden list, making it appear in their dashboa
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - UUID lookup with composite index is O(1)
 - Response time target: <200ms
 
 #### Implementation Steps
+
 1. Create Zod schema for path parameter validation
 2. Create service function `unhideSummary(userId, summaryId)` in `src/lib/summaries.service.ts`
 3. Create API route handler at `src/pages/api/summaries/[summaryId]/hide.ts` (same file, handle DELETE method)
 4. Verify authentication and extract user ID
 5. Parse and validate summary ID from path
 6. Delete hidden_summaries record:
+
    ```typescript
    const { count } = await supabase
-     .from('hidden_summaries')
-     .delete({ count: 'exact' })
-     .eq('user_id', userId)
-     .eq('summary_id', summaryId)
-   
+     .from("hidden_summaries")
+     .delete({ count: "exact" })
+     .eq("user_id", userId)
+     .eq("summary_id", summaryId);
+
    if (count === 0) {
-     return error(404, 'RESOURCE_NOT_FOUND')
+     return error(404, "RESOURCE_NOT_FOUND");
    }
    ```
+
 7. Return 200 OK with success message
 8. Test with hidden summary, non-hidden summary, invalid ID
 
@@ -1761,9 +1942,11 @@ Removes a summary from the user's hidden list, making it appear in their dashboa
 ### 6.1. Rate Summary
 
 #### Endpoint Overview
+
 Creates or updates the user's rating for a summary. Uses upsert operation to handle both new ratings and rating changes.
 
 #### Request Details
+
 - **HTTP Method:** `POST`
 - **URL Structure:** `/api/summaries/:summaryId/ratings`
 - **Authentication:** Required (Bearer token)
@@ -1772,6 +1955,7 @@ Creates or updates the user's rating for a summary. Uses upsert operation to han
     - `summaryId` (path param, UUID) - UUID of the summary to rate
   - Optional: None
 - **Request Body:**
+
 ```typescript
 {
   rating: boolean; // true = upvote, false = downvote
@@ -1779,13 +1963,16 @@ Creates or updates the user's rating for a summary. Uses upsert operation to han
 ```
 
 #### Used Types
+
 - **Request DTO:** `RateSummaryRequest`
 - **Response DTO:** `RatingResponse`
 - **Error DTO:** `ApiError`
 - **Internal Types:** `SummaryRatingInsert`
 
 #### Response Details
+
 - **Success (201 Created or 200 OK):**
+
 ```json
 {
   "id": "uuid",
@@ -1797,6 +1984,7 @@ Creates or updates the user's rating for a summary. Uses upsert operation to han
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract summary ID from URL path
 3. Parse and validate request body
@@ -1806,6 +1994,7 @@ Creates or updates the user's rating for a summary. Uses upsert operation to han
 7. Return rating details with appropriate status code (201 for new, 200 for update)
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** Can only rate summaries from subscribed channels
 - **Authorization:** User can only create/update their own ratings
@@ -1813,6 +2002,7 @@ Creates or updates the user's rating for a summary. Uses upsert operation to han
 - **Boolean Validation:** Ensure rating is boolean value
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid summary ID format (not UUID)
   - Invalid rating value (not boolean)
@@ -1832,50 +2022,55 @@ Creates or updates the user's rating for a summary. Uses upsert operation to han
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - UPSERT operation is atomic and efficient
 - Unique constraint on (user_id, summary_id) prevents duplicates
 - Response time target: <200ms
 
 #### Implementation Steps
+
 1. Create Zod schema for request validation (`RateSummaryRequestSchema`)
 2. Create service function `rateSummary(userId, summaryId, rating)` in `src/lib/ratings.service.ts`
 3. Create API route handler at `src/pages/api/summaries/[summaryId]/ratings.ts`
 4. Verify authentication and extract user ID
 5. Parse and validate summary ID and request body
 6. Verify summary exists and user has access:
+
    ```typescript
-   const { data: summary } = await supabase
-     .from('summaries')
-     .select('id')
-     .eq('id', summaryId)
-     .single()
-   
+   const { data: summary } = await supabase.from("summaries").select("id").eq("id", summaryId).single();
+
    if (!summary) {
-     return error(404, 'RESOURCE_NOT_FOUND')
+     return error(404, "RESOURCE_NOT_FOUND");
    }
    ```
+
 7. Check if rating already exists to determine status code:
+
    ```typescript
    const { data: existing } = await supabase
-     .from('summary_ratings')
-     .select('id')
-     .eq('user_id', userId)
-     .eq('summary_id', summaryId)
-     .maybeSingle()
-   
-   const statusCode = existing ? 200 : 201
+     .from("summary_ratings")
+     .select("id")
+     .eq("user_id", userId)
+     .eq("summary_id", summaryId)
+     .maybeSingle();
+
+   const statusCode = existing ? 200 : 201;
    ```
+
 8. Upsert rating:
    ```typescript
    const { data: ratingData } = await supabase
-     .from('summary_ratings')
-     .upsert({
-       user_id: userId,
-       summary_id: summaryId,
-       rating: rating
-     }, { onConflict: 'user_id,summary_id' })
+     .from("summary_ratings")
+     .upsert(
+       {
+         user_id: userId,
+         summary_id: summaryId,
+         rating: rating,
+       },
+       { onConflict: "user_id,summary_id" }
+     )
      .select()
-     .single()
+     .single();
    ```
 9. Format response according to RatingResponse type
 10. Return with appropriate status code and success message
@@ -1886,9 +2081,11 @@ Creates or updates the user's rating for a summary. Uses upsert operation to han
 ### 6.2. Remove Rating
 
 #### Endpoint Overview
+
 Removes the user's rating from a summary.
 
 #### Request Details
+
 - **HTTP Method:** `DELETE`
 - **URL Structure:** `/api/summaries/:summaryId/ratings`
 - **Authentication:** Required (Bearer token)
@@ -1899,12 +2096,15 @@ Removes the user's rating from a summary.
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (path param only)
 - **Response DTO:** `ApiSuccess<void>`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "message": "Rating removed successfully"
@@ -1912,6 +2112,7 @@ Removes the user's rating from a summary.
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract summary ID from URL path
 3. Validate summary ID format (UUID)
@@ -1920,11 +2121,13 @@ Removes the user's rating from a summary.
 6. Return success message
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **RLS Protection:** User can only delete their own ratings
 - **UUID Validation:** Validate summary ID format
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Invalid summary ID format (not UUID)
   - Error code: `INVALID_INPUT`
@@ -1939,27 +2142,31 @@ Removes the user's rating from a summary.
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - UUID lookup with composite index is O(1)
 - Response time target: <200ms
 
 #### Implementation Steps
+
 1. Create Zod schema for path parameter validation
 2. Create service function `removeRating(userId, summaryId)` in `src/lib/ratings.service.ts`
 3. Create API route handler at `src/pages/api/summaries/[summaryId]/ratings.ts` (same file, handle DELETE method)
 4. Verify authentication and extract user ID
 5. Parse and validate summary ID from path
 6. Delete rating:
+
    ```typescript
    const { count } = await supabase
-     .from('summary_ratings')
-     .delete({ count: 'exact' })
-     .eq('user_id', userId)
-     .eq('summary_id', summaryId)
-   
+     .from("summary_ratings")
+     .delete({ count: "exact" })
+     .eq("user_id", userId)
+     .eq("summary_id", summaryId);
+
    if (count === 0) {
-     return error(404, 'RESOURCE_NOT_FOUND')
+     return error(404, "RESOURCE_NOT_FOUND");
    }
    ```
+
 7. Return 200 OK with success message
 8. Test with existing rating, non-existing rating, invalid ID
 
@@ -1970,9 +2177,11 @@ Removes the user's rating from a summary.
 ### 7.1. Check Generation Status
 
 #### Endpoint Overview
+
 Checks if a summary can be generated for a specific channel today by verifying the global daily limit (1 successful summary per channel per day across all users).
 
 #### Request Details
+
 - **HTTP Method:** `GET`
 - **URL Structure:** `/api/generation-requests/status`
 - **Authentication:** Required (Bearer token)
@@ -1983,12 +2192,15 @@ Checks if a summary can be generated for a specific channel today by verifying t
 - **Request Body:** None
 
 #### Used Types
+
 - **Request DTO:** None (query param only)
 - **Response DTO:** `GenerationStatusResponse`
 - **Error DTO:** `ApiError`
 
 #### Response Details
+
 - **Success (200 OK):**
+
 ```json
 {
   "channel_id": "uuid",
@@ -2001,6 +2213,7 @@ Checks if a summary can be generated for a specific channel today by verifying t
 ```
 
 #### Data Flow
+
 1. Extract user ID from authenticated session
 2. Extract and validate channel_id from query params
 3. Verify user is subscribed to the channel
@@ -2015,12 +2228,14 @@ Checks if a summary can be generated for a specific channel today by verifying t
 10. Return generation status
 
 #### Security Considerations
+
 - **Authentication Required:** Verified by middleware
 - **Subscription Check:** User must be subscribed to channel to check status
 - **UUID Validation:** Validate channel ID format
 - **Global Limit:** Status reflects global limit, not per-user
 
 #### Error Handling
+
 - **400 Bad Request:**
   - Missing channel_id parameter
   - Invalid channel_id format (not UUID)
@@ -2036,55 +2251,56 @@ Checks if a summary can be generated for a specific channel today by verifying t
   - Error code: `INTERNAL_ERROR`
 
 #### Performance Considerations
+
 - Query filtered by channel_id and date range
 - Index on `summaries(channel_id, generated_at, status)` optimizes query
 - Response time target: <200ms
 - Consider caching status for 1 minute
 
 #### Implementation Steps
+
 1. Create Zod schema for query parameter validation
 2. Create service function `checkGenerationStatus(userId, channelId)` in `src/lib/generation-requests.service.ts`
 3. Create API route handler at `src/pages/api/generation-requests/status.ts`
 4. Verify authentication and extract user ID
 5. Parse and validate channel_id from query params
 6. Verify user is subscribed to channel:
+
    ```typescript
    const { data: subscription } = await supabase
-     .from('subscriptions')
-     .select('id')
-     .eq('user_id', userId)
-     .eq('channel_id', channelId)
-     .maybeSingle()
-   
+     .from("subscriptions")
+     .select("id")
+     .eq("user_id", userId)
+     .eq("channel_id", channelId)
+     .maybeSingle();
+
    if (!subscription) {
-     return error(403, 'CHANNEL_NOT_SUBSCRIBED')
+     return error(403, "CHANNEL_NOT_SUBSCRIBED");
    }
    ```
+
 7. Get today's date range (UTC):
    ```typescript
-   const today = new Date().toISOString().split('T')[0]
-   const startOfDay = `${today}T00:00:00Z`
-   const endOfDay = `${today}T23:59:59Z`
+   const today = new Date().toISOString().split("T")[0];
+   const startOfDay = `${today}T00:00:00Z`;
+   const endOfDay = `${today}T23:59:59Z`;
    ```
 8. Count successful summaries today for this channel:
+
    ```typescript
    const { data: summaries } = await supabase
-     .from('summaries')
-     .select('id, generated_at')
-     .eq('status', 'completed')
-     .gte('generated_at', startOfDay)
-     .lte('generated_at', endOfDay)
-     .in('video_id', 
-       supabase
-         .from('videos')
-         .select('id')
-         .eq('channel_id', channelId)
-     )
-   
-   const count = summaries?.length || 0
-   const can_generate = count < 1
-   const last_generation = summaries?.[0]?.generated_at || null
+     .from("summaries")
+     .select("id, generated_at")
+     .eq("status", "completed")
+     .gte("generated_at", startOfDay)
+     .lte("generated_at", endOfDay)
+     .in("video_id", supabase.from("videos").select("id").eq("channel_id", channelId));
+
+   const count = summaries?.length || 0;
+   const can_generate = count < 1;
+   const last_generation = summaries?.[0]?.generated_at || null;
    ```
+
 9. Format response according to GenerationStatusResponse type
 10. Return 200 OK with status information
 11. Test with subscribed channel, non-subscribed channel, various limit scenarios
@@ -2099,17 +2315,20 @@ All authenticated endpoints should use a common middleware to verify JWT tokens:
 
 ```typescript
 // src/middleware/index.ts
-import type { MiddlewareHandler } from 'astro';
+import type { MiddlewareHandler } from "astro";
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
-  const { data: { user }, error } = await context.locals.supabase.auth.getUser();
-  
+  const {
+    data: { user },
+    error,
+  } = await context.locals.supabase.auth.getUser();
+
   if (error || !user) {
     context.locals.user = null;
   } else {
     context.locals.user = user;
   }
-  
+
   return next();
 };
 ```
@@ -2120,12 +2339,9 @@ Extract business logic into service functions:
 
 ```typescript
 // src/lib/example.service.ts
-import type { SupabaseClient } from './db/supabase.client';
+import type { SupabaseClient } from "./db/supabase.client";
 
-export async function serviceFunction(
-  supabase: SupabaseClient,
-  params: any
-) {
+export async function serviceFunction(supabase: SupabaseClient, params: any) {
   // Business logic here
   // Return data or throw error
 }
@@ -2137,19 +2353,15 @@ Use consistent error response format:
 
 ```typescript
 // src/lib/errors.ts
-import type { ApiError } from './types';
+import type { ApiError } from "./types";
 
-export function formatError(
-  code: string,
-  message: string,
-  details?: Record<string, any>
-): ApiError {
+export function formatError(code: string, message: string, details?: Record<string, any>): ApiError {
   return {
     error: {
       code,
       message,
-      details
-    }
+      details,
+    },
   };
 }
 ```
@@ -2160,11 +2372,11 @@ Create reusable validation schemas:
 
 ```typescript
 // src/lib/validation/schemas.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 export const PaginationSchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
-  offset: z.coerce.number().min(0).default(0)
+  offset: z.coerce.number().min(0).default(0),
 });
 
 export const UUIDSchema = z.string().uuid();
@@ -2176,28 +2388,20 @@ Use consistent response formatting:
 
 ```typescript
 // src/lib/responses.ts
-import type { ApiSuccess, PaginatedResponse } from './types';
+import type { ApiSuccess, PaginatedResponse } from "./types";
 
-export function formatSuccess<T>(
-  data?: T,
-  message?: string
-): ApiSuccess<T> {
+export function formatSuccess<T>(data?: T, message?: string): ApiSuccess<T> {
   return { data, message };
 }
 
-export function formatPaginated<T>(
-  data: T[],
-  total: number,
-  limit: number,
-  offset: number
-): PaginatedResponse<T> {
+export function formatPaginated<T>(data: T[], total: number, limit: number, offset: number): PaginatedResponse<T> {
   return {
     data,
     pagination: {
       total,
       limit,
-      offset
-    }
+      offset,
+    },
   };
 }
 ```
@@ -2212,22 +2416,22 @@ Test service functions and utility functions in isolation:
 
 ```typescript
 // src/lib/__tests__/youtube.utils.test.ts
-import { describe, it, expect } from 'vitest';
-import { extractYouTubeVideoId } from '../youtube.utils';
+import { describe, it, expect } from "vitest";
+import { extractYouTubeVideoId } from "../youtube.utils";
 
-describe('extractYouTubeVideoId', () => {
-  it('extracts ID from standard URL', () => {
-    const url = 'https://www.youtube.com/watch?v=abc123';
-    expect(extractYouTubeVideoId(url)).toBe('abc123');
+describe("extractYouTubeVideoId", () => {
+  it("extracts ID from standard URL", () => {
+    const url = "https://www.youtube.com/watch?v=abc123";
+    expect(extractYouTubeVideoId(url)).toBe("abc123");
   });
-  
-  it('extracts ID from shortened URL', () => {
-    const url = 'https://youtu.be/abc123';
-    expect(extractYouTubeVideoId(url)).toBe('abc123');
+
+  it("extracts ID from shortened URL", () => {
+    const url = "https://youtu.be/abc123";
+    expect(extractYouTubeVideoId(url)).toBe("abc123");
   });
-  
-  it('throws error for invalid URL', () => {
-    expect(() => extractYouTubeVideoId('invalid')).toThrow();
+
+  it("throws error for invalid URL", () => {
+    expect(() => extractYouTubeVideoId("invalid")).toThrow();
   });
 });
 ```
@@ -2238,40 +2442,40 @@ Test API endpoints with test database:
 
 ```typescript
 // src/pages/api/__tests__/auth.register.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
-import { setupTestDatabase, createTestUser } from '../../../test/helpers';
+import { describe, it, expect, beforeEach } from "vitest";
+import { setupTestDatabase, createTestUser } from "../../../test/helpers";
 
-describe('POST /api/auth/register', () => {
+describe("POST /api/auth/register", () => {
   beforeEach(async () => {
     await setupTestDatabase();
   });
-  
-  it('creates new user successfully', async () => {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
+
+  it("creates new user successfully", async () => {
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
       body: JSON.stringify({
-        email: 'test@example.com',
-        password: 'SecurePassword123!'
-      })
+        email: "test@example.com",
+        password: "SecurePassword123!",
+      }),
     });
-    
+
     expect(response.status).toBe(201);
     const data = await response.json();
-    expect(data.user.email).toBe('test@example.com');
+    expect(data.user.email).toBe("test@example.com");
     expect(data.session.access_token).toBeDefined();
   });
-  
-  it('returns 409 for duplicate email', async () => {
-    await createTestUser({ email: 'test@example.com' });
-    
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
+
+  it("returns 409 for duplicate email", async () => {
+    await createTestUser({ email: "test@example.com" });
+
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
       body: JSON.stringify({
-        email: 'test@example.com',
-        password: 'SecurePassword123!'
-      })
+        email: "test@example.com",
+        password: "SecurePassword123!",
+      }),
     });
-    
+
     expect(response.status).toBe(409);
   });
 });
@@ -2283,28 +2487,28 @@ Test complete user workflows:
 
 ```typescript
 // e2e/auth-flow.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('user can register, login, and subscribe to channel', async ({ page }) => {
+test("user can register, login, and subscribe to channel", async ({ page }) => {
   // Navigate to app
-  await page.goto('/');
-  
+  await page.goto("/");
+
   // Register
-  await page.click('text=Sign Up');
-  await page.fill('[name=email]', 'test@example.com');
-  await page.fill('[name=password]', 'SecurePassword123!');
-  await page.click('button[type=submit]');
-  
+  await page.click("text=Sign Up");
+  await page.fill("[name=email]", "test@example.com");
+  await page.fill("[name=password]", "SecurePassword123!");
+  await page.click("button[type=submit]");
+
   // Should be logged in and redirected to dashboard
-  await expect(page).toHaveURL('/dashboard');
-  
+  await expect(page).toHaveURL("/dashboard");
+
   // Subscribe to channel
-  await page.click('text=Add Channel');
-  await page.fill('[name=channel_url]', 'https://www.youtube.com/@example');
-  await page.click('button[type=submit]');
-  
+  await page.click("text=Add Channel");
+  await page.fill("[name=channel_url]", "https://www.youtube.com/@example");
+  await page.click("button[type=submit]");
+
   // Should see channel in list
-  await expect(page.locator('text=example')).toBeVisible();
+  await expect(page.locator("text=example")).toBeVisible();
 });
 ```
 
@@ -2357,6 +2561,7 @@ When introducing breaking changes:
 ### Breaking Changes Definition
 
 Breaking changes include:
+
 - Removing endpoints or fields
 - Renaming endpoints or fields
 - Changing field data types
@@ -2366,6 +2571,7 @@ Breaking changes include:
 ### Non-Breaking Changes
 
 Non-breaking changes can be made to v1:
+
 - Adding new endpoints
 - Adding optional parameters
 - Adding new fields to responses
@@ -2378,36 +2584,42 @@ Non-breaking changes can be made to v1:
 ## Security Best Practices
 
 ### Input Validation
+
 - Always validate and sanitize user input
 - Use Zod schemas for type-safe validation
 - Validate UUID formats before database queries
 - Sanitize URLs before external API calls
 
 ### Authentication & Authorization
+
 - Verify JWT tokens on every protected endpoint
 - Use RLS policies for defense-in-depth
 - Implement proper session management
 - Rotate tokens regularly
 
 ### Rate Limiting
+
 - Implement per-user rate limits (100 req/min)
 - Implement per-IP rate limits for auth endpoints
 - Monitor and block suspicious activity
 - Use exponential backoff for failed attempts
 
 ### Data Protection
+
 - Never log sensitive data (passwords, tokens)
 - Use HTTPS only in production
 - Implement proper CORS policies
 - Sanitize error messages (no stack traces in production)
 
 ### Database Security
+
 - Use parameterized queries (Supabase handles this)
 - Enable RLS on all user-facing tables
 - Use service role key only for admin operations
 - Regularly audit RLS policies
 
 ### API Security Headers
+
 ```typescript
 // Add to all API responses
 headers: {
@@ -2424,6 +2636,7 @@ headers: {
 ## Performance Optimization Guidelines
 
 ### Database Queries
+
 - Use indexes on frequently queried columns
 - Minimize number of queries (use JOINs)
 - Use `SELECT` with specific columns (avoid `SELECT *`)
@@ -2431,6 +2644,7 @@ headers: {
 - Use connection pooling
 
 ### API Response Times
+
 - Target response times:
   - Simple reads: <200ms
   - Complex queries: <400ms
@@ -2439,6 +2653,7 @@ headers: {
 - Use background jobs for long-running tasks
 
 ### Caching Strategy
+
 - Cache channel metadata: 24 hours
 - Cache video lists: 1 minute
 - Cache summary details: 5 minutes
@@ -2446,12 +2661,14 @@ headers: {
 - Use cache invalidation on updates
 
 ### Pagination
+
 - Enforce maximum page size (100 items)
 - Use efficient offset-based pagination
 - Consider cursor-based pagination for large datasets
 - Include total count only when necessary
 
 ### Background Jobs
+
 - Use queue system for summary generation
 - Implement retry logic with exponential backoff
 - Monitor queue depth and processing times
@@ -2462,6 +2679,7 @@ headers: {
 ## Monitoring and Observability
 
 ### Metrics to Track
+
 - API request rate and latency (p50, p95, p99)
 - Error rates by endpoint and error code
 - Authentication success/failure rates
@@ -2471,6 +2689,7 @@ headers: {
 - Cache hit/miss ratios
 
 ### Logging Strategy
+
 - Log all errors with stack traces
 - Log authentication failures
 - Log rate limit violations
@@ -2478,6 +2697,7 @@ headers: {
 - Never log sensitive data
 
 ### Alerting Thresholds
+
 - Error rate > 5%
 - P95 latency > 2s
 - Database connection pool exhausted
@@ -2485,6 +2705,7 @@ headers: {
 - Failed background jobs > 10%
 
 ### Health Check Endpoint
+
 ```typescript
 // GET /api/health
 {
@@ -2503,4 +2724,3 @@ headers: {
 ## 1. Executive Summary
 
 This comprehensive implementation plan covers all 19 REST API endpoints for the VideoSummary application. Each endpoint includes detailed specifications for request/response handling, security considerations, error handling, performance optimization, and implementation steps. The plan follows industry best practices and is tailored to the Astro + Supabase tech stack.
-

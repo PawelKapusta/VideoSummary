@@ -5,7 +5,7 @@ import {
   isValidYouTubeChannelId,
   isValidYouTubeVideoId,
   constructYouTubeChannelUrl,
-  YOUTUBE_VIDEO_URL_PREFIX
+  YOUTUBE_VIDEO_URL_PREFIX,
 } from "@/lib/youtube.utils";
 
 describe("YouTube Utilities", () => {
@@ -56,23 +56,17 @@ describe("YouTube Utilities", () => {
 
     it("should throw error for youtu.be (video URL)", () => {
       const url = "https://youtu.be/dQw4w9WgXcQ";
-      expect(() => extractYouTubeChannelId(url)).toThrow(
-        "youtu.be URLs are for videos, not channels"
-      );
+      expect(() => extractYouTubeChannelId(url)).toThrow("youtu.be URLs are for videos, not channels");
     });
 
     it("should throw error for invalid YouTube URL", () => {
       const url = "https://www.youtube.com/invalid";
-      expect(() => extractYouTubeChannelId(url)).toThrow(
-        "Invalid YouTube channel URL format"
-      );
+      expect(() => extractYouTubeChannelId(url)).toThrow("Invalid YouTube channel URL format");
     });
 
     it("should throw error for non-YouTube URL", () => {
       const url = "https://example.com/channel/test";
-      expect(() => extractYouTubeChannelId(url)).toThrow(
-        "Invalid YouTube channel URL format"
-      );
+      expect(() => extractYouTubeChannelId(url)).toThrow("Invalid YouTube channel URL format");
     });
   });
 
@@ -114,23 +108,17 @@ describe("YouTube Utilities", () => {
 
     it("should throw error for invalid YouTube video URL", () => {
       const url = "https://www.youtube.com/watch";
-      expect(() => extractYouTubeVideoId(url)).toThrow(
-        "Invalid YouTube video URL format"
-      );
+      expect(() => extractYouTubeVideoId(url)).toThrow("Invalid YouTube video URL format");
     });
 
     it("should throw error for non-YouTube URL", () => {
       const url = "https://example.com/watch?v=test";
-      expect(() => extractYouTubeVideoId(url)).toThrow(
-        "Invalid YouTube video URL format"
-      );
+      expect(() => extractYouTubeVideoId(url)).toThrow("Invalid YouTube video URL format");
     });
 
     it("should throw error for channel URL", () => {
       const url = "https://www.youtube.com/channel/UC1234567890123456789012";
-      expect(() => extractYouTubeVideoId(url)).toThrow(
-        "Invalid YouTube video URL format"
-      );
+      expect(() => extractYouTubeVideoId(url)).toThrow("Invalid YouTube video URL format");
     });
   });
 
@@ -206,7 +194,9 @@ describe("YouTube Utilities", () => {
     });
 
     it("should construct URL for channel ID format", () => {
-      expect(constructYouTubeChannelUrl("UC1234567890123456789012")).toBe("https://www.youtube.com/channel/UC1234567890123456789012");
+      expect(constructYouTubeChannelUrl("UC1234567890123456789012")).toBe(
+        "https://www.youtube.com/channel/UC1234567890123456789012"
+      );
     });
 
     it("should construct URL for plain username (fallback)", () => {

@@ -72,6 +72,7 @@ Video Summary follows a modern serverless architecture built with:
 ## 🔧 Tech Stack
 
 ### Frontend
+
 - **[Astro](https://astro.build/)** - Modern web framework for content-driven websites
 - **[React 19](https://react.dev/)** - UI library for interactive components
 - **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
@@ -79,12 +80,14 @@ Video Summary follows a modern serverless architecture built with:
 - **[Shadcn/ui](https://ui.shadcn.com/)** - Modern component library built on Radix UI
 
 ### Backend & Infrastructure
+
 - **[Cloudflare Functions](https://workers.cloudflare.com/)** - Serverless API endpoints
 - **[Supabase](https://supabase.com/)** - PostgreSQL database with real-time subscriptions and RLS
 - **[OpenRouter](https://openrouter.ai/)** - Unified API for multiple AI models
 - **[YouTube Data API](https://developers.google.com/youtube/v3)** - Channel and video information
 
 ### Development & Quality
+
 - **[Vite](https://vitejs.dev/)** - Fast build tool and development server
 - **[ESLint](https://eslint.org/)** + **[Prettier](https://prettier.io/)** - Code linting and formatting
 - **[Vitest](https://vitest.dev/)** + **[MSW](https://mswjs.io/)** - Fast unit & integration testing with API mocking
@@ -108,6 +111,7 @@ Get Video Summary running locally in minutes.
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd videosummary
@@ -143,7 +147,6 @@ Get Video Summary running locally in minutes.
    ```
 
 4. **Configure Supabase**
-
    - Create a new Supabase project
    - Run the migrations in `supabase/migrations/`
    - Update your environment variables with the Supabase credentials
@@ -151,6 +154,7 @@ Get Video Summary running locally in minutes.
 ### Development
 
 5. **Start the development server**
+
    ```bash
    npm run dev
    ```
@@ -158,6 +162,7 @@ Get Video Summary running locally in minutes.
    The application will be available at `http://localhost:3000`.
 
 6. **Process summary queue (when needed)**
+
    ```bash
    # First, make sure the dev server is running in another terminal
    npm run dev
@@ -175,25 +180,25 @@ Get Video Summary running locally in minutes.
 
 ## 📋 Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot reloading |
-| `npm run build` | Build application for production |
-| `npm run preview` | Preview production build locally |
-| `npm run astro` | Access Astro CLI commands |
-| `npm run typecheck` | Run TypeScript type checking |
-| `npm run lint` | Lint code for errors and style issues |
-| `npm run lint:fix` | Automatically fix linting issues |
-| `npm run format` | Format code with Prettier |
-| `npm run test` | Run unit tests with Vitest |
-| `npm run test:watch` | Run unit tests in watch mode |
-| `npm run test:e2e` | Run end-to-end tests with Playwright |
-| `npm run test:e2e:ui` | Run E2E tests in UI mode |
-| `npm run process-queue` | Process next pending summary from queue |
-| `npm run process-queue-all` | Process all pending summaries from queue |
-| `npm run check-bulk-status status` | Check bulk generation status |
-| `npm run check-bulk-status reset` | Reset stuck bulk generation status |
-| `npm run check-bulk-status-cli` | Check/reset status via Supabase CLI |
+| Command                            | Description                                 |
+| ---------------------------------- | ------------------------------------------- |
+| `npm run dev`                      | Start development server with hot reloading |
+| `npm run build`                    | Build application for production            |
+| `npm run preview`                  | Preview production build locally            |
+| `npm run astro`                    | Access Astro CLI commands                   |
+| `npm run typecheck`                | Run TypeScript type checking                |
+| `npm run lint`                     | Lint code for errors and style issues       |
+| `npm run lint:fix`                 | Automatically fix linting issues            |
+| `npm run format`                   | Format code with Prettier                   |
+| `npm run test`                     | Run unit tests with Vitest                  |
+| `npm run test:watch`               | Run unit tests in watch mode                |
+| `npm run test:e2e`                 | Run end-to-end tests with Playwright        |
+| `npm run test:e2e:ui`              | Run E2E tests in UI mode                    |
+| `npm run process-queue`            | Process next pending summary from queue     |
+| `npm run process-queue-all`        | Process all pending summaries from queue    |
+| `npm run check-bulk-status status` | Check bulk generation status                |
+| `npm run check-bulk-status reset`  | Reset stuck bulk generation status          |
+| `npm run check-bulk-status-cli`    | Check/reset status via Supabase CLI         |
 
 ## ⚙️ GitHub Actions Workflows
 
@@ -233,6 +238,7 @@ Instead of GitHub Actions, you can use external cron services to trigger the sam
 2. **Add two jobs**:
 
 **Daily Summary Generation:**
+
 - **URL**: `https://your-domain.com/api/summaries/generate-all`
 - **Method**: `POST`
 - **Schedule**: `0 18 * * *` (daily at 18:00 UTC)
@@ -243,6 +249,7 @@ Instead of GitHub Actions, you can use external cron services to trigger the sam
   ```
 
 **Queue Processing:**
+
 - **URL**: `https://your-domain.com/api/summaries/process-next`
 - **Method**: `POST`
 - **Schedule**: `*/10 * * * *` (every 10 minutes)
@@ -283,6 +290,7 @@ The application provides RESTful API endpoints for:
 ### Database Schema
 
 Video Summary uses Supabase with the following main tables:
+
 - `profiles` - User profiles and preferences
 - `user_channels` - Subscribed YouTube channels
 - `videos` - Video metadata and processing status

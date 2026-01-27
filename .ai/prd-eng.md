@@ -11,6 +11,7 @@ The main problem that VideoSummary addresses is information overload and lack of
 ## 2. Target Audience
 
 The application is designed for users who:
+
 - Have a strong interest in staying informed about various topics.
 - Subscribe to multiple valuable YouTube channels.
 - Lack the time to watch all the content they are interested in.
@@ -20,15 +21,18 @@ The application is designed for users who:
 ## 3. Functional Requirements
 
 ### 3.1. Authentication and User Profile
+
 - Registration and login using an email address and password.
 - A complete password reset mechanism ("forgot password").
 - A simple user profile page with a list of subscribed channels, an option to remove them, and a "Logout" button.
 
 ### 3.2. Channel Management
+
 - Ability to add YouTube channels by pasting the full channel URL.
 - Limit of 10 subscribed channels per user.
 
 ### 3.3. Summary Generation
+
 - Automatic generation: Once a day (at 7:00 PM UTC), the system scans the channels and generates a summary for one, newest video from each channel.
 - Manual generation: The user can manually generate a summary for a video from a channel they subscribe to.
 - Daily limit of one **successful** summary per channel **globally** (shared by automatic, manual actions, and all users):
@@ -36,10 +40,11 @@ The application is designed for users who:
   - If user A generates a summary for channel X today, user B will see the same summary (cannot generate another one for that channel today).
   - Failed generation attempts (e.g., no subtitles) do NOT count toward the limit and can be retried.
 - Two summary formats generated in a single LLM query:
-    - TL;DR (up to 100 tokens).
-    - Full summary (up to 500 tokens, in JSON format with sections: `summary`, `conclusions`, `key_points`).
+  - TL;DR (up to 100 tokens).
+  - Full summary (up to 500 tokens, in JSON format with sections: `summary`, `conclusions`, `key_points`).
 
 ### 3.4. User Interface (Dashboard)
+
 - A main dashboard displaying a list of summaries as cards, sorted chronologically.
 - Each card includes: video title, channel name, YouTube publication date, and the TL;DR summary.
 - A dedicated subpage for each summary (`/dashboard/[id]`) with the full, formatted content, a link to the original, and rating buttons (thumbs up/down).
@@ -47,11 +52,13 @@ The application is designed for users who:
 - The interface is fully responsive (RWD) for mobile browsers.
 
 ### 3.5. Error Handling and Notifications
+
 - Use of "toast" notifications to inform about statuses and errors.
 - Clear error messages for summary generation failures (e.g., "Error: No subtitles", "Error: Video is private").
 - A special message for videos longer than 45 minutes.
 
 ### 3.6. Technical Specification
+
 - Frontend: Astro 5 + React 19, Tailwind CSS 4, shadcn/ui.
 - Backend: Supabase (PostgreSQL + Auth) with Row-Level Security (RLS) implemented.
 - Database: PostgreSQL (via Supabase).
@@ -63,6 +70,7 @@ The application is designed for users who:
 ## 4. Product Boundaries
 
 The following functionalities are intentionally excluded from the MVP scope and will be considered in future product iterations:
+
 - Generating summaries from any YouTube video link (without a channel subscription).
 - An advanced system for categorizing and filtering summaries.
 - The ability to edit user profile data (other than the password).

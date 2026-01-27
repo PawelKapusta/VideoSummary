@@ -7,6 +7,7 @@ The Dashboard is the main view for authenticated users, displaying a list of gen
 ## 2. View Routing
 
 The Dashboard view will be accessible at the following path:
+
 - **Path**: `/dashboard`
 
 This will be handled by a `dashboard.astro` file inside the `src/pages/` directory.
@@ -27,6 +28,7 @@ src/pages/dashboard.astro
 ## 4. Component Details
 
 ### `DashboardView.tsx`
+
 - **Component description**: This is the main container component for the dashboard. It is responsible for orchestrating data fetching, state management, and rendering the appropriate child components based on the current state (loading, success, empty, or error).
 - **Main elements**: It will render the `SummaryList` component when summaries are available or loading, or the `EmptyState` component if no summaries are found. It will also contain a title heading (e.g., `<h1>Dashboard</h1>`).
 - **Handled interactions**: None directly. It manages the state that child components use.
@@ -35,6 +37,7 @@ src/pages/dashboard.astro
 - **Props**: None.
 
 ### `SummaryList.tsx`
+
 - **Component description**: This component is responsible for rendering the list of summaries. It implements the infinite scroll functionality, triggering a callback to load more data when the user scrolls near the end of the list. It also displays skeleton loaders while new data is being fetched.
 - **Main elements**: A `div` or `ul` element that maps over the `summaries` array to render `SummaryCard` components. It will use a sentinel element at the bottom of the list and the `react-intersection-observer` hook to detect when it becomes visible, triggering the `onLoadMore` callback. It will also render a set of `SummaryCardSkeleton` components when `isLoading` is true.
 - **Handled interactions**: User scrolling to the bottom of the list.
@@ -52,6 +55,7 @@ src/pages/dashboard.astro
   ```
 
 ### `SummaryCard.tsx`
+
 - **Component description**: A presentational component that displays information for a single video summary. The entire card will be clickable and link to the detailed summary view.
 - **Main elements**: It will be built using the `Card` component from `shadcn/ui`. It will contain an `img` for the video thumbnail, and text elements for the video title, channel name, video publication date, and the TL;DR summary. The component will be wrapped in an Astro `<a>` tag or a client-side routing link.
 - **Handled interactions**: User click on the card to navigate.
@@ -65,6 +69,7 @@ src/pages/dashboard.astro
   ```
 
 ### `SummaryCardSkeleton.tsx`
+
 - **Component description**: A placeholder component that mimics the layout of the `SummaryCard`. It is displayed during data fetching to improve perceived performance and prevent layout shifts.
 - **Main elements**: It will use the `Card` and `Skeleton` components from `shadcn/ui` to create a visual placeholder with shapes corresponding to the thumbnail, title, and text lines of a real `SummaryCard`.
 - **Handled interactions**: None.
@@ -73,6 +78,7 @@ src/pages/dashboard.astro
 - **Props**: None.
 
 ### `EmptyState.tsx`
+
 - **Component description**: A component displayed when the initial API call returns no summaries. It should inform the user why the dashboard is empty and guide them on what to do next.
 - **Main elements**: It will contain an icon or illustration, a heading (e.g., "No summaries yet"), a descriptive paragraph (e.g., "Subscribe to YouTube channels on your profile page to start generating summaries."), and a call-to-action button linking to the profile page.
 - **Handled interactions**: User click on the CTA button.
@@ -98,7 +104,7 @@ The primary DTOs provided by the API are sufficient for this view. No new custom
     video: VideoBasic;
     channel: Channel;
     tldr: string | null;
-    status: 'pending' | 'in_progress' | 'completed' | 'failed';
+    status: "pending" | "in_progress" | "completed" | "failed";
     generated_at: string | null;
     user_rating: boolean | null;
   }
@@ -117,6 +123,7 @@ The primary DTOs provided by the API are sufficient for this view. No new custom
 State will be encapsulated within a custom React hook, `useSummaries`, to keep the data-fetching logic separate from the UI components.
 
 ### `useSummaries()` Hook
+
 - **Purpose**: To handle fetching summaries, managing pagination state, and tracking loading/error states.
 - **State**:
   - `summaries: SummaryWithVideo[]`: An array of all loaded summary items.

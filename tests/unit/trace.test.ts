@@ -189,7 +189,7 @@ describe("AWS X-Ray Trace Utilities", () => {
     it("should add trace ID to existing headers", () => {
       const existingHeaders = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer token",
+        Authorization: "Bearer token",
       };
 
       const result = addTraceIdToHeaders(existingHeaders);

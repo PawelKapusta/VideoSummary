@@ -239,7 +239,8 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         .neq("id", userId)
         .single();
 
-      if (checkError && checkError.code !== "PGRST116") { // PGRST116 = no rows returned
+      if (checkError && checkError.code !== "PGRST116") {
+        // PGRST116 = no rows returned
         throw checkError;
       }
 

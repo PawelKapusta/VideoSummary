@@ -1,15 +1,19 @@
 # View Implementation Plan: Videos List
 
 ## 1. Overview
+
 This document outlines the implementation plan for the "Videos List" view. The primary purpose of this view is to allow users to browse videos from their subscribed YouTube channels, see which ones already have a summary, and manually trigger summary generation for those that don't. The view will feature filtering options and an infinite scroll for a seamless browsing experience.
 
 ## 2. View Routing
+
 The view will be accessible at the following application path:
+
 - **Path**: `/videos`
 
 This will be handled by creating a new Astro page at `src/pages/videos.astro`, which will render the main React component.
 
 ## 3. Component Structure
+
 The view will be composed of several hierarchical components.
 
 ```
@@ -34,6 +38,7 @@ The view will be composed of several hierarchical components.
 ## 4. Component Details
 
 ### `VideosView.tsx`
+
 - **Component description**: The main container component for the view. It orchestrates data fetching, state management for filters, and renders all child components.
 - **Main elements**: A `div` acting as the main container, rendering `<VideosFilterBar />`, `<VideosGrid />`, and `<GenerateSummaryDialog />`.
 - **Handled interactions**: Manages the overall state of the view, passing down data and handlers to child components.
@@ -42,6 +47,7 @@ The view will be composed of several hierarchical components.
 - **Props**: None.
 
 ### `VideosFilterBar.tsx`
+
 - **Component description**: A horizontal bar at the top of the view that contains controls for filtering the list of videos.
 - **Main elements**:
   - `Select` (Shadcn) for filtering by channel.
@@ -62,6 +68,7 @@ The view will be composed of several hierarchical components.
   ```
 
 ### `VideosGrid.tsx`
+
 - **Component description**: Renders the videos in a responsive grid layout. It also handles the infinite scroll logic to fetch and display more videos as the user scrolls.
 - **Main elements**:
   - A `div` with grid layout styles.
@@ -86,6 +93,7 @@ The view will be composed of several hierarchical components.
   ```
 
 ### `VideoCard.tsx`
+
 - **Component description**: A card that displays the thumbnail, title, and channel name for a single video. It includes a button to initiate summary generation if a summary is not available.
 - **Main elements**:
   - `Card` (Shadcn) as the main container, fully clickable.
@@ -106,6 +114,7 @@ The view will be composed of several hierarchical components.
   ```
 
 ### `GenerateSummaryDialog.tsx`
+
 - **Component description**: A modal dialog that appears when a user intends to generate a summary. It displays video details and asks for confirmation before proceeding. It should also perform pre-flight checks (e.g., generation limits).
 - **Main elements**:
   - `Dialog` (Shadcn) components.
@@ -133,6 +142,7 @@ The view will be composed of several hierarchical components.
 ## 5. Types
 
 ### DTOs (from API)
+
 - `VideoSummary`: The core data object for each video in the list.
 - `Channel`: Used for the channel filter dropdown.
 - `UserProfile`: Fetched to get the list of subscribed channels.
@@ -141,13 +151,14 @@ The view will be composed of several hierarchical components.
 - `GenerationStatusResponse`: The response from the pre-flight check for generation limits.
 
 ### ViewModels and State Types
+
 ```typescript
 /**
  * Represents the state of the filters applied to the videos list.
  */
 interface VideosFilterState {
-  channelId: string | 'all';
-  summaryStatus: 'all' | 'with' | 'without';
+  channelId: string | "all";
+  summaryStatus: "all" | "with" | "without";
 }
 
 /**
@@ -155,15 +166,17 @@ interface VideosFilterState {
  */
 interface ValidationStep {
   text: string;
-  status: 'pending' | 'checking' | 'success' | 'error';
+  status: "pending" | "checking" | "success" | "error";
   errorMessage?: string;
 }
 ```
 
 ## 6. State Management
+
 State will be managed primarily through a custom React hook, `useVideos`, which will encapsulate all related logic.
 
 ### `useVideos` Custom Hook
+
 - **Purpose**: To handle all business logic for the `VideosView`, including data fetching, filtering, pagination, and triggering summary generation.
 - **React Query Usage**:
   - `useInfiniteQuery`: To fetch paginated video data from `/api/videos`. The query key will be dynamic, incorporating the `filters` state (e.g., `['videos', filters]`) to trigger automatic refetching when filters change. It will manage pagination tokens/offsets.
@@ -191,6 +204,7 @@ State will be managed primarily through a custom React hook, `useVideos`, which 
   ```
 
 ## 7. API Integration
+
 - **Primary Endpoint**: `GET /api/videos`
   - **Usage**: Fetched by `useInfiniteQuery`.
   - **Request**: The hook will dynamically build the query string with `limit`, `offset`, and `channel_id` based on the current state.
@@ -210,6 +224,7 @@ State will be managed primarily through a custom React hook, `useVideos`, which 
   - **Response Type**: `GenerationStatusResponse`.
 
 ## 8. User Interactions
+
 1.  **Initial Load**: The view loads, displaying a skeleton grid. `useVideos` fetches the first page of videos and the user's channels.
 2.  **Scrolling**: When the user scrolls to the bottom of the grid, `fetchNextPage` is called to append the next page of results. A loading spinner appears at the bottom during the fetch.
 3.  **Filtering**: The user changes a filter in `VideosFilterBar`. The `filters` state updates, `useInfiniteQuery` re-fetches from the API with new parameters, and the grid updates.
@@ -217,6 +232,7 @@ State will be managed primarily through a custom React hook, `useVideos`, which 
 5.  **Confirm Generation**: The user clicks "Confirm" in the dialog. The `useMutation` is triggered. The dialog can show a loading state. Upon completion, a success/error toast is shown, the dialog closes, and the video list is updated.
 
 ## 9. Conditions and Validation
+
 - **Client-Side Filtering**: The "summaryStatus" filter (`All`, `With`, `Without`) will be implemented on the client side. The data from `useInfiniteQuery` will be flattened and then filtered before being passed to the `VideosGrid`.
 - **Generation Pre-conditions**: The `GenerateSummaryDialog` must perform the following checks before enabling the "Confirm" button:
   - Fetch the generation status from `/api/summaries/status` to ensure the daily limit isn't exceeded.
@@ -224,11 +240,13 @@ State will be managed primarily through a custom React hook, `useVideos`, which 
   - An error message will be displayed for each failed validation step.
 
 ## 10. Error Handling
+
 - **API Fetch Errors**: If `useInfiniteQuery` or `useQuery` fail, the UI will display an error message with a "Retry" button.
 - **Empty States**: If the API returns no videos (either initially or after filtering), an `EmptyState` component will be rendered with an informative message.
 - **Generation Errors**: If the `useMutation` for summary generation fails, a descriptive error toast will be displayed to the user (e.g., "Failed to generate summary: Video has no captions."). The UI state will revert to its pre-action state.
 
 ## 11. Implementation Steps
+
 1.  **Create File Structure**:
     - Create `src/pages/videos.astro`.
     - Create a new folder `src/components/views/videos/`.

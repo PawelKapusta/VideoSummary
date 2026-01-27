@@ -21,6 +21,7 @@ The view should be accessible at the path `/register`. This is a public route, n
   - Toast notifications (via sonner for success/error messages)
 
 High-level hierarchy:
+
 ```
 RegisterView
 ├── RegisterForm
@@ -38,33 +39,33 @@ RegisterView
 
 - **Component description**: The top-level component for the registration page. It renders the overall layout, includes the form, handles global state if needed, and manages redirects after successful registration. It integrates with the QueryProvider for any caching if applicable, but primarily focuses on rendering the form and handling authentication flow.
 
-- **Main elements**: 
+- **Main elements**:
   - Astro layout wrapper (Layout.astro)
   - Centered container div with Tailwind classes for responsiveness
   - RegisterForm as the main child
   - NavigationLinks below the form
   - Toast container (if not global)
 
-- **Handled interactions**: 
+- **Handled interactions**:
   - No direct interactions; delegates to RegisterForm
   - Post-submission redirect using Astro's navigation or React router if in SPA mode
 
-- **Handled validation**: 
+- **Handled validation**:
   - None directly; relies on RegisterForm for client-side validation before API call
   - Ensures form is valid before submission
 
-- **Types**: 
+- **Types**:
   - Uses `RegisterFormState` for form state
   - `ToastNotification` for feedback
 
-- **Props**: 
+- **Props**:
   - None (standalone view component)
 
 ### RegisterForm
 
 - **Component description**: Core form component that manages the registration form state, validation, submission to the API, and error handling. Uses React hooks for state and effects.
 
-- **Main elements**: 
+- **Main elements**:
   - Form element with onSubmit handler
   - Label and EmailInput for email field
   - Label and PasswordInput for password field
@@ -72,24 +73,24 @@ RegisterView
   - FormErrorMessage for displaying overall form errors
   - Submit Button with loading state
 
-- **Handled interactions**: 
+- **Handled interactions**:
   - onSubmit: Validates form, calls API if valid, handles response
   - onChange: Updates form data and re-validates fields
 
-- **Handled validation**: 
+- **Handled validation**:
   - Email: Required, valid email format (RFC 5322 compliant)
   - Password: Required, minimum 8 characters, at least one uppercase, one lowercase, one number
   - Confirm Password: Must match Password field
   - Form-level: All fields valid before submission
   - Client-side using Zod schema matching backend `RegisterRequestSchema`
 
-- **Types**: 
+- **Types**:
   - `RegisterFormData` for form values
   - `RegisterFormErrors` for error states
   - `RegisterFormState` for overall state
   - `RegisterRequest` for API payload
 
-- **Props**: 
+- **Props**:
   - `onSuccess?: () => void` (optional callback for redirect)
   - `initialData?: Partial<RegisterFormData>` (for pre-filling, though unlikely)
 
@@ -97,24 +98,24 @@ RegisterView
 
 - **Component description**: Reusable input component for the email field, integrated with shadcn/ui Input and Label.
 
-- **Main elements**: 
+- **Main elements**:
   - Label with "Email" text
   - Input field with type="email"
   - Error message display if invalid
 
-- **Handled interactions**: 
+- **Handled interactions**:
   - onChange: Updates parent form state
   - onBlur: Triggers validation
 
-- **Handled validation**: 
+- **Handled validation**:
   - Required field
   - Valid email format (regex or Zod)
 
-- **Types**: 
+- **Types**:
   - Inherits from shadcn/ui Input props
   - Uses string for value
 
-- **Props**: 
+- **Props**:
   - `value: string`
   - `onChange: (value: string) => void`
   - `error?: string`
@@ -124,47 +125,47 @@ RegisterView
 
 - **Component description**: Input component for password, with visibility toggle if needed (using shadcn/ui).
 
-- **Main elements**: 
+- **Main elements**:
   - Label with "Password" text
   - Input field with type="password"
   - Optional eye icon for toggle
   - Error message if invalid
 
-- **Handled interactions**: 
+- **Handled interactions**:
   - onChange: Updates form state
   - onBlur: Validates
 
-- **Handled validation**: 
+- **Handled validation**:
   - Required
   - Min length 8, uppercase, lowercase, number (via parent)
 
-- **Types**: 
+- **Types**:
   - string for value
 
-- **Props**: 
+- **Props**:
   - Similar to EmailInput: `value`, `onChange`, `error`, `disabled`
 
 ### ConfirmPasswordInput
 
 - **Component description**: Similar to PasswordInput but for confirmation, validates match with password.
 
-- **Main elements**: 
+- **Main elements**:
   - Label "Confirm Password"
   - Input type="password"
   - Error if doesn't match
 
-- **Handled interactions**: 
+- **Handled interactions**:
   - onChange: Updates and validates match
   - onBlur: Validates match
 
-- **Handled validation**: 
+- **Handled validation**:
   - Required
   - Matches password field value
 
-- **Types**: 
+- **Types**:
   - string
 
-- **Props**: 
+- **Props**:
   - `value: string`
   - `onChange: (value: string) => void`
   - `error?: string`
@@ -175,19 +176,19 @@ RegisterView
 
 - **Component description**: Displays error messages for the entire form or specific fields.
 
-- **Main elements**: 
+- **Main elements**:
   - Alert or simple p tag with error text, styled red
 
-- **Handled interactions**: 
+- **Handled interactions**:
   - None (display only)
 
-- **Handled validation**: 
+- **Handled validation**:
   - N/A
 
-- **Types**: 
+- **Types**:
   - `error?: string`
 
-- **Props**: 
+- **Props**:
   - `error: string`
   - `className?: string`
 
@@ -195,55 +196,55 @@ RegisterView
 
 - **Component description**: Provides link to login page for users who already have an account.
 
-- **Main elements**: 
+- **Main elements**:
   - Paragraph with "Already have an account?"
   - Link to /login
 
-- **Handled interactions**: 
+- **Handled interactions**:
   - onClick: Navigate to login (using Astro's A tag or Link)
 
-- **Handled validation**: 
+- **Handled validation**:
   - N/A
 
-- **Types**: 
+- **Types**:
   - None specific
 
-- **Props**: 
+- **Props**:
   - None
 
 ## 5. Types
 
 The view leverages existing types from `src/types.ts`. No entirely new types are required, but we define ViewModel extensions for the form:
 
-- **RegisterFormData** (existing): 
+- **RegisterFormData** (existing):
   - `email: string` - User's email address
   - `password: string` - User's password
   - Extends with `confirmPassword: string` for confirmation (added to form state, not sent to API)
 
-- **RegisterFormErrors** (existing, extended): 
+- **RegisterFormErrors** (existing, extended):
   - `email?: string` - Email-specific errors (e.g., "Invalid email format")
   - `password?: string` - Password errors (e.g., "Password must be at least 8 characters")
   - `confirmPassword?: string` - Confirmation errors (e.g., "Passwords do not match")
   - `form?: string` - General form errors (e.g., API response errors)
 
-- **RegisterFormState** (existing): 
+- **RegisterFormState** (existing):
   - `data: RegisterFormData` - Current form values
   - `errors: RegisterFormErrors` - Current validation errors
   - `isSubmitting: boolean` - Loading state during submission
   - `isValid: boolean` - Overall form validity
 
-- **RegisterRequest** (existing DTO): 
+- **RegisterRequest** (existing DTO):
   - `email: string`
   - `password: string` (confirmPassword stripped before sending)
 
-- **AuthResponse** (existing response DTO): 
+- **AuthResponse** (existing response DTO):
   - `user: { id: string; email: string; created_at: string }`
   - `session: { access_token: string; refresh_token: string; expires_at: number }`
 
-- **ApiError** (existing): 
+- **ApiError** (existing):
   - `error: { code: string; message: string; details?: Record<string, any> }`
 
-- **ToastNotification** (existing): 
+- **ToastNotification** (existing):
   - `type: 'success' | 'error' | 'info'`
   - `message: string`
   - `duration?: number`

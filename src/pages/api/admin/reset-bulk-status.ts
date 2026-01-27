@@ -66,11 +66,14 @@ export const POST: APIRoute = async ({ locals }) => {
     appLogger.info("Resetting stuck bulk generations", { userId });
 
     // Call the database function
-    const { data: result, error: rpcError } = await supabase.rpc("reset_stuck_bulk_generations");
+    const { data: resultData, error: rpcError } = await supabase.rpc("reset_stuck_bulk_generations");
 
     if (rpcError) {
       throw rpcError;
     }
+
+    // RPC returns an array of objects, take the first one or default
+    const result = Array.isArray(resultData) && resultData.length > 0 ? resultData[0] : null;
 
     const resetCount = result?.reset_count || 0;
     const updatedIds = result?.updated_ids || [];

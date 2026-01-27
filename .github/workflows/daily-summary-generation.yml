@@ -3,7 +3,7 @@ name: Daily Summary Generation
 on:
   schedule:
     # Every day at 18:00 UTC (19:00 Polish winter time / 20:00 Polish summer time)
-    - cron: '0 18 * * *'
+    - cron: "0 18 * * *"
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - name: Queue Videos for Generation
         run: |
           TARGET_URL="${{ secrets.APP_URL || 'https://videosummary.org' }}/api/summaries/generate-all"
-          
+
           echo "Queueing videos for summary generation at $TARGET_URL"
 
           response=$(curl -s -w "\n%{http_code}" -X POST \
@@ -25,26 +25,26 @@ jobs:
             --http1.1 \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json")
-          
+
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
-          
+
           echo "Response Code: $http_code"
           echo "Response Body: $body"
-          
+
           if [ "$http_code" -ne 202 ] && [ "$http_code" -ne 200 ]; then
             echo "Failed to queue videos for generation."
             exit 1
           fi
-          
+
           echo "Videos queued successfully!"
 
       - name: Process Queue (up to 50 items)
         run: |
           PROCESS_URL="${{ secrets.APP_URL || 'https://videosummary.org' }}/api/summaries/process-next"
-          
+
           echo "Processing queued summaries..."
-          
+
           # Process up to 50 items (or until queue is empty)
           for i in $(seq 1 50); do
             echo ""
@@ -76,6 +76,6 @@ jobs:
             
             echo "Item $i processed."
           done
-          
+
           echo ""
           echo "Daily summary generation completed!"

@@ -2,7 +2,10 @@ export function AppFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer data-testid="app-footer" className="relative bg-gradient-to-b from-background/95 via-background/90 to-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 mt-8 overflow-hidden rounded-t-xl shadow-2xl shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.15),0_-4px_16px_-4px_rgba(0,0,0,0.1)]">
+    <footer
+      data-testid="app-footer"
+      className="relative bg-gradient-to-b from-background/95 via-background/90 to-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 mt-8 overflow-hidden rounded-t-xl shadow-2xl shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.15),0_-4px_16px_-4px_rgba(0,0,0,0.1)]"
+    >
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px] [mask-image:radial-gradient(white,transparent_85%)]" />
 

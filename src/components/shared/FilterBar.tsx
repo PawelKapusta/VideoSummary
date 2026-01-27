@@ -1,3 +1,4 @@
+/* eslint-disable react-compiler/react-compiler */
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -66,7 +67,10 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
 
   // Sync local search with external search query changes
   useEffect(() => {
-    setLocalSearch(searchQuery || "");
+    if (searchQuery !== localSearch) {
+      setLocalSearch(searchQuery || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   // Debounce search input changes
@@ -115,42 +119,50 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
             <label className="text-base font-medium text-muted-foreground cursor-default mb-2">{statusLabel}</label>
             <div className="mt-2">
               <Select value={statusValue} onValueChange={onStatusChange}>
-              <SelectTrigger className="h-11 w-[250px] bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 hover:from-blue-100 hover:via-indigo-100 hover:to-cyan-100 border-blue-200 hover:border-blue-300 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[1.02] rounded-lg relative overflow-hidden cursor-pointer">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700"></div>
-                <div className="flex items-center relative z-10">
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-900 border-blue-200 rounded-lg shadow-lg p-1">
-                {statusOptions.map((option) => {
-                  const getStatusIcon = (value: string) => {
-                    switch (value) {
-                      case "all": return <CheckCircle className="h-4 w-4 text-gray-500" />;
-                      case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
-                      case "in_progress": return <PlayCircle className="h-4 w-4 text-blue-500" />;
-                      case "completed": return <CheckCircle className="h-4 w-4 text-green-500" />;
-                      case "failed": return <AlertCircle className="h-4 w-4 text-red-500" />;
-                      case "with": return <CheckCircle className="h-4 w-4 text-green-500" />;
-                      case "without": return <AlertCircle className="h-4 w-4 text-gray-500" />;
-                      default: return <CheckCircle className="h-4 w-4 text-gray-500" />;
-                    }
-                  };
+                <SelectTrigger className="h-11 w-[250px] bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 hover:from-blue-100 hover:via-indigo-100 hover:to-cyan-100 border-blue-200 hover:border-blue-300 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[1.02] rounded-lg relative overflow-hidden cursor-pointer">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700"></div>
+                  <div className="flex items-center relative z-10">
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-900 border-blue-200 rounded-lg shadow-lg p-1">
+                  {statusOptions.map((option) => {
+                    const getStatusIcon = (value: string) => {
+                      switch (value) {
+                        case "all":
+                          return <CheckCircle className="h-4 w-4 text-gray-500" />;
+                        case "pending":
+                          return <Clock className="h-4 w-4 text-yellow-500" />;
+                        case "in_progress":
+                          return <PlayCircle className="h-4 w-4 text-blue-500" />;
+                        case "completed":
+                          return <CheckCircle className="h-4 w-4 text-green-500" />;
+                        case "failed":
+                          return <AlertCircle className="h-4 w-4 text-red-500" />;
+                        case "with":
+                          return <CheckCircle className="h-4 w-4 text-green-500" />;
+                        case "without":
+                          return <AlertCircle className="h-4 w-4 text-gray-500" />;
+                        default:
+                          return <CheckCircle className="h-4 w-4 text-gray-500" />;
+                      }
+                    };
 
-                  return (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className={`focus:bg-blue-100 !focus:text-blue-900 hover:bg-blue-50 hover:text-blue-900 text-gray-900 dark:text-gray-100 rounded-md cursor-pointer px-3 py-2.5 mx-1 mb-1 transition-colors duration-200 ${statusValue === option.value ? '!bg-blue-100 !text-blue-900 font-semibold' : ''}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(option.value)}
-                        <span className="text-sm">{option.label}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+                    return (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className={`focus:bg-blue-100 !focus:text-blue-900 hover:bg-blue-50 hover:text-blue-900 text-gray-900 dark:text-gray-100 rounded-md cursor-pointer px-3 py-2.5 mx-1 mb-1 transition-colors duration-200 ${statusValue === option.value ? "!bg-blue-100 !text-blue-900 font-semibold" : ""}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {getStatusIcon(option.value)}
+                          <span className="text-sm">{option.label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -159,36 +171,36 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
             <label className="text-base font-medium text-muted-foreground cursor-default mb-2">{channelLabel}</label>
             <div className="mt-2">
               <Select value={channelValue} onValueChange={onChannelChange} disabled={channels.length === 0}>
-              <SelectTrigger className="h-11 w-[350px] bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 hover:from-green-100 hover:via-emerald-100 hover:to-teal-100 border-green-200 hover:border-green-300 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[1.02] rounded-lg relative overflow-hidden cursor-pointer">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700"></div>
-                <div className="flex items-center relative z-10">
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-900 border-green-200 rounded-lg shadow-lg p-1">
-                <SelectItem
-                  value="all"
-                  className={`focus:bg-green-100 !focus:text-green-900 hover:bg-green-50 hover:text-green-900 text-gray-900 dark:text-gray-100 rounded-md cursor-pointer px-3 py-2.5 mx-1 mb-1 transition-colors duration-200 ${channelValue === "all" ? '!bg-green-100 !text-green-900 font-semibold' : ''}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Youtube className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">All {channelLabel}s</span>
+                <SelectTrigger className="h-11 w-[350px] bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 hover:from-green-100 hover:via-emerald-100 hover:to-teal-100 border-green-200 hover:border-green-300 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[1.02] rounded-lg relative overflow-hidden cursor-pointer">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700"></div>
+                  <div className="flex items-center relative z-10">
+                    <SelectValue />
                   </div>
-                </SelectItem>
-                {channels.map((channel) => (
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-900 border-green-200 rounded-lg shadow-lg p-1">
                   <SelectItem
-                    key={channel.id}
-                    value={channel.id}
-                    className={`focus:bg-green-100 !focus:text-green-900 hover:bg-green-50 hover:text-green-900 text-gray-900 dark:text-gray-100 rounded-md cursor-pointer px-3 py-2.5 mx-1 mb-1 transition-colors duration-200 ${channelValue === channel.id ? '!bg-green-100 !text-green-900 font-semibold' : ''}`}
+                    value="all"
+                    className={`focus:bg-green-100 !focus:text-green-900 hover:bg-green-50 hover:text-green-900 text-gray-900 dark:text-gray-100 rounded-md cursor-pointer px-3 py-2.5 mx-1 mb-1 transition-colors duration-200 ${channelValue === "all" ? "!bg-green-100 !text-green-900 font-semibold" : ""}`}
                   >
                     <div className="flex items-center gap-3">
-                      <Youtube className="h-4 w-4 text-green-600" />
-                      <span className="text-sm">{channel.name}</span>
+                      <Youtube className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">All {channelLabel}s</span>
                     </div>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  {channels.map((channel) => (
+                    <SelectItem
+                      key={channel.id}
+                      value={channel.id}
+                      className={`focus:bg-green-100 !focus:text-green-900 hover:bg-green-50 hover:text-green-900 text-gray-900 dark:text-gray-100 rounded-md cursor-pointer px-3 py-2.5 mx-1 mb-1 transition-colors duration-200 ${channelValue === channel.id ? "!bg-green-100 !text-green-900 font-semibold" : ""}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Youtube className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">{channel.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

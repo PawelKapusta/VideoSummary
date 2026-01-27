@@ -1,5 +1,5 @@
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export interface EmailInputProps {
   value: string;
@@ -12,8 +12,11 @@ export interface EmailInputProps {
 export function EmailInput({ value, onChange, onBlur, error, disabled }: EmailInputProps) {
   return (
     <div data-testid="email-input" className="space-y-2">
-      <Label htmlFor="email" className={error ? 'text-red-500' : ''}>
-        Email <span className="text-red-500" aria-label="required">*</span>
+      <Label htmlFor="email" className={error ? "text-red-500" : ""}>
+        Email{" "}
+        <span className="text-red-500" aria-label="required">
+          *
+        </span>
       </Label>
       <Input
         id="email"
@@ -25,10 +28,10 @@ export function EmailInput({ value, onChange, onBlur, error, disabled }: EmailIn
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
         disabled={disabled}
-        className={error ? 'border-red-500 focus-visible:ring-red-500' : ''}
+        className={error ? "border-red-500 focus-visible:ring-red-500" : ""}
         aria-required="true"
         aria-invalid={!!error}
-        aria-describedby={error ? 'email-error' : undefined}
+        aria-describedby={error ? "email-error" : undefined}
       />
       {error && (
         <p id="email-error" className="text-sm text-red-500" role="alert">
@@ -38,4 +41,3 @@ export function EmailInput({ value, onChange, onBlur, error, disabled }: EmailIn
     </div>
   );
 }
-

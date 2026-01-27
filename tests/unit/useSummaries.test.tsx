@@ -26,9 +26,7 @@ describe("useSummaries", () => {
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
   it("should use generated_at_desc as default sort when no filters provided", async () => {
@@ -64,10 +62,7 @@ describe("useSummaries", () => {
 
     vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-    const { result } = renderHook(
-      () => useSummaries({ sort: "published_at_desc" }),
-      { wrapper }
-    );
+    const { result } = renderHook(() => useSummaries({ sort: "published_at_desc" }), { wrapper });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);

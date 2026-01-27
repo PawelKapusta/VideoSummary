@@ -1263,9 +1263,7 @@ export async function startBulkSummaryGeneration(
   appLogger.debug("Fetching subscribed channels...");
 
   // First get channel IDs that have subscriptions
-  const { data: subscribedChannelIds, error: subError } = await supabase
-    .from("subscriptions")
-    .select("channel_id");
+  const { data: subscribedChannelIds, error: subError } = await supabase.from("subscriptions").select("channel_id");
 
   if (subError) {
     appLogger.error(`Failed to fetch subscriptions: ${subError.message} (code: ${subError.code})`);
@@ -1278,7 +1276,7 @@ export async function startBulkSummaryGeneration(
   }
 
   // Extract unique channel IDs
-  const uniqueChannelIds = [...new Set(subscribedChannelIds.map(s => s.channel_id))];
+  const uniqueChannelIds = [...new Set(subscribedChannelIds.map((s) => s.channel_id))];
 
   // Now fetch the channels
   const { data: channels, error: channelsError } = await supabase

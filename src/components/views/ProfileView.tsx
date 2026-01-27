@@ -24,7 +24,10 @@ function UserHeader({ profile }: UserHeaderProps) {
   const subtitle = profile.username ? profile.email : null;
 
   return (
-    <Card data-testid="user-header" className="mb-6 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-100 dark:to-gray-100 border-slate-200 dark:border-slate-300 shadow-lg">
+    <Card
+      data-testid="user-header"
+      className="mb-6 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-100 dark:to-gray-100 border-slate-200 dark:border-slate-300 shadow-lg"
+    >
       <CardHeader>
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16 ring-4 ring-slate-300 dark:ring-slate-400 shadow-xl">
@@ -38,11 +41,7 @@ function UserHeader({ profile }: UserHeaderProps) {
             <CardDescription className="text-lg font-semibold text-slate-700 dark:text-slate-800">
               {displayName}
             </CardDescription>
-            {subtitle && (
-              <p className="text-sm text-slate-600 dark:text-slate-700 mt-1">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="text-sm text-slate-600 dark:text-slate-700 mt-1">{subtitle}</p>}
             <p className="text-base font-medium text-slate-600 dark:text-slate-700 mt-1">Member since {joinDate}</p>
           </div>
         </div>

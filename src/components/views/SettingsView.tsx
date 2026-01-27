@@ -160,12 +160,7 @@ const SettingsContent = () => {
                   >
                     <Save className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCancelEdit}
-                    disabled={isUpdating}
-                  >
+                  <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isUpdating}>
                     <X className="h-4 w-4" />
                   </Button>
                 </>
@@ -174,27 +169,21 @@ const SettingsContent = () => {
                   <div className="flex-1 p-3 border rounded-md bg-gray-50 text-sm">
                     {profile?.username || "No username set"}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsEditingUsername(true)}
-                  >
+                  <Button size="sm" variant="outline" onClick={() => setIsEditingUsername(true)}>
                     Edit
                   </Button>
                 </>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Your username will be displayed instead of your email. Leave empty to use your email address.
-              Username must be 3-30 characters long and can only contain letters, numbers, underscores, and dashes.
+              Your username will be displayed instead of your email. Leave empty to use your email address. Username
+              must be 3-30 characters long and can only contain letters, numbers, underscores, and dashes.
             </p>
           </div>
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Email</Label>
-            <div className="p-3 border rounded-md bg-gray-50 text-sm">
-              {profile?.email || "Loading..."}
-            </div>
+            <div className="p-3 border rounded-md bg-gray-50 text-sm">{profile?.email || "Loading..."}</div>
             <p className="text-xs text-muted-foreground">
               Your email address cannot be changed here. Contact support if you need to update your email.
             </p>

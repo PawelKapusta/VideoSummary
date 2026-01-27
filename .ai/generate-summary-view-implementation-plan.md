@@ -7,6 +7,7 @@ This document outlines the implementation plan for the "Generate Summary" view, 
 ## 2. View Routing
 
 The view will be accessible at the following path:
+
 - **Path:** `/generate`
 
 This will be handled by a `generate.astro` file in the `src/pages/` directory, which will render the main React client component.
@@ -31,6 +32,7 @@ The view will be composed of a main container component that manages state and s
 ## 4. Component Details
 
 ### `GenerateSummaryView.tsx`
+
 - **Component description:** The main container component for the `/generate` page. It orchestrates all state management, API calls via a custom hook, and renders its child components, passing down necessary state and props.
 - **Main elements:** A `div` that structures the layout, containing the `VideoUrlForm`, `VideoPreview`, and `ValidationStatus` components.
 - **Handled interactions:** None directly. It manages the state that results from child component interactions.
@@ -39,6 +41,7 @@ The view will be composed of a main container component that manages state and s
 - **Props:** None.
 
 ### `VideoUrlForm.tsx`
+
 - **Component description:** A form consisting of a single text input for the YouTube video URL and a submit button. It captures user input and signals submission events.
 - **Main elements:** An HTML `<form>` element, a shadcn/ui `Input` for the URL, and a shadcn/ui `Button` for submission.
 - **Handled interactions:**
@@ -58,6 +61,7 @@ The view will be composed of a main container component that manages state and s
   ```
 
 ### `VideoPreview.tsx`
+
 - **Component description:** A display component that shows metadata of the YouTube video fetched from the backend, including the thumbnail, title, channel name, and duration. It is only rendered when video data is available.
 - **Main elements:** An `img` tag for the thumbnail, and `h3`/`p` tags for text content.
 - **Handled interactions:** None.
@@ -71,6 +75,7 @@ The view will be composed of a main container component that manages state and s
   ```
 
 ### `ValidationStatus.tsx`
+
 - **Component description:** Displays a checklist of the conditions required to generate a summary. Each item in the list shows its current status (pending, checking, success, or error) to give the user real-time feedback.
 - **Main elements:** A `ul` containing `li` elements for each validation step, with icons and text indicating the status.
 - **Handled interactions:** None.
@@ -113,6 +118,7 @@ A new backend endpoint `GET /api/videos/meta` will be required to fetch video de
 
 - **`VideoPreviewViewModel`**
   - **Description:** Shape of the data required by the `VideoPreview` component.
+
   ```typescript
   // src/types.ts
   export interface VideoPreviewViewModel {
@@ -125,11 +131,12 @@ A new backend endpoint `GET /api/videos/meta` will be required to fetch video de
 
 - **`ValidationStatusViewModel`**
   - **Description:** Represents the complete state of all pre-submission validation checks.
+
   ```typescript
   // src/types.ts
   export interface ValidationStep {
     text: string;
-    status: 'pending' | 'checking' | 'success' | 'error';
+    status: "pending" | "checking" | "success" | "error";
     error_message?: string;
   }
 
@@ -146,6 +153,7 @@ A new backend endpoint `GET /api/videos/meta` will be required to fetch video de
 State will be managed within a custom hook, `useGenerateSummary`, to encapsulate all business logic, API calls, and state transitions, keeping the `GenerateSummaryView` component clean.
 
 ### `useGenerateSummary` Custom Hook
+
 - **Purpose:** To handle the entire lifecycle of the generate summary process, from user input to final submission.
 - **Internal State:**
   - `url`: The raw string from the input.
@@ -163,25 +171,25 @@ State will be managed within a custom hook, `useGenerateSummary`, to encapsulate
 Integration will rely on three endpoints and be managed by React Query.
 
 1.  **Fetch Video Metadata**
-    -   **Endpoint:** `GET /api/videos/meta`
-    -   **Trigger:** Debounced URL input change.
-    -   **Request:** Query parameter `url`.
-    -   **Response:** `VideoMetaResponse`
-    -   **Hook:** `useQuery`
+    - **Endpoint:** `GET /api/videos/meta`
+    - **Trigger:** Debounced URL input change.
+    - **Request:** Query parameter `url`.
+    - **Response:** `VideoMetaResponse`
+    - **Hook:** `useQuery`
 
 2.  **Check Generation Status**
-    -   **Endpoint:** `GET /api/generation-requests/status`
-    -   **Trigger:** Successful fetch of video metadata.
-    -   **Request:** Query parameter `channel_id`.
-    -   **Response:** `GenerationStatusResponse` (existing type).
-    -   **Hook:** `useQuery` (chained with `enabled` option).
+    - **Endpoint:** `GET /api/generation-requests/status`
+    - **Trigger:** Successful fetch of video metadata.
+    - **Request:** Query parameter `channel_id`.
+    - **Response:** `GenerationStatusResponse` (existing type).
+    - **Hook:** `useQuery` (chained with `enabled` option).
 
 3.  **Initiate Summary Generation**
-    -   **Endpoint:** `POST /api/summaries`
-    -   **Trigger:** User clicks the "Generate Summary" button.
-    -   **Request Type:** `GenerateSummaryRequest` (`{ video_url: string }`).
-    -   **Response Type:** `ApiSuccess<SummaryBasic & { message: string }>`.
-    -   **Hook:** `useMutation`
+    - **Endpoint:** `POST /api/summaries`
+    - **Trigger:** User clicks the "Generate Summary" button.
+    - **Request Type:** `GenerateSummaryRequest` (`{ video_url: string }`).
+    - **Response Type:** `ApiSuccess<SummaryBasic & { message: string }>`.
+    - **Hook:** `useMutation`
 
 ## 8. User Interactions
 

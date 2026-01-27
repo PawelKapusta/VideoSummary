@@ -8,7 +8,7 @@ The Login view is a public-facing page that allows registered users to authentic
 
 - **Path:** `/login`
 - **Access:** Public (unauthenticated users only)
-- **Redirect Logic:** 
+- **Redirect Logic:**
   - If user is already authenticated → redirect to `/dashboard`
   - After successful login → redirect to `/dashboard`
   - From protected routes without authentication → redirect to `/login` with return URL parameter
@@ -34,11 +34,11 @@ LoginPage (Astro)
 ### LoginPage (Astro Component)
 
 - **Description:** The main page component that serves as the entry point for the login route. It handles server-side authentication checks and renders the React LoginView component.
-- **Main HTML Elements:** 
+- **Main HTML Elements:**
   - `<Layout>` wrapper with page metadata
   - Client-side `<LoginView>` component with `client:load` directive
 - **Handled Events:** None (static wrapper)
-- **Validation Conditions:** 
+- **Validation Conditions:**
   - Server-side: Check if user is already authenticated via middleware
   - If authenticated, redirect to `/dashboard`
 - **Types:** None specific to this component
@@ -56,7 +56,7 @@ LoginPage (Astro)
   - `onLoginSuccess`: Handles successful authentication and redirect
   - `onLoginError`: Manages error states and displays toast notifications
 - **Validation Conditions:** None directly (delegated to LoginForm)
-- **Types:** 
+- **Types:**
   - `LoginFormData`
   - `AuthResponse`
   - `ApiError`
@@ -267,15 +267,11 @@ interface LoginFormState {
 type LoginApiResponse = AuthResponse | ApiError;
 
 // Error codes from API (for type-safe error handling)
-type LoginErrorCode = 
-  | 'INVALID_INPUT'
-  | 'INVALID_CREDENTIALS'
-  | 'RATE_LIMIT_EXCEEDED'
-  | 'INTERNAL_ERROR';
+type LoginErrorCode = "INVALID_INPUT" | "INVALID_CREDENTIALS" | "RATE_LIMIT_EXCEEDED" | "INTERNAL_ERROR";
 
 // Toast notification type
 interface ToastNotification {
-  type: 'success' | 'error' | 'info';
+  type: "success" | "error" | "info";
   message: string;
   duration?: number;
 }
@@ -290,8 +286,8 @@ The LoginForm component manages its own state without requiring external state m
 ```typescript
 // Form data state
 const [formData, setFormData] = useState<LoginFormData>({
-  email: '',
-  password: '',
+  email: "",
+  password: "",
 });
 
 // Form errors state
@@ -309,10 +305,10 @@ const [apiError, setApiError] = useState<ApiError | null>(null);
 ```typescript
 // Update individual field
 const updateField = (field: keyof LoginFormData, value: string) => {
-  setFormData(prev => ({ ...prev, [field]: value }));
+  setFormData((prev) => ({ ...prev, [field]: value }));
   // Clear field error when user starts typing
   if (errors[field]) {
-    setErrors(prev => ({ ...prev, [field]: undefined }));
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
   // Clear API error when user modifies form
   if (apiError) {
@@ -323,31 +319,31 @@ const updateField = (field: keyof LoginFormData, value: string) => {
 // Validate field
 const validateField = (field: keyof LoginFormData): string | undefined => {
   const value = formData[field];
-  
-  if (field === 'email') {
-    if (!value) return 'Email is required';
+
+  if (field === "email") {
+    if (!value) return "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return 'Please enter a valid email address';
+      return "Please enter a valid email address";
     }
   }
-  
-  if (field === 'password') {
-    if (!value) return 'Password is required';
+
+  if (field === "password") {
+    if (!value) return "Password is required";
     if (value.length < 8) {
-      return 'Password must be at least 8 characters';
+      return "Password must be at least 8 characters";
     }
   }
-  
+
   return undefined;
 };
 
 // Validate entire form
 const validateForm = (): boolean => {
   const newErrors: LoginFormErrors = {
-    email: validateField('email'),
-    password: validateField('password'),
+    email: validateField("email"),
+    password: validateField("password"),
   };
-  
+
   setErrors(newErrors);
   return !newErrors.email && !newErrors.password;
 };
@@ -364,10 +360,10 @@ After successful login, session tokens should be stored securely:
 ```typescript
 // Store session in httpOnly cookie (handled by API response headers)
 // OR store in localStorage/sessionStorage (less secure, but simpler for MVP)
-const storeSession = (session: AuthResponse['session']) => {
-  localStorage.setItem('access_token', session.access_token);
-  localStorage.setItem('refresh_token', session.refresh_token);
-  localStorage.setItem('expires_at', session.expires_at.toString());
+const storeSession = (session: AuthResponse["session"]) => {
+  localStorage.setItem("access_token", session.access_token);
+  localStorage.setItem("refresh_token", session.refresh_token);
+  localStorage.setItem("expires_at", session.expires_at.toString());
 };
 ```
 
@@ -393,13 +389,11 @@ Create an API client function in `src/lib/api.ts`:
  * @returns AuthResponse with user and session data
  * @throws ApiError on failure
  */
-export async function loginUser(
-  credentials: LoginRequest
-): Promise<AuthResponse> {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
+export async function loginUser(credentials: LoginRequest): Promise<AuthResponse> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(credentials),
   });
@@ -421,39 +415,37 @@ export async function loginUser(
 ```typescript
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  
+
   // Validate form
   if (!validateForm()) {
     return;
   }
-  
+
   setIsSubmitting(true);
   setApiError(null);
-  
+
   try {
     const response = await loginUser(formData);
-    
+
     // Store session tokens
     storeSession(response.session);
-    
+
     // Call success callback
     onSuccess(response);
-    
+
     // Redirect to dashboard
-    window.location.href = '/dashboard';
-    
+    window.location.href = "/dashboard";
   } catch (error) {
     // Handle API errors
     const apiError = error as ApiError;
     setApiError(apiError);
     onError(apiError);
-    
+
     // Show toast notification
     showToast({
-      type: 'error',
+      type: "error",
       message: apiError.error.message,
     });
-    
   } finally {
     setIsSubmitting(false);
   }
@@ -501,6 +493,7 @@ ApiError {
 ## 8. User Interactions
 
 ### 1. Page Load
+
 - **Action:** User navigates to `/login`
 - **Expected Outcome:**
   - Page renders with empty login form
@@ -508,6 +501,7 @@ ApiError {
   - If user is already authenticated, redirect to `/dashboard`
 
 ### 2. Email Input
+
 - **Action:** User types in email field
 - **Expected Outcome:**
   - Email value updates in real-time
@@ -515,6 +509,7 @@ ApiError {
   - API error message (if present) clears when user modifies form
 
 ### 3. Email Field Blur
+
 - **Action:** User tabs out or clicks away from email field
 - **Expected Outcome:**
   - Field-level validation triggers
@@ -522,6 +517,7 @@ ApiError {
   - Input border changes to red (error state)
 
 ### 4. Password Input
+
 - **Action:** User types in password field
 - **Expected Outcome:**
   - Password value updates in real-time
@@ -530,6 +526,7 @@ ApiError {
   - API error message (if present) clears when user modifies form
 
 ### 5. Toggle Password Visibility (Optional)
+
 - **Action:** User clicks eye icon button
 - **Expected Outcome:**
   - Password text toggles between masked and visible
@@ -537,6 +534,7 @@ ApiError {
   - ARIA label updates for screen readers
 
 ### 6. Password Field Blur
+
 - **Action:** User tabs out or clicks away from password field
 - **Expected Outcome:**
   - Field-level validation triggers
@@ -544,6 +542,7 @@ ApiError {
   - Input border changes to red (error state)
 
 ### 7. Form Submission (Valid)
+
 - **Action:** User clicks "Sign In" button or presses Enter
 - **Expected Outcome:**
   - Client-side validation runs
@@ -556,6 +555,7 @@ ApiError {
     - Redirect to `/dashboard`
 
 ### 8. Form Submission (Invalid)
+
 - **Action:** User clicks "Sign In" with invalid/empty fields
 - **Expected Outcome:**
   - Client-side validation runs
@@ -565,6 +565,7 @@ ApiError {
   - Submit button remains enabled for retry
 
 ### 9. Form Submission (API Error - Invalid Credentials)
+
 - **Action:** API returns 401 Unauthorized
 - **Expected Outcome:**
   - Error message displays: "Invalid email or password"
@@ -574,6 +575,7 @@ ApiError {
   - Password field is cleared for security (optional)
 
 ### 10. Form Submission (API Error - Rate Limited)
+
 - **Action:** API returns 429 Too Many Requests
 - **Expected Outcome:**
   - Error message displays: "Too many login attempts. Please try again later."
@@ -582,6 +584,7 @@ ApiError {
   - Timer shows when user can retry (optional enhancement)
 
 ### 11. Form Submission (Network Error)
+
 - **Action:** Network request fails
 - **Expected Outcome:**
   - Error message displays: "Network error. Please check your connection."
@@ -590,18 +593,21 @@ ApiError {
   - Retry button appears (optional)
 
 ### 12. Navigation to Register
+
 - **Action:** User clicks "Don't have an account? Sign up"
 - **Expected Outcome:**
   - Navigate to `/register`
   - Form state is not preserved
 
 ### 13. Navigation to Password Reset
+
 - **Action:** User clicks "Forgot password?"
 - **Expected Outcome:**
   - Navigate to `/reset-password`
   - Form state is not preserved
 
 ### 14. Keyboard Navigation
+
 - **Action:** User navigates using Tab key
 - **Expected Outcome:**
   - Focus moves in logical order: Email → Password → Submit → Links
@@ -613,6 +619,7 @@ ApiError {
 ### Client-Side Validation
 
 #### Email Field Validation
+
 - **Component:** EmailInput
 - **Trigger:** onChange (clear errors), onBlur (validate), onSubmit (validate)
 - **Conditions:**
@@ -629,6 +636,7 @@ ApiError {
   - Submit button: Disabled if email is invalid
 
 #### Password Field Validation
+
 - **Component:** PasswordInput
 - **Trigger:** onChange (clear errors), onBlur (validate), onSubmit (validate)
 - **Conditions:**
@@ -644,6 +652,7 @@ ApiError {
   - Submit button: Disabled if password is invalid
 
 #### Form-Level Validation
+
 - **Component:** LoginForm
 - **Trigger:** onSubmit
 - **Conditions:**
@@ -657,6 +666,7 @@ ApiError {
 ### Server-Side Validation (via API)
 
 #### Authentication Validation
+
 - **Component:** LoginForm
 - **Trigger:** After API response
 - **Conditions:**
@@ -682,6 +692,7 @@ ApiError {
   - Focus returns to first field for correction
 
 ### Middleware Authentication Check
+
 - **Component:** LoginPage (Astro)
 - **Trigger:** Server-side on page load
 - **Conditions:**
@@ -697,6 +708,7 @@ ApiError {
 ### Client-Side Errors
 
 #### 1. Validation Errors
+
 - **Cause:** User input doesn't meet validation criteria
 - **Handling:**
   - Display inline error message below the invalid field
@@ -707,6 +719,7 @@ ApiError {
 - **User Recovery:** User corrects input and resubmits
 
 #### 2. Empty Form Submission
+
 - **Cause:** User tries to submit without filling required fields
 - **Handling:**
   - Show "required" errors for all empty fields
@@ -717,6 +730,7 @@ ApiError {
 ### Network Errors
 
 #### 1. Connection Failure
+
 - **Cause:** No internet connection or server unreachable
 - **Handling:**
   - Catch network exception in try-catch
@@ -726,6 +740,7 @@ ApiError {
 - **User Recovery:** Check connection and click retry or resubmit form
 
 #### 2. Timeout
+
 - **Cause:** API request takes too long
 - **Handling:**
   - Set timeout (e.g., 30 seconds) on fetch request
@@ -736,6 +751,7 @@ ApiError {
 ### API Errors
 
 #### 1. Invalid Credentials (401)
+
 - **Cause:** Email/password combination doesn't match any user
 - **HTTP Status:** 401 Unauthorized
 - **Error Code:** `INVALID_CREDENTIALS`
@@ -745,11 +761,12 @@ ApiError {
   - Keep form populated (don't clear fields)
   - Optionally clear password field for security
   - Don't reveal which field is incorrect (security best practice)
-- **User Recovery:** 
+- **User Recovery:**
   - Re-enter credentials and retry
   - Click "Forgot password?" link if needed
 
 #### 2. Validation Error (400)
+
 - **Cause:** Request payload fails server-side validation
 - **HTTP Status:** 400 Bad Request
 - **Error Code:** `INVALID_INPUT`
@@ -761,6 +778,7 @@ ApiError {
 - **User Recovery:** Correct invalid fields and resubmit
 
 #### 3. Rate Limit Exceeded (429)
+
 - **Cause:** Too many failed login attempts from this IP/account
 - **HTTP Status:** 429 Too Many Requests
 - **Error Code:** `RATE_LIMIT_EXCEEDED`
@@ -770,11 +788,12 @@ ApiError {
   - Show countdown timer (optional enhancement)
   - Check `Retry-After` header for cooldown duration
   - Store cooldown end time in localStorage to persist across page refreshes
-- **User Recovery:** 
+- **User Recovery:**
   - Wait for cooldown period to expire
   - Try "Forgot password?" if user is unsure of credentials
 
 #### 4. Internal Server Error (500)
+
 - **Cause:** Unexpected error on server (database down, etc.)
 - **HTTP Status:** 500 Internal Server Error
 - **Error Code:** `INTERNAL_ERROR`
@@ -784,13 +803,14 @@ ApiError {
   - Log full error details to console
   - Don't expose internal error details to user (security)
   - Optionally send error report to monitoring service
-- **User Recovery:** 
+- **User Recovery:**
   - Wait a moment and retry
   - Contact support if error persists
 
 ### Edge Cases
 
 #### 1. Session Already Exists
+
 - **Cause:** User is already logged in
 - **Handling:**
   - Middleware checks for existing session on page load
@@ -799,6 +819,7 @@ ApiError {
 - **User Recovery:** N/A (automatically handled)
 
 #### 2. Concurrent Login Attempts
+
 - **Cause:** User double-clicks submit button or submits from multiple tabs
 - **Handling:**
   - Disable submit button immediately on first click
@@ -807,6 +828,7 @@ ApiError {
 - **User Recovery:** N/A (prevented by UI state)
 
 #### 3. Browser Autofill
+
 - **Cause:** Browser autofills credentials from password manager
 - **Handling:**
   - Ensure inputs have proper `autocomplete` attributes
@@ -815,6 +837,7 @@ ApiError {
 - **User Recovery:** N/A (should work seamlessly)
 
 #### 4. JavaScript Disabled
+
 - **Cause:** User has JavaScript disabled in browser
 - **Handling:**
   - Provide `<noscript>` tag with message
@@ -828,7 +851,7 @@ All errors should be logged for debugging and monitoring:
 ```typescript
 const logError = (error: ApiError | Error, context: string) => {
   console.error(`[Login Error] ${context}:`, error);
-  
+
   // In production, send to monitoring service
   if (import.meta.env.PROD) {
     // sendToMonitoring(error, context);
@@ -839,6 +862,7 @@ const logError = (error: ApiError | Error, context: string) => {
 ## 11. Implementation Steps
 
 ### Step 1: Set Up Page Structure
+
 1. Create `/src/pages/login.astro`
 2. Import Layout component
 3. Add page metadata (title, description)
@@ -846,6 +870,7 @@ const logError = (error: ApiError | Error, context: string) => {
 5. Add client-side React component mounting point with `client:load`
 
 ### Step 2: Create Type Definitions
+
 1. Verify `LoginRequest` and `AuthResponse` exist in `src/types.ts`
 2. Add new types to `src/types.ts`:
    - `LoginFormData`
@@ -856,6 +881,7 @@ const logError = (error: ApiError | Error, context: string) => {
 3. Export all types for use in components
 
 ### Step 3: Implement API Client Function
+
 1. Open or create `src/lib/api.ts`
 2. Implement `loginUser()` function:
    - Accept `LoginRequest` parameter
@@ -867,6 +893,7 @@ const logError = (error: ApiError | Error, context: string) => {
 4. Export function
 
 ### Step 4: Create Session Management Utilities
+
 1. Create `src/lib/auth.ts` (if not exists)
 2. Implement `storeSession()` function:
    - Store access token, refresh token, and expiry
@@ -879,6 +906,7 @@ const logError = (error: ApiError | Error, context: string) => {
 5. Export utilities
 
 ### Step 5: Build Form Input Components
+
 1. Create `src/components/auth/EmailInput.tsx`:
    - Use shadcn/ui Input component
    - Add Label component
@@ -894,6 +922,7 @@ const logError = (error: ApiError | Error, context: string) => {
    - Implement show/hide password logic
 
 ### Step 6: Build Supporting Components
+
 1. Create `src/components/auth/FormErrorMessage.tsx`:
    - Accept `error` prop of type `ApiError | null`
    - Conditionally render error alert
@@ -906,6 +935,7 @@ const logError = (error: ApiError | Error, context: string) => {
    - Style with Tailwind (text-sm, text-muted-foreground)
 
 ### Step 7: Implement LoginForm Component
+
 1. Create `src/components/auth/LoginForm.tsx`
 2. Set up component props interface (`LoginFormProps`)
 3. Initialize state hooks:
@@ -929,6 +959,7 @@ const logError = (error: ApiError | Error, context: string) => {
 7. Add noValidate to form to use custom validation
 
 ### Step 8: Implement LoginView Container
+
 1. Create `src/components/views/LoginView.tsx`
 2. Set up container with Tailwind classes:
    - `min-h-screen flex items-center justify-center`
@@ -944,6 +975,7 @@ const logError = (error: ApiError | Error, context: string) => {
 5. Import and configure toast notifications
 
 ### Step 9: Create Astro Page Component
+
 1. Open `/src/pages/login.astro`
 2. Import Layout component
 3. Add frontmatter script for middleware auth check:
@@ -955,19 +987,21 @@ const logError = (error: ApiError | Error, context: string) => {
 7. Set page title: "Sign In | VideoSummary"
 
 ### Step 10: Add Toast Notifications
+
 1. Install/configure shadcn/ui Toast component (if not already)
 2. Add ToastProvider to root layout or LoginView
 3. Create useToast hook (from shadcn/ui)
 4. Use toast in error handlers:
    ```typescript
    toast({
-     variant: 'destructive',
-     title: 'Login Failed',
+     variant: "destructive",
+     title: "Login Failed",
      description: error.error.message,
-   })
+   });
    ```
 
 ### Step 11: Implement Middleware Auth Check
+
 1. Open or create `src/middleware/index.ts`
 2. Add route-specific logic for `/login`:
    - Check for existing session in cookies/headers
@@ -976,6 +1010,7 @@ const logError = (error: ApiError | Error, context: string) => {
 3. Test redirect logic
 
 ### Step 12: Style and Polish UI
+
 1. Ensure consistent spacing and sizing
 2. Add focus states for keyboard navigation
 3. Verify color contrast for accessibility (WCAG AA)
@@ -986,6 +1021,7 @@ const logError = (error: ApiError | Error, context: string) => {
 6. Add hover states for interactive elements
 
 ### Step 13: Add Accessibility Features
+
 1. Ensure all form inputs have associated labels
 2. Add ARIA attributes:
    - `aria-required="true"` on required fields
@@ -999,6 +1035,7 @@ const logError = (error: ApiError | Error, context: string) => {
 4. Test with screen reader (VoiceOver/NVDA)
 
 ### Step 14: Testing
+
 1. **Manual testing:**
    - Test successful login flow
    - Test validation errors (empty fields, invalid email, short password)
@@ -1018,6 +1055,7 @@ const logError = (error: ApiError | Error, context: string) => {
    - Test navigation to register and password reset
 
 ### Step 15: Security Hardening
+
 1. Ensure passwords are never logged or exposed
 2. Implement rate limiting feedback (countdown timer)
 3. Clear password field after failed attempts (optional)
@@ -1026,6 +1064,7 @@ const logError = (error: ApiError | Error, context: string) => {
 6. Test against common vulnerabilities (XSS, CSRF)
 
 ### Step 16: Performance Optimization
+
 1. Ensure LoginView React component is code-split
 2. Lazy load toast notifications if not immediately needed
 3. Optimize bundle size (check for unnecessary imports)
@@ -1033,12 +1072,14 @@ const logError = (error: ApiError | Error, context: string) => {
 5. Test performance with Lighthouse
 
 ### Step 17: Documentation
+
 1. Add JSDoc comments to all functions
 2. Document component props with TypeScript interfaces
 3. Add inline code comments for complex logic
 4. Update README with login flow documentation (if applicable)
 
 ### Step 18: Final Review
+
 1. Review code against PRD requirements
 2. Verify all user stories are satisfied (US-002)
 3. Check coding conventions and style guidelines
@@ -1055,6 +1096,7 @@ const logError = (error: ApiError | Error, context: string) => {
 **Estimated Implementation Time:** 6-8 hours for experienced developer
 
 **Key Dependencies:**
+
 - Astro 5 framework
 - React 19
 - shadcn/ui components (Button, Input, Label, Card, Toast)
@@ -1063,6 +1105,7 @@ const logError = (error: ApiError | Error, context: string) => {
 - Existing types in `src/types.ts`
 
 **Testing Checklist:**
+
 - [ ] Login with valid credentials succeeds
 - [ ] Login with invalid credentials shows error
 - [ ] Email validation works correctly
@@ -1075,4 +1118,3 @@ const logError = (error: ApiError | Error, context: string) => {
 - [ ] Already authenticated users redirect to dashboard
 - [ ] Session is stored correctly after login
 - [ ] Links to register and password reset work
-

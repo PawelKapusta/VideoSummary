@@ -11,7 +11,10 @@ interface AuthLayoutProps {
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, description, footer }) => {
   return (
-    <div data-testid="auth-layout" className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#fafafa] px-4 py-12">
+    <div
+      data-testid="auth-layout"
+      className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#fafafa] px-4 py-12"
+    >
       {/* Background Animation Elements - Refined for Light Mode */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div

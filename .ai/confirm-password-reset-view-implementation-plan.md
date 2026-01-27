@@ -122,6 +122,7 @@ State is managed locally within the ResetPasswordConfirmView using React's useSt
 - `showSuccess: boolean` - Toggles between form and success message.
 
 A custom hook `useConfirmResetPasswordForm` will encapsulate form logic:
+
 - Purpose: Manages form state, validation on change/blur, and submission handler.
 - Usage: Returns `{ formState, handleSubmit, handleInputChange }` for use in the view component.
 - Integrates with Zod for schema-based validation (password strength, match).

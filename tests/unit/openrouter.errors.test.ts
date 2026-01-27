@@ -202,7 +202,7 @@ describe("OpenRouter Error Classes", () => {
     it("should preserve error properties when thrown", () => {
       try {
         throw new AuthenticationError("Custom auth message");
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(AuthenticationError);
         expect(error).toBeInstanceOf(OpenRouterError);
         expect(error).toBeInstanceOf(Error);
@@ -231,7 +231,7 @@ describe("OpenRouter Error Classes", () => {
         new ServerError("test", 500),
       ];
 
-      errors.forEach(error => {
+      errors.forEach((error) => {
         expect(error.stack).toBeDefined();
         expect(typeof error.stack).toBe("string");
       });

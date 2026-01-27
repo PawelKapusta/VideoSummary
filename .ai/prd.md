@@ -13,15 +13,18 @@ Głównym problemem, na który odpowiada VideoSummary, jest przeciążenie infor
 ## 3. Wymagania funkcjonalne
 
 ### 3.1. Uwierzytelnianie i Profil Użytkownika
+
 - Rejestracja i logowanie za pomocą adresu e-mail i hasła.
 - Kompletny mechanizm resetowania hasła ("zapomniałem hasła").
 - Prosta strona profilu użytkownika z listą subskrybowanych kanałów i opcją ich usuwania oraz przycisk "Wyloguj".
 
 ### 3.2. Zarządzanie Kanałami
+
 - Możliwość dodawania kanałów YouTube poprzez wklejenie pełnego adresu URL kanału.
 - Limit 10 subskrybowanych kanałów na użytkownika.
 
 ### 3.3. Generowanie Podsumowań
+
 - Automatyczne generowanie: Raz dziennie (godz. 19:00) system skanuje kanały i generuje podsumowanie dla jednego najnowszego filmu z każdego kanału.
 - Manualne generowanie: Użytkownik może ręcznie wygenerować podsumowanie dla filmu z kanału, który subskrybuje.
 - Dzienny limit jednego **udanego** podsumowania na kanał **globalnie** (współdzielony przez automat, akcję manualną i wszystkich użytkowników):
@@ -29,10 +32,11 @@ Głównym problemem, na który odpowiada VideoSummary, jest przeciążenie infor
   - Jeśli użytkownik A wygeneruje podsumowanie dla kanału X dzisiaj, użytkownik B zobaczy to samo podsumowanie (nie może wygenerować kolejnego tego samego dnia).
   - Nieudane próby generowania (np. brak napisów) nie liczą się do limitu i można je ponawiać.
 - Dwa formaty podsumowań generowane w jednym zapytaniu LLM:
-    - TL;DR (do 100 tokenów).
-    - Pełne podsumowanie (do 500 tokenów, w formacie JSON z sekcjami: `summary`, `conclusions`, `key_points`).
+  - TL;DR (do 100 tokenów).
+  - Pełne podsumowanie (do 500 tokenów, w formacie JSON z sekcjami: `summary`, `conclusions`, `key_points`).
 
 ### 3.4. Interfejs Użytkownika (Dashboard)
+
 - Główny dashboard z listą podsumowań w formie kart, sortowanych chronologicznie.
 - Karta podsumowania zawiera: tytuł filmu, nazwę kanału, datę publikacji na YT oraz TL;DR.
 - Dedykowana podstrona dla każdego podsumowania (`/dashboard/[id]`) z pełną treścią, linkiem do oryginału oraz przyciskami do oceny (kciuk w górę/dół).
@@ -40,11 +44,13 @@ Głównym problemem, na który odpowiada VideoSummary, jest przeciążenie infor
 - Pełna responsywność interfejsu (RWD) dla przeglądarek mobilnych.
 
 ### 3.5. Obsługa Błędów i Powiadomień
+
 - Wykorzystanie powiadomień "toast" do informowania o statusach i błędach.
 - Czytelne komunikaty o błędach generowania podsumowań (np. "Brak napisów", "Film prywatny").
 - Specjalny komunikat dla filmów dłuższych niż 45 minut.
 
 ### 3.6. Specyfikacja Techniczna
+
 - Frontend: Astro 5 + React 19, Tailwind CSS 4, shadcn/ui.
 - Backend: Supabase (PostgreSQL + Auth) z zaimplementowanym Row-Level Security (RLS).
 - Baza Danych: PostgreSQL (przez Supabase).
@@ -56,6 +62,7 @@ Głównym problemem, na który odpowiada VideoSummary, jest przeciążenie infor
 ## 4. Granice produktu
 
 Następujące funkcjonalności są świadomie wyłączone z zakresu MVP i zostaną rozważone w przyszłych iteracjach produktu:
+
 - Generowanie podsumowań z dowolnego linku do filmu YouTube (bez subskrypcji kanału).
 - Zaawansowany system kategoryzacji i filtrowania podsumowań.
 - Możliwość edycji danych profilu użytkownika (poza hasłem).

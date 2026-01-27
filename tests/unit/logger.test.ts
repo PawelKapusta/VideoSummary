@@ -105,15 +105,9 @@ describe("Logger Utilities", () => {
     });
 
     it("should always return consistent format", () => {
-      const testCases = [
-        "a",
-        "user123",
-        "very_long_user_id_with_many_characters",
-        "123456789",
-        "special-chars@#$%",
-      ];
+      const testCases = ["a", "user123", "very_long_user_id_with_many_characters", "123456789", "special-chars@#$%"];
 
-      testCases.forEach(userId => {
+      testCases.forEach((userId) => {
         const ticketId = createSupportTicketId(userId);
         const hashPart = ticketId.replace("SUPPORT_", "");
         expect(hashPart.length).toBeGreaterThan(0);

@@ -24,10 +24,10 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
     if (!dateString) return "Select date";
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch {
       return "Select date";
@@ -36,9 +36,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
 
   return (
     <div className="w-full space-y-2">
-      <Label className="text-base font-medium text-muted-foreground mb-2">
-        {label}
-      </Label>
+      <Label className="text-base font-medium text-muted-foreground mb-2">{label}</Label>
 
       <div className="grid grid-cols-2 gap-6">
         <div className="relative group">
@@ -47,17 +45,17 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
             className="w-full h-14 justify-center text-center font-semibold bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 hover:from-cyan-100 hover:via-blue-100 hover:to-indigo-100 border-cyan-200 hover:border-cyan-300 transition-all duration-500 shadow-md hover:shadow-lg hover:scale-[1.03] rounded-xl relative overflow-hidden"
             disabled={disabled}
             onClick={() => {
-              const input = document.getElementById('from-date-input') as HTMLInputElement;
+              const input = document.getElementById("from-date-input") as HTMLInputElement;
               if (input) {
                 // Position the input at the center of the button before showing picker
                 const button = input.previousElementSibling as HTMLElement;
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  input.style.position = 'fixed';
+                  input.style.position = "fixed";
                   input.style.left = `${rect.left + rect.width / 2}px`;
                   input.style.top = `${rect.top + rect.height / 2}px`;
-                  input.style.opacity = '0';
-                  input.style.pointerEvents = 'none';
+                  input.style.opacity = "0";
+                  input.style.pointerEvents = "none";
                 }
                 input.focus();
                 if (input.showPicker) {
@@ -79,7 +77,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
           <input
             id="from-date-input"
             type="date"
-            value={fromDate ? fromDate.split('T')[0] : ""}
+            value={fromDate ? fromDate.split("T")[0] : ""}
             onChange={(e) => {
               const value = e.target.value;
               if (value) {
@@ -100,17 +98,17 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
             className="w-full h-14 justify-center text-center font-semibold bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 hover:from-rose-100 hover:via-pink-100 hover:to-fuchsia-100 border-rose-200 hover:border-rose-300 transition-all duration-500 shadow-md hover:shadow-lg hover:scale-[1.03] rounded-xl relative overflow-hidden"
             disabled={disabled}
             onClick={() => {
-              const input = document.getElementById('to-date-input') as HTMLInputElement;
+              const input = document.getElementById("to-date-input") as HTMLInputElement;
               if (input) {
                 // Position the input at the center of the button before showing picker
                 const button = input.previousElementSibling as HTMLElement;
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  input.style.position = 'fixed';
+                  input.style.position = "fixed";
                   input.style.left = `${rect.left + rect.width / 2}px`;
                   input.style.top = `${rect.top + rect.height / 2}px`;
-                  input.style.opacity = '0';
-                  input.style.pointerEvents = 'none';
+                  input.style.opacity = "0";
+                  input.style.pointerEvents = "none";
                 }
                 input.focus();
                 if (input.showPicker) {
@@ -132,7 +130,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
           <input
             id="to-date-input"
             type="date"
-            value={toDate ? toDate.split('T')[0] : ""}
+            value={toDate ? toDate.split("T")[0] : ""}
             onChange={(e) => {
               const value = e.target.value;
               if (value) {

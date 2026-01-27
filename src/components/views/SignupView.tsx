@@ -45,29 +45,29 @@ export default function SignupView() {
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center gap-6 py-8"
           >
-          <div className="text-center space-y-6">
-            <p className="text-emerald-600 font-medium text-lg leading-relaxed px-4">
-              Please check your email for a verification link to complete your registration.
-            </p>
+            <div className="text-center space-y-6">
+              <p className="text-emerald-600 font-medium text-lg leading-relaxed px-4">
+                Please check your email for a verification link to complete your registration.
+              </p>
 
-            <div className="pt-4">
-              <button
-                onClick={async () => {
-                  try {
-                    await fetch("/api/auth/logout", { method: "POST" });
-                  } catch {
-                    // Logout failed, but continue with redirect
-                  }
-                  window.location.href = "/login";
-                }}
-                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200 cursor-pointer"
-              >
-                Return to login
-              </button>
+              <div className="pt-4">
+                <button
+                  onClick={async () => {
+                    try {
+                      await fetch("/api/auth/logout", { method: "POST" });
+                    } catch {
+                      // Logout failed, but continue with redirect
+                    }
+                    window.location.href = "/login";
+                  }}
+                  className="text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200 cursor-pointer"
+                >
+                  Return to login
+                </button>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      </AuthLayout>
+          </motion.div>
+        </AuthLayout>
       </div>
     );
   }

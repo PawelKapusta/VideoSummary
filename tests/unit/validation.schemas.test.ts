@@ -38,7 +38,7 @@ describe("Validation Schemas", () => {
       const result = EmailSchema.safeParse("");
       expect(result.success).toBe(false);
       // Zod checks email format first, then min length, so we get "Invalid email format"
-      expect(result.error?.issues.some(issue => issue.message === "Email is required")).toBe(true);
+      expect(result.error?.issues.some((issue) => issue.message === "Email is required")).toBe(true);
     });
 
     it("should reject email that is too long", () => {
@@ -349,8 +349,10 @@ describe("Validation Schemas", () => {
           hidden_only: input,
         });
         expect(result.success).toBe(true);
-        expect(result.data.include_hidden).toBe(expected);
-        expect(result.data.hidden_only).toBe(expected);
+        if (result.success) {
+          expect(result.data.include_hidden).toBe(expected);
+          expect(result.data.hidden_only).toBe(expected);
+        }
       });
     });
 
@@ -381,7 +383,7 @@ describe("Validation Schemas", () => {
 
     it("should validate status enum values", () => {
       const validStatuses = ["all", "with", "without"];
-      validStatuses.forEach(status => {
+      validStatuses.forEach((status) => {
         const result = VideoListFiltersSchema.safeParse({ status });
         expect(result.success).toBe(true);
       });

@@ -19,6 +19,7 @@ The view should be accessible at the path `/profile`. This route will be impleme
   - ChangePasswordForm (for password management, if extended)
 
 High-level tree:
+
 ```
 ProfileView
 ├── UserHeader

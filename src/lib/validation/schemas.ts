@@ -160,7 +160,9 @@ export const UpdateSummaryRequestSchema = z.object({
   tldr: z.string().min(10).max(500).optional(),
   full_summary: z.any().optional(), // JSON summary data
   status: z.enum(["pending", "in_progress", "completed", "failed"]).optional(),
-  error_code: z.enum(["TRANSCRIPT_NOT_AVAILABLE", "NO_SUBTITLES", "VIDEO_TOO_LONG", "AI_ERROR", "UNKNOWN_ERROR"]).optional(),
+  error_code: z
+    .enum(["TRANSCRIPT_NOT_AVAILABLE", "NO_SUBTITLES", "VIDEO_TOO_LONG", "AI_ERROR", "UNKNOWN_ERROR"])
+    .optional(),
 });
 
 /**

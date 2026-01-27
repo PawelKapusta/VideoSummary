@@ -34,14 +34,11 @@ export function useProfile() {
     }
   }, [error]);
 
-  const updateProfileMutation = useMutation<
-    UserProfile,
-    ApiClientError,
-    { username?: string }
-  >({
+  const updateProfileMutation = useMutation<UserProfile, ApiClientError, { username?: string }>({
     mutationFn: async (updates) => {
       const response = await apiClient.put<ApiSuccess<UserProfile>>("/api/profile", updates);
-      return response.data!;
+      if (!response.data) throw new Error("No data returned from profile update");
+      return response.data;
     },
     onSuccess: (updatedProfile) => {
       // Update the cached profile data immediately

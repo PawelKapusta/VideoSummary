@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-  createSecureYouTubeFetchOptions,
-  validateYouTubeApiUrl,
-  secureYouTubeFetch,
-} from "@/lib/youtube-api-security";
+import { createSecureYouTubeFetchOptions, validateYouTubeApiUrl, secureYouTubeFetch } from "@/lib/youtube-api-security";
 
 // Mock dependencies
 vi.mock("@/lib/logger", () => ({
@@ -18,7 +14,6 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/lib/env", () => ({
   getSiteUrl: vi.fn(() => "https://example.com/"),
 }));
-
 
 describe("YouTube API Security", () => {
   beforeEach(() => {
@@ -76,7 +71,7 @@ describe("YouTube API Security", () => {
         "https://www.googleapis.com/youtube/v3/channels?part=snippet",
       ];
 
-      validUrls.forEach(url => {
+      validUrls.forEach((url) => {
         const result = validateYouTubeApiUrl(url);
         expect(result).toBe(true);
       });
@@ -92,7 +87,7 @@ describe("YouTube API Security", () => {
         "https://googleapis.com/youtube/v3/videos", // missing www
       ];
 
-      invalidUrls.forEach(url => {
+      invalidUrls.forEach((url) => {
         const result = validateYouTubeApiUrl(url);
         expect(result).toBe(false);
       });
@@ -102,14 +97,9 @@ describe("YouTube API Security", () => {
     });
 
     it("should handle malformed URLs", () => {
-      const malformedUrls = [
-        "not-a-url",
-        "",
-        "://invalid",
-        "https://",
-      ];
+      const malformedUrls = ["not-a-url", "", "://invalid", "https://"];
 
-      malformedUrls.forEach(url => {
+      malformedUrls.forEach((url) => {
         const result = validateYouTubeApiUrl(url);
         expect(result).toBe(false);
       });
