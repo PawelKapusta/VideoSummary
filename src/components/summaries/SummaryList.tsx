@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useCallback, memo } from "react";
+import React, { useEffect, memo } from "react";
+import { useInView } from "react-intersection-observer";
 import SummaryCard from "./SummaryCard";
 import type { SummaryWithVideo, PaginatedResponse } from "../../types";
 import type { InfiniteData } from "@tanstack/react-query";
@@ -33,46 +34,17 @@ const SummaryList: React.FC<Props> = memo(
     onRate,
     onRegenerate,
   }) => {
-    const sentinelRef = useRef<HTMLDivElement>(null);
-    const observer = useRef<IntersectionObserver | null>(null);
-    const [isSentinelVisible, setIsSentinelVisible] = React.useState(false);
+    const { ref, inView } = useInView({
+      threshold: 0,
+    });
 
     const flattenedData = data?.pages.flatMap((page: PaginatedResponse<SummaryWithVideo>) => page.data) || [];
 
-    const handleObserve = useCallback(
-      (entries: IntersectionObserverEntry[]) => {
-        const [entry] = entries;
-        setIsSentinelVisible(entry.isIntersecting);
-
-        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      [fetchNextPage, hasNextPage, isFetchingNextPage]
-    );
-
     useEffect(() => {
-      observer.current = new IntersectionObserver(handleObserve, { threshold: 1.0 });
-
-      return () => {
-        if (observer.current) {
-          observer.current.disconnect();
-        }
-      };
-    }, [handleObserve]);
-
-    useEffect(() => {
-      const currentObserver = observer.current;
-      const currentSentinel = sentinelRef.current;
-
-      if (currentObserver && currentSentinel) {
-        currentObserver.observe(currentSentinel);
-
-        return () => {
-          currentObserver.unobserve(currentSentinel);
-        };
+      if (inView && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
       }
-    }, [handleObserve]); // Re-run when handleObserve changes
+    }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]); // Re-run when handleObserve changes
 
     if (error && !flattenedData.length) {
       // Only show global error if no data
@@ -124,24 +96,27 @@ const SummaryList: React.FC<Props> = memo(
             );
           })}
         </div>
-        <div ref={sentinelRef} className="h-10 flex justify-center items-center">
-          {isFetchingNextPage && <FuturisticSkeleton />}
-          {!hasNextPage && flattenedData.length > 10 && isSentinelVisible && (
-            <div className="flex flex-col items-center justify-center py-8 px-4">
-              <div className="w-12 h-px bg-gray-200 dark:bg-gray-700 mb-4"></div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center">You&apos;ve reached the end</p>
+        <div ref={ref} className="h-10" />
+        {isFetchingNextPage && (
+          <div className="text-center py-4">
+            <FuturisticSkeleton />
+          </div>
+        )}
+        {!hasNextPage && flattenedData.length > 10 && (
+          <div className="flex flex-col items-center justify-center py-8 px-4">
+            <div className="w-12 h-px bg-gray-200 dark:bg-gray-700 mb-4"></div>
+            <p className="text-gray-500 dark:text-gray-400 text-sm text-center">You&apos;ve reached the end</p>
+          </div>
+        )}
+        {error &&
+          flattenedData.length > 0 && ( // Infinite error
+            <div className="text-center py-4">
+              <p className="text-red-500 mb-2">Failed to load more summaries</p>
+              <button onClick={fetchNextPage} className="text-blue-500 underline">
+                Retry
+              </button>
             </div>
           )}
-          {error &&
-            flattenedData.length > 0 && ( // Infinite error
-              <div className="text-center py-4">
-                <p className="text-red-500 mb-2">Failed to load more summaries</p>
-                <button onClick={fetchNextPage} className="text-blue-500 underline">
-                  Retry
-                </button>
-              </div>
-            )}
-        </div>
       </>
     );
   }
