@@ -87,7 +87,7 @@ const GenerateSummaryDialog: React.FC<GenerateSummaryDialogProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog data-testid="generate-summary-dialog" open={isOpen} onOpenChange={onClose}>
       <DialogOverlay className="bg-background" />
       <DialogContent className="max-w-2xl">
         <DialogHeader className="space-y-3">

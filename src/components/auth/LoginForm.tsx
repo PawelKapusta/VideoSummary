@@ -88,7 +88,7 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <form data-testid="login-form" onSubmit={handleSubmit} noValidate className="space-y-4">
       <FormErrorMessage error={apiError} onDismiss={() => setApiError(null)} />
 
       <div className="space-y-4">

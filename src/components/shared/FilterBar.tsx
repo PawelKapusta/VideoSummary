@@ -81,7 +81,7 @@ const FilterBar: React.FC<FilterBarProps> = (props) => {
   }, [localSearch, searchQuery, onSearchChange]);
 
   return (
-    <div className="bg-card w-full px-6 pt-4 pb-3 rounded-lg border shadow-sm mb-4">
+    <div data-testid="filter-bar" className="bg-card w-full px-6 pt-4 pb-3 rounded-lg border shadow-sm mb-4">
       {/* Search Section */}
       <div className="mb-6">
         <div className="w-full space-y-2">

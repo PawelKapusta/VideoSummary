@@ -56,6 +56,7 @@ const SummaryCard: React.FC<Props> = React.memo(({ summary, onHide, onRate, onCl
 
   return (
     <Card
+      data-testid="summary-card"
       className="group flex flex-col cursor-pointer overflow-hidden border-muted-foreground/20 hover:border-primary/50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
       onClick={() => onClick(summary.id)}
     >

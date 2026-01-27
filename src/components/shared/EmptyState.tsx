@@ -20,6 +20,7 @@ const EmptyState = ({ message, description, type = "summaries" }: EmptyStateProp
 
   return (
     <div
+      data-testid="empty-state"
       className="flex flex-col items-center justify-center py-16 px-8 max-w-2xl mx-auto"
       role="status"
       aria-live="polite"

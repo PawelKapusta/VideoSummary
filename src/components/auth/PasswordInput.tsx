@@ -51,7 +51,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div data-testid="password-input" className="space-y-2">
       <Label htmlFor="password" className={`text-sm font-semibold ${error ? "text-red-500" : "text-slate-700"}`}>
         {label} <span className="text-red-500">*</span>
       </Label>

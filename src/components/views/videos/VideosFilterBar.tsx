@@ -17,7 +17,8 @@ const statusOptions = [
 
 const VideosFilterBar: React.FC<VideosFilterBarProps> = ({ channels, activeFilters, onFiltersChange, disabled }) => {
   return (
-    <FilterBar
+    <div data-testid="videos-filter-bar">
+      <FilterBar
       searchQuery={activeFilters.searchQuery || ""}
       onSearchChange={(query) => onFiltersChange({ searchQuery: query })}
       statusValue={activeFilters.summaryStatus}
@@ -42,6 +43,7 @@ const VideosFilterBar: React.FC<VideosFilterBarProps> = ({ channels, activeFilte
       }
       disabled={disabled}
     />
+    </div>
   );
 };
 

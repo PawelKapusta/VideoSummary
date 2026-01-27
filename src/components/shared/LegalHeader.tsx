@@ -21,7 +21,7 @@ export function LegalHeader({ activePage, isAuthenticated = false }: LegalHeader
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-background via-background/98 to-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-gradient-to-r supports-[backdrop-filter]:from-background/90 supports-[backdrop-filter]:via-background/95 supports-[backdrop-filter]:to-background/90 shadow-lg relative before:absolute before:bottom-0 before:left-0 before:right-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-border/30 before:to-transparent">
+    <header data-testid="legal-header" className="sticky top-0 z-50 w-full bg-gradient-to-r from-background via-background/98 to-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-gradient-to-r supports-[backdrop-filter]:from-background/90 supports-[backdrop-filter]:via-background/95 supports-[backdrop-filter]:to-background/90 shadow-lg relative before:absolute before:bottom-0 before:left-0 before:right-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-border/30 before:to-transparent">
       <div className="container mx-auto px-4 py-4 max-w-6xl">
         <div className="flex items-center justify-between">
           {/* Mobile Menu & Logo */}

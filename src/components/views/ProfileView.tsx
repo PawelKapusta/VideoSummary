@@ -24,7 +24,7 @@ function UserHeader({ profile }: UserHeaderProps) {
   const subtitle = profile.username ? profile.email : null;
 
   return (
-    <Card className="mb-6 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-100 dark:to-gray-100 border-slate-200 dark:border-slate-300 shadow-lg">
+    <Card data-testid="user-header" className="mb-6 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-100 dark:to-gray-100 border-slate-200 dark:border-slate-300 shadow-lg">
       <CardHeader>
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16 ring-4 ring-slate-300 dark:ring-slate-400 shadow-xl">
@@ -61,7 +61,7 @@ function StatsSection({
   thisMonthSummaries: number;
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div data-testid="stats-section" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <Card className="text-center">
         <CardContent className="pt-6">
           <div className="flex items-center justify-center mb-2">
@@ -165,7 +165,7 @@ function ProfileContent() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+    <div data-testid="profile-view" className="container max-w-4xl mx-auto p-4 md:p-6 space-y-6">
       <UserHeader profile={profile} />
 
       <StatsSection

@@ -41,7 +41,7 @@ export default function ChannelRow({ channel, onRemove }: ChannelRowProps) {
   };
 
   return (
-    <TableRow className="hover:bg-slate-50 transition-colors">
+    <TableRow data-testid="channel-row" className="hover:bg-slate-50 transition-colors">
       <TableCell className="font-medium text-slate-900 py-3">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">

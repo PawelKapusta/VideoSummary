@@ -11,6 +11,7 @@ interface VideoCardProps {
 const VideoCard: React.FC<VideoCardProps> = ({ video, onGenerate }) => {
   return (
     <Card
+      data-testid="video-card"
       onClick={() => {
         if (video.summary_id && video.summary_status === "completed") {
           window.location.href = `/summaries/${video.summary_id}`;

@@ -35,7 +35,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ video, isLoading }) => {
   };
 
   return (
-    <Card className="h-full">
+    <Card data-testid="video-preview" className="h-full">
       <CardHeader>
         <CardTitle>Video Preview</CardTitle>
       </CardHeader>

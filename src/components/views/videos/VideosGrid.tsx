@@ -66,7 +66,7 @@ const VideosGrid: React.FC<VideosGridProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div data-testid="videos-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {videos.map((video) => (
         <VideoCard key={video.id} video={video} onGenerate={onSelectVideo} />
       ))}

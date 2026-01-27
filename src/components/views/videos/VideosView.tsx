@@ -41,7 +41,7 @@ const VideosContent = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 pt-12 pb-12">
+    <div data-testid="videos-view" className="container mx-auto p-4 pt-12 pb-12">
       {/* Page Header - always visible */}
       <div className="text-center mb-8 space-y-3">
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">

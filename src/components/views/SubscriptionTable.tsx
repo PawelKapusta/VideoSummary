@@ -11,7 +11,7 @@ interface SubscriptionTableProps {
 
 export default function SubscriptionTable({ channels, onRemove }: SubscriptionTableProps) {
   return (
-    <div className="rounded-lg border border-slate-200 shadow-sm overflow-x-auto bg-white">
+    <div data-testid="subscription-table" className="rounded-lg border border-slate-200 shadow-sm overflow-x-auto bg-white">
       <Table>
         <TableHeader>
           <TableRow className="bg-slate-50 hover:bg-slate-50">

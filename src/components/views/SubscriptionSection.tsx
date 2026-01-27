@@ -14,7 +14,7 @@ export default function SubscriptionSection({ profile, onRemoveChannel, onAddCli
   const canAdd = profile.subscription_count < 10;
 
   return (
-    <Card>
+    <Card data-testid="subscription-section">
       <CardHeader>
         <CardTitle className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
           <span>Subscribed Channels ({profile.subscription_count}/10)</span>

@@ -53,9 +53,6 @@ const SummaryList: React.FC<Props> = memo(
 
     useEffect(() => {
       observer.current = new IntersectionObserver(handleObserve, { threshold: 1.0 });
-      if (sentinelRef.current) {
-        observer.current.observe(sentinelRef.current);
-      }
 
       return () => {
         if (observer.current) {
@@ -63,6 +60,19 @@ const SummaryList: React.FC<Props> = memo(
         }
       };
     }, [handleObserve]);
+
+    useEffect(() => {
+      const currentObserver = observer.current;
+      const currentSentinel = sentinelRef.current;
+
+      if (currentObserver && currentSentinel) {
+        currentObserver.observe(currentSentinel);
+
+        return () => {
+          currentObserver.unobserve(currentSentinel);
+        };
+      }
+    }, [handleObserve]); // Re-run when handleObserve changes
 
     if (error && !flattenedData.length) {
       // Only show global error if no data
@@ -99,7 +109,7 @@ const SummaryList: React.FC<Props> = memo(
     // For refetch overlay, could add a spinner, but for now, show partial data + skeletons if needed
     return (
       <>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+        <div data-testid="summary-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
           {flattenedData.map((summary: SummaryWithVideo) => {
             if (!summary || !summary.id) return null; // Skip invalid summaries
             return (

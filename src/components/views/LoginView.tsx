@@ -26,12 +26,14 @@ export default function LoginView() {
   };
 
   return (
-    <AuthLayout
-      title="Welcome Back"
-      description="Enter your credentials to access your summaries"
-      footer={<NavigationLinks />}
-    >
-      <LoginForm onSuccess={handleLoginSuccess} onError={handleLoginError} />
-    </AuthLayout>
+    <div data-testid="login-view">
+      <AuthLayout
+        title="Welcome Back"
+        description="Enter your credentials to access your summaries"
+        footer={<NavigationLinks />}
+      >
+        <LoginForm onSuccess={handleLoginSuccess} onError={handleLoginError} />
+      </AuthLayout>
+    </div>
   );
 }

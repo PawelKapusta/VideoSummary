@@ -30,7 +30,7 @@ export const ConfirmPasswordInput: React.FC<ConfirmPasswordInputProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div data-testid="confirm-password-input" className="space-y-2">
       <Label
         htmlFor="confirm-password"
         className={`text-sm font-semibold ${error ? "text-red-500" : "text-slate-700"}`}

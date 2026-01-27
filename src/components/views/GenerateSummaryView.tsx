@@ -10,7 +10,7 @@ const GenerateSummaryContent = () => {
     useGenerateSummary();
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl space-y-8 pt-8">
+    <div data-testid="generate-summary-view" className="container mx-auto p-4 max-w-2xl space-y-8 pt-8">
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">
           Generate New Summary

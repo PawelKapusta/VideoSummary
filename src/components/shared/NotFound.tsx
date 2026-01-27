@@ -43,7 +43,7 @@ const NotFound: React.FC<NotFoundProps> = ({
   }, []);
 
   return (
-    <div className="flex min-h-[calc(100vh-160px)] items-center justify-center p-6 relative overflow-hidden w-full bg-white">
+    <div data-testid="not-found" className="flex min-h-[calc(100vh-160px)] items-center justify-center p-6 relative overflow-hidden w-full bg-white">
       {/* Background decorative elements - Digital Noise/Waveform theme */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/10 to-transparent"></div>

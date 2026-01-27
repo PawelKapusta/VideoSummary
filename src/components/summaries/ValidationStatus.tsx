@@ -33,7 +33,7 @@ const ValidationItem: React.FC<{ step: ValidationStep }> = ({ step }) => (
 
 const ValidationStatus: React.FC<ValidationStatusProps> = ({ status }) => {
   return (
-    <Card className="h-full">
+    <Card data-testid="validation-status" className="h-full">
       <CardHeader>
         <CardTitle>Validation Checklist</CardTitle>
       </CardHeader>

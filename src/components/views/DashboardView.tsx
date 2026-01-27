@@ -108,7 +108,7 @@ const DashboardContent = () => {
   }, [queryClient]);
 
   return (
-    <div className="container mx-auto p-4 pt-12 pb-12">
+    <div data-testid="dashboard-view" className="container mx-auto p-4 pt-12 pb-12">
       <div className="text-center mb-8 space-y-2">
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           Dashboard

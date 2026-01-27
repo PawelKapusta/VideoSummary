@@ -38,12 +38,13 @@ export default function SignupView() {
 
   if (isEmailSent) {
     return (
-      <AuthLayout title="Create an account" description="Sign up to start generating insights">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-6 py-8"
-        >
+      <div data-testid="signup-success-view">
+        <AuthLayout title="Create an account" description="Sign up to start generating insights">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center gap-6 py-8"
+          >
           <div className="text-center space-y-6">
             <p className="text-emerald-600 font-medium text-lg leading-relaxed px-4">
               Please check your email for a verification link to complete your registration.
@@ -67,16 +68,19 @@ export default function SignupView() {
           </div>
         </motion.div>
       </AuthLayout>
+      </div>
     );
   }
 
   return (
-    <AuthLayout
-      title="Create Account"
-      description="Start generating insights from your favorite videos"
-      footer={<SignupNavigationLinks />}
-    >
-      <SignupForm onSuccess={handleSignupSuccess} onError={handleSignupError} />
-    </AuthLayout>
+    <div data-testid="signup-view">
+      <AuthLayout
+        title="Create Account"
+        description="Start generating insights from your favorite videos"
+        footer={<SignupNavigationLinks />}
+      >
+        <SignupForm onSuccess={handleSignupSuccess} onError={handleSignupError} />
+      </AuthLayout>
+    </div>
   );
 }

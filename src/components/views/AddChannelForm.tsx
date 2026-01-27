@@ -55,7 +55,7 @@ export default function AddChannelForm({ isOpen, onClose }: AddChannelFormProps)
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog data-testid="add-channel-dialog" open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px] [&>button]:hover:bg-destructive/10 [&>button]:hover:text-destructive [&>button]:transition-all [&>button]:duration-200 [&>button]:rounded-md [&>button]:p-1">
         <DialogHeader>
           <DialogTitle>Add a new YouTube Channel</DialogTitle>

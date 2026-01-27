@@ -19,6 +19,7 @@ const VideoUrlForm: React.FC<VideoUrlFormProps> = ({ url, onUrlChange, onSubmit,
 
   return (
     <form
+      data-testid="video-url-form"
       onSubmit={handleSubmit}
       className="flex flex-col space-y-3 md:flex-row md:items-center md:space-x-2 md:space-y-0"
     >

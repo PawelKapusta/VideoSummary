@@ -290,7 +290,7 @@ const SummarySidebar: React.FC<{
   };
 
   return (
-    <div className="space-y-6">
+    <div data-testid="summary-details-view" className="space-y-6">
       {/* Processing Status - Clean & Intuitive */}
       <div
         className={`${status === "completed" ? "md:block hidden" : ""} bg-white rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow duration-300`}

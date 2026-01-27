@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { useHiddenSummaries } from "../../hooks/useHiddenSummaries";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient as api } from "../../lib/api";
-import type { SummaryWithVideo } from "../../types";
+import type { SummaryWithVideo, FilterOptions, PaginatedResponse } from "../../types";
 import AppLoader from "../ui/AppLoader";
 import QueryProvider from "../providers/QueryProvider";
 import FilterPanel from "../summaries/FilterPanel";
@@ -132,7 +132,7 @@ const HiddenSummariesContent = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 pt-12 pb-12">
+    <div data-testid="hidden-summaries-view" className="container mx-auto p-4 pt-12 pb-12">
       {/* Header Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

@@ -78,7 +78,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, compact = false
   }
 
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12">
+    <div data-testid="error-state" className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-12">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-red-100/20 rounded-full blur-3xl"></div>

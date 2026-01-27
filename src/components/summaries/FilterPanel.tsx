@@ -19,7 +19,8 @@ const statusOptions = [
 
 const FilterPanel: React.FC<Props> = ({ filters, onFiltersChange, channels, disabled }) => {
   return (
-    <FilterBar
+    <div data-testid="filter-panel">
+      <FilterBar
       searchQuery={filters.search || ""}
       onSearchChange={(query) => {
         const newFilters = { ...filters, search: query || undefined };
@@ -47,6 +48,7 @@ const FilterPanel: React.FC<Props> = ({ filters, onFiltersChange, channels, disa
       onClear={() => onFiltersChange({})}
       disabled={disabled}
     />
+    </div>
   );
 };
 

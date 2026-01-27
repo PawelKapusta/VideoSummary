@@ -565,25 +565,15 @@ export async function listSummaries(
 
   appLogger.debug("Query before sorting and range applied", { userId, offset: filters.offset, limit: filters.limit });
 
-  // Apply pagination first (required for complex joins)
+  // Apply sorting at database level before pagination
+  const ascending = filters.sort === "oldest";
+  q = q.order("generated_at", { ascending });
+  appLogger.debug("Sorting applied to query", { userId, sort: filters.sort, ascending });
+
+  // Apply pagination after sorting
   const { data, count, error } = await q.range(filters.offset, filters.offset + filters.limit - 1);
   appLogger.debug("Query executed", { userId, count, dataLength: data?.length, hasError: !!error });
   if (error) throw error;
-
-  // Sort data in memory using generated_at instead of video published_at
-  if (data && data.length > 0) {
-    const ascending = filters.sort === "oldest";
-    data.sort((a, b) => {
-      const dateA = new Date(a.generated_at || 0).getTime();
-      const dateB = new Date(b.generated_at || 0).getTime();
-      return ascending ? dateA - dateB : dateB - dateA;
-    });
-    appLogger.debug("Data sorted in memory by generated_at", {
-      userId,
-      firstItemDate: data[0]?.generated_at,
-      lastItemDate: data[data.length - 1]?.generated_at,
-    });
-  }
 
   // Get user ratings for all summaries in this batch
   const summaryIds = (data ?? []).map((row) => row.id).filter((id): id is string => id !== null);

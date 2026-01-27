@@ -62,6 +62,7 @@ export function SignupForm({ onSuccess, onError }: SignupFormProps) {
 
   return (
     <form
+      data-testid="signup-form"
       ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();

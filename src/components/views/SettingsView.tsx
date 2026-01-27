@@ -116,7 +116,7 @@ const SettingsContent = () => {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto p-4 md:p-6 pt-8 space-y-8">
+    <div data-testid="settings-view" className="container max-w-4xl mx-auto p-4 md:p-6 pt-8 space-y-8">
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-800 to-gray-900 bg-clip-text text-transparent">
           Settings
