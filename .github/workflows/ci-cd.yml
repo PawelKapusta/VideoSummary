@@ -61,8 +61,8 @@ jobs:
         project:
           - "landing page"
           - "landing page mobile"
-          # - "videos e2e ui"
-          # - "videos e2e api"
+          - "videos e2e ui"
+          - "videos e2e api"
           # - "videos mobile ui"
           # - "videos mobile api"
           # - "dashboard e2e"
