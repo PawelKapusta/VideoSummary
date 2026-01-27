@@ -2,8 +2,6 @@ name: CI/CD Pipeline
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -20,6 +18,10 @@ jobs:
       - run: npm ci
       - name: Run ESLint
         run: npm run lint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
   typecheck:
     name: Type Check
@@ -51,6 +53,7 @@ jobs:
     name: E2E (${{ matrix.project }})
     needs: [lint, typecheck, unit-tests]
     runs-on: ubuntu-latest
+    environment: testing
     timeout-minutes: 60
     strategy:
       fail-fast: false
