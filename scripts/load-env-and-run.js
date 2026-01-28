@@ -8,8 +8,9 @@
  *   - Backs up original .env and restores it on exit
  *
  * In CI/CD:
- *   - Environment variables are available directly (no .env file needed)
- *   - Astro reads variables from process.env automatically
+ *   - Copies .env.test to .env so Astro loads test credentials
+ *   - Cleans up .env on exit
+ *   - Note: CI workflow creates .env.test from GitHub Secrets before running tests
  */
 
 import { spawn } from "child_process";
@@ -31,8 +32,18 @@ const isCI = process.env.CI === "true" || process.env.CI === true;
 let envWasRenamed = false;
 
 if (isCI) {
-  // CI/CD mode: Environment variables are available directly, no .env file needed
-  console.log("🤖 CI environment detected - using environment variables directly");
+  // CI/CD mode: Create .env from .env.test for Astro to load
+  console.log("🤖 CI environment detected - creating .env from .env.test");
+  
+  if (!existsSync(envTestPath)) {
+    console.error("❌ .env.test file not found in CI!");
+    console.error("   The CI workflow should create .env.test before running tests.");
+    process.exit(1);
+  }
+  
+  // Copy .env.test to .env so Astro loads it
+  console.log("📋 Copying .env.test to .env for Astro to load");
+  copyFileSync(envTestPath, envPath);
 } else {
   // Local development mode: Use .env.test
   if (!existsSync(envTestPath)) {
@@ -57,8 +68,11 @@ if (isCI) {
 function cleanup() {
   try {
     if (isCI) {
-      // CI: No cleanup needed - no .env file was created
-      console.log("\n🧹 CI cleanup - no files to clean");
+      // CI: Remove the .env file that was created from .env.test
+      console.log("\n🧹 CI cleanup - removing temporary .env");
+      if (existsSync(envPath)) {
+        unlinkSync(envPath);
+      }
     } else {
       // Local: Remove the temporary .env (which is a copy of .env.test)
       if (existsSync(envPath)) {

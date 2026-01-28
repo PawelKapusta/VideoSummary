@@ -73,21 +73,21 @@ async function checkUser() {
           console.log("   💡 To fix: Disable email confirmation in Supabase Dashboard:");
           console.log("      Authentication → Providers → Email → Disable 'Confirm email'");
         }
-        
+
         // Try to login again to verify
         console.log("\n🔄 Verifying login with new credentials...");
-        const { data: verifyData, error: verifyError } = await supabase.auth.signInWithPassword({
+        const { error: verifyError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        
+
         if (verifyError) {
           console.log("⚠ Login verification failed:", verifyError.message);
           console.log("   This might be OK if email confirmation is required.");
         } else {
           console.log("✅ Login verification successful!");
         }
-        
+
         process.exit(0);
       }
     } else {
