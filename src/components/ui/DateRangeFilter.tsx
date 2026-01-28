@@ -35,7 +35,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
   };
 
   return (
-    <div className="w-full space-y-2">
+    <div data-testid="date-range-filter" className="w-full space-y-2">
       <Label className="text-base font-medium text-muted-foreground mb-2">{label}</Label>
 
       <div className="grid grid-cols-2 gap-6">

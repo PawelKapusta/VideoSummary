@@ -21,7 +21,7 @@ export default function ResetPasswordForm({ onSuccess }: Props) {
   const emailErrorId = "email-error";
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form data-testid="reset-password-form" onSubmit={onSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label
           htmlFor="email"
@@ -61,6 +61,7 @@ export default function ResetPasswordForm({ onSuccess }: Props) {
       {formState.isRateLimited && (
         <p
           id="rate-limit-msg"
+          data-testid="reset-error"
           className="text-amber-600 text-sm text-center font-medium bg-amber-50 p-3 rounded-lg border border-amber-100"
           role="alert"
         >

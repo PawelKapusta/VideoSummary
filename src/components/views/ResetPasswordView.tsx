@@ -10,9 +10,10 @@ export default function ResetPasswordView() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   return (
-    <AuthLayout
-      title={showSuccess ? "Link Sent" : "Reset Password"}
-      description={showSuccess ? "Check your email for instructions" : "Enter your email to receive a reset link"}
+    <div data-testid="reset-password-view">
+      <AuthLayout
+        title={showSuccess ? "Link Sent" : "Reset Password"}
+        description={showSuccess ? "Check your email for instructions" : "Enter your email to receive a reset link"}
       footer={
         !showSuccess ? (
           <div className="text-center">
@@ -55,5 +56,6 @@ export default function ResetPasswordView() {
         <ResetPasswordForm onSuccess={() => setShowSuccess(true)} />
       )}
     </AuthLayout>
+    </div>
   );
 }

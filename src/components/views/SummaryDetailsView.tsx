@@ -899,7 +899,7 @@ const SummaryDetailsContent: React.FC<SummaryDetailsContentProps> = ({ summaryId
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 w-full overflow-x-hidden">
+    <div data-testid="summary-details-view" className="min-h-screen bg-gray-50/50 w-full overflow-x-hidden">
       <ScrollProgress />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-12">
         {/* Video Header */}

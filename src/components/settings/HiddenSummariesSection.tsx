@@ -125,7 +125,7 @@ const HiddenSummariesSection = () => {
   }
 
   return (
-    <Card>
+    <Card data-testid="hidden-summaries-section">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <EyeOff className="h-5 w-5" />

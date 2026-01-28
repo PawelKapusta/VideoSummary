@@ -10,7 +10,7 @@ interface TermsViewProps {
 
 export function TermsView({ isAuthenticated = false }: TermsViewProps) {
   return (
-    <>
+    <div data-testid="terms-view">
       <LegalHeader activePage="terms" isAuthenticated={isAuthenticated} />
 
       <div className="container mx-auto px-4 py-8 sm:py-12 pt-6 sm:pt-8 max-w-4xl">
@@ -370,6 +370,6 @@ export function TermsView({ isAuthenticated = false }: TermsViewProps) {
         </div>
       </div>
       <LegalFooter activePage="terms" />
-    </>
+    </div>
   );
 }

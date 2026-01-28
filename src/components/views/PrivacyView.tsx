@@ -10,7 +10,7 @@ interface PrivacyViewProps {
 
 export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
   return (
-    <>
+    <div data-testid="privacy-view">
       <LegalHeader activePage="privacy" isAuthenticated={isAuthenticated} />
 
       <div className="container mx-auto px-4 py-8 sm:py-12 pt-6 sm:pt-8 max-w-4xl">
@@ -402,6 +402,6 @@ export function PrivacyView({ isAuthenticated = false }: PrivacyViewProps) {
         </div>
       </div>
       <LegalFooter activePage="privacy" />
-    </>
+    </div>
   );
 }

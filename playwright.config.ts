@@ -35,6 +35,30 @@ export default defineConfig({
       },
     },
 
+    // ===== Auth Tests (Login/Registration - No Session) =====
+    // These tests start with a clean slate (no authenticated session)
+    // as recommended by Playwright best practices
+    {
+      name: "auth tests",
+      testMatch: /auth\/.*\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: undefined, // Fresh session - not logged in
+      },
+      dependencies: ["setup db"],
+      teardown: "teardown db",
+    },
+    {
+      name: "auth tests mobile",
+      testMatch: /auth\/.*\.spec\.ts/,
+      use: {
+        ...devices["iPhone 13"],
+        storageState: undefined, // Fresh session - not logged in
+      },
+      dependencies: ["setup db"],
+      teardown: "teardown db",
+    },
+
     // ===== Setup & Teardown =====
     {
       name: "setup db",
@@ -128,11 +152,14 @@ export default defineConfig({
   webServer: {
     command: "npm run dev:e2e",
     url: "http://localhost:3001",
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI, // Only reuse in local dev, not in CI
     timeout: 120 * 1000,
+    // Note: dev:e2e script loads .env.test automatically via dotenv
+    // These are just fallbacks/overrides if needed
     env: {
       SUPABASE_URL: process.env.SUPABASE_URL || "",
       SUPABASE_KEY: process.env.SUPABASE_KEY || "",
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
       E2E_USERNAME: process.env.E2E_USERNAME || "",
       E2E_PASSWORD: process.env.E2E_PASSWORD || "",
     },

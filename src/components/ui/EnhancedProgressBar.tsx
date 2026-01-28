@@ -254,7 +254,7 @@ const EnhancedProgressBar: React.FC<EnhancedProgressBarProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div data-testid="enhanced-progress-bar" className="space-y-2">
       <div className="relative">
         {renderProgressBar()}
         <AnimatePresence>

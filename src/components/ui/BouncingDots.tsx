@@ -41,7 +41,7 @@ const BouncingDots: React.FC<BouncingDotsProps> = ({ size = "md", color = "blue"
   const currentColors = colors[color];
 
   return (
-    <div className={`flex items-center justify-center space-x-2 ${className}`}>
+    <div data-testid="bouncing-dots" className={`flex items-center justify-center space-x-2 ${className}`}>
       {[0, 1, 2].map((index) => (
         <motion.div
           key={index}

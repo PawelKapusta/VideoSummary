@@ -1,155 +1,150 @@
 import { type Page, type Locator, expect } from "@playwright/test";
-import { VideosFilterBarComponent } from "../components/videos-filter-bar.component";
-import { VideosGridComponent } from "../components/videos-grid.component";
-import { GenerateSummaryDialogComponent } from "../components/generate-summary-dialog.component";
-import { ToastNotificationsComponent } from "../components/toast-notifications.component";
-import { EmptyStateComponent } from "../components/empty-state.component";
-import { ErrorStateComponent } from "../components/error-state.component";
-import { VideoCardComponent } from "../components/video-card.component";
 
 export class VideosPage {
   readonly page: Page;
 
-  // Main container
-  readonly container: Locator;
-  readonly pageHeader: Locator;
-  readonly videosCount: Locator;
+  // Main containers
+  readonly videosView: Locator;
 
-  // Component instances (following POM pattern)
-  readonly filterBar: VideosFilterBarComponent;
-  readonly videosGrid: VideosGridComponent;
-  readonly generateDialog: GenerateSummaryDialogComponent;
-  readonly toasts: ToastNotificationsComponent;
-  readonly emptyState: EmptyStateComponent;
-  readonly errorState: ErrorStateComponent;
+  // Header elements
+  readonly videosTitle: Locator;
+  readonly videosDescription: Locator;
 
-  // Backward compatibility - direct access to commonly used elements
+  // Filter components
+  readonly videosFilterBar: Locator;
+  readonly filterBar: Locator;
+
+  // Video grid/list
+  readonly videosGrid: Locator;
   readonly videoCards: Locator;
-  readonly loadingIndicator: Locator;
+
+  // Dialogs
+  readonly generateSummaryDialog: Locator;
+
+  // Empty state
+  readonly emptyState: Locator;
+
+  // Loading states
+  readonly loadingSpinner: Locator;
+  readonly appLoader: Locator;
+
+  // Error states
+  readonly errorState: Locator;
 
   constructor(page: Page) {
     this.page = page;
 
-    // Main container
-    this.container = page.locator('[data-testid="videos-view"]');
-    this.pageHeader = page.locator("h1").filter({ hasText: "Available Videos" });
-    this.videosCount = page.locator("p").filter({ hasText: /Currently displaying \d+ videos/ });
+    // Main containers
+    this.videosView = page.locator('[data-testid="videos-view"]');
 
-    // Initialize components following POM pattern
-    this.filterBar = new VideosFilterBarComponent(page);
-    this.videosGrid = new VideosGridComponent(page);
-    this.generateDialog = new GenerateSummaryDialogComponent(page);
-    this.toasts = new ToastNotificationsComponent(page);
-    this.emptyState = new EmptyStateComponent(page);
-    this.errorState = new ErrorStateComponent(page);
+    // Header elements
+    this.videosTitle = page.locator('[data-testid="videos-view"] h1').filter({ hasText: /videos|Videos/i });
+    this.videosDescription = page.locator('[data-testid="videos-view"] p').filter({ hasText: /videos|channels/i });
 
-    // Backward compatibility
-    this.videoCards = this.videosGrid.videoCards;
-    this.loadingIndicator = this.videosGrid.loadingIndicator;
+    // Filter components
+    this.videosFilterBar = page.locator('[data-testid="videos-filter-bar"]');
+    this.filterBar = page.locator('[data-testid="filter-bar"]');
+
+    // Video grid/list
+    this.videosGrid = page.locator('[data-testid="videos-grid"]');
+    this.videoCards = page.locator('[data-testid="video-card"]');
+
+    // Dialogs
+    this.generateSummaryDialog = page.locator('[data-testid="generate-summary-dialog"]');
+
+    // Empty state
+    this.emptyState = page.locator('[data-testid="empty-state"]');
+
+    // Loading states
+    this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');
+    this.appLoader = page.locator('[data-testid="app-loader"]');
+
+    // Error states
+    this.errorState = page.locator('[data-testid="error-state"]');
   }
 
   async goto() {
     await this.page.goto("/videos");
   }
 
-  async expectLoaded() {
-    await expect(this.container).toBeVisible();
-    await expect(this.pageHeader).toBeVisible();
-    await this.filterBar.expectVisible();
-    await this.videosGrid.expectVisible();
+  async expectVideosPageLoaded() {
+    await expect(this.videosView).toBeVisible();
+    await expect(this.videosTitle).toBeVisible();
+    await expect(this.videosDescription).toBeVisible();
   }
 
-  async expectVideosCount(expectedCount: number) {
-    await expect(this.videosCount).toContainText(`Currently displaying ${expectedCount} videos`);
+  async expectVideosGridVisible() {
+    await expect(this.videosGrid).toBeVisible();
   }
 
-  async expectVideoCardsCount(expectedCount: number) {
-    await this.videosGrid.expectVideoCardsCount(expectedCount);
+  async expectFilterBarVisible() {
+    await expect(this.videosFilterBar).toBeVisible();
   }
 
-  async searchForVideos(searchTerm: string) {
-    await this.filterBar.search(searchTerm);
+  async expectEmptyStateVisible() {
+    await expect(this.emptyState).toBeVisible();
   }
 
-  async filterByStatus(status: "all" | "with" | "without") {
-    await this.filterBar.selectStatus(status);
-  }
-
-  async filterByChannel(channelName: string) {
-    await this.filterBar.selectChannel(channelName);
-  }
-
-  async setDateRange(fromDate: string, toDate: string) {
-    await this.filterBar.setDateFrom(fromDate);
-    await this.filterBar.setDateTo(toDate);
-  }
-
-  async clearAllFilters() {
-    await this.filterBar.clearAllFilters();
-  }
-
-  async getVideoCard(index: number): Promise<VideoCardComponent> {
-    return await this.videosGrid.getVideoCard(index);
-  }
-
-  async clickVideoCard(index: number) {
-    await this.videosGrid.clickVideoCard(index);
-  }
-
-  async expectEmptyStateVisible(message?: string) {
-    await this.emptyState.expectVisible();
-    if (message) {
-      await expect(this.page.locator(`text=${message}`)).toBeVisible();
-    }
-  }
-
-  async expectNoVideosState() {
-    await this.emptyState.expectType("videos");
-  }
-
-  async expectNoFiltersMatchState() {
-    await this.emptyState.expectType("search-results");
-  }
-
-  async expectGenerateDialogVisible() {
-    await this.generateDialog.expectVisible();
-  }
-
-  async expectGenerateDialogHidden() {
-    await this.generateDialog.expectHidden();
-  }
-
-  async getVideoTitleInDialog() {
-    return await this.generateDialog.getVideoTitle();
-  }
-
-  async confirmGenerateSummary() {
-    await this.generateDialog.clickConfirm();
-  }
-
-  async cancelGenerateSummary() {
-    await this.generateDialog.clickCancel();
-  }
-
-  async expectValidationStepsCount(expectedCount: number) {
-    await this.generateDialog.expectValidationStepsCount(expectedCount);
-  }
-
-  async expectToastMessage(message: string) {
-    await this.toasts.expectToastContainsText(message);
-  }
-
-  async expectLoadingIndicator() {
-    await this.videosGrid.expectLoadingIndicator();
+  async expectLoadingState() {
+    await expect(this.appLoader).toBeVisible();
   }
 
   async waitForLoadingToComplete() {
-    await this.videosGrid.waitForLoadingToComplete();
+    await expect(this.appLoader).not.toBeVisible();
   }
 
-  async scrollToLoadMore() {
-    await this.videosGrid.scrollToLoadMore();
+  async expectErrorStateVisible() {
+    await expect(this.errorState).toBeVisible();
+  }
+
+  async getVideoCount(): Promise<number> {
+    return await this.videoCards.count();
+  }
+
+  async clickVideoCard(index: number = 0) {
+    const card = this.videoCards.nth(index);
+    await expect(card).toBeVisible();
+    await card.click();
+  }
+
+  async expectVideoCardContainsText(index: number, text: string) {
+    const card = this.videoCards.nth(index);
+    await expect(card).toContainText(text);
+  }
+
+  async clickGenerateSummaryOnVideo(index: number = 0) {
+    const card = this.videoCards.nth(index);
+    // Click the generate summary button/area on the card
+    const generateButton = card.locator('button, [role="button"]').filter({ hasText: /generate|Generate/i });
+    await expect(generateButton).toBeVisible();
+    await generateButton.click();
+  }
+
+  async expectGenerateSummaryDialogVisible() {
+    await expect(this.generateSummaryDialog).toBeVisible();
+  }
+
+  async expectOnVideosPage() {
+    await expect(this.page).toHaveURL(/\/videos/);
+    await this.expectVideosPageLoaded();
+  }
+
+  // Filter methods
+  async filterByChannel(channelName: string) {
+    const channelSelect = this.filterBar.locator('select, [role="combobox"]').first();
+    await expect(channelSelect).toBeVisible();
+    await channelSelect.selectOption({ label: channelName });
+  }
+
+  async filterByStatus(status: string) {
+    const statusSelect = this.filterBar.locator('select, [role="combobox"]').nth(1);
+    await expect(statusSelect).toBeVisible();
+    await statusSelect.selectOption({ label: status });
+  }
+
+  async searchVideos(searchTerm: string) {
+    const searchInput = this.filterBar.locator('input[type="text"], input[placeholder*="search"]').first();
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill(searchTerm);
   }
 }
-
-// VideoCard component is now available as VideoCardComponent in components/video-card.component.ts

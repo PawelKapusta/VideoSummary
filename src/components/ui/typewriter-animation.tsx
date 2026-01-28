@@ -40,7 +40,7 @@ const TypewriterAnimation: React.FC<TypewriterAnimationProps> = ({
   }, [text, speed, delay]);
 
   return (
-    <span className={className}>
+    <span data-testid="typewriter-animation" className={className}>
       {displayText}
       {!isComplete && (
         <motion.span

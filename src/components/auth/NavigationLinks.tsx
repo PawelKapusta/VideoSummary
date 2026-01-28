@@ -1,6 +1,6 @@
 export function NavigationLinks() {
   return (
-    <div className="flex w-full flex-col gap-3 text-center text-sm">
+    <div data-testid="auth-navigation-links" className="flex w-full flex-col gap-3 text-center text-sm">
       <div className="text-slate-500">
         Don&apos;t have an account?{" "}
         <a href="/signup" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">

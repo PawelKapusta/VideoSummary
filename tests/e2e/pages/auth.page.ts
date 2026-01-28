@@ -36,13 +36,13 @@ export class AuthPage {
     this.page = page;
 
     // Login form elements
-    this.loginForm = page.locator("form").filter({ hasText: "Log in" });
+    this.loginForm = page.locator("form").filter({ hasText: /Log in|Sign In/i });
     this.loginEmailInput = page.locator('input[type="email"]').first();
     this.loginPasswordInput = page.locator('input[type="password"]').first();
-    this.loginButton = page.locator('button[type="submit"]').filter({ hasText: "Log in" });
+    this.loginButton = page.locator('button[type="submit"]').filter({ hasText: /Log in|Sign In/i });
     this.loginError = page.locator('[data-testid="login-error"]');
     this.forgotPasswordLink = page.locator("a").filter({ hasText: "Forgot your password?" });
-    this.registerLink = page.locator("a").filter({ hasText: "Sign up" });
+    this.registerLink = page.locator("a").filter({ hasText: "Create one now" });
 
     // Register form elements
     this.registerForm = page.locator("form").filter({ hasText: "Sign up" });
@@ -70,7 +70,7 @@ export class AuthPage {
   }
 
   async gotoRegister() {
-    await this.page.goto("/register");
+    await this.page.goto("/signup");
   }
 
   async gotoResetPassword() {

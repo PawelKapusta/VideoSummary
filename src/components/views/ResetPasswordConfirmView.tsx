@@ -113,9 +113,10 @@ export const ResetPasswordConfirmView: React.FC = () => {
   };
 
   return (
-    <AuthLayout
-      title={showSuccess ? "Success!" : "Set New Password"}
-      description={showSuccess ? "Your password has been reset" : "Create a secure password for your account"}
+    <div data-testid="reset-password-confirm-view">
+      <AuthLayout
+        title={showSuccess ? "Success!" : "Set New Password"}
+        description={showSuccess ? "Your password has been reset" : "Create a secure password for your account"}
       footer={
         !showSuccess && (
           <div className="text-center">
@@ -157,5 +158,6 @@ export const ResetPasswordConfirmView: React.FC = () => {
         </div>
       )}
     </AuthLayout>
+    </div>
   );
 };

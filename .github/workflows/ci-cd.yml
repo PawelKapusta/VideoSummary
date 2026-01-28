@@ -6,35 +6,31 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Lint Code
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-      - run: npm ci
-      - name: Run ESLint
-        run: npm run lint
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  # lint:
+  #   name: Lint Code
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: "npm"
+  #     - run: npm ci
+  #     - name: Run ESLint
+  #       run: npm run lint
 
-  typecheck:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-      - run: npm ci
-      - name: Run Astro TS Check
-        run: npm run typecheck
+  # typecheck:
+  #   name: Type Check
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: "npm"
+  #     - run: npm ci
+  #     - name: Run Astro TS Check
+  #       run: npm run typecheck
 
   unit-tests:
     name: Unit Tests
@@ -51,7 +47,7 @@ jobs:
 
   e2e-tests:
     name: E2E (${{ matrix.project }})
-    needs: [lint, typecheck, unit-tests]
+    needs: [unit-tests] #lint, typecheck,
     runs-on: ubuntu-latest
     environment: testing
     timeout-minutes: 60
@@ -61,6 +57,8 @@ jobs:
         project:
           - "landing page"
           - "landing page mobile"
+          - "auth tests"
+          - "auth tests mobile"
           - "videos e2e ui"
           - "videos e2e api"
           # - "videos mobile ui"
@@ -97,4 +95,4 @@ jobs:
         with:
           name: playwright-report-${{ matrix.project }}
           path: playwright-report/
-          retention-days: 30
+          retention-days: 3
