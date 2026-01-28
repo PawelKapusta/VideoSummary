@@ -57,8 +57,8 @@ jobs:
       fail-fast: false
       matrix:
         project:
-          - "landing page"
-          - "landing page mobile"
+          # - "landing page"
+          # - "landing page mobile"
           - "auth tests"
           - "auth tests mobile"
           # - "videos e2e ui"

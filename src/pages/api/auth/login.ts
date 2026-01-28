@@ -41,11 +41,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Use Supabase client from middleware (already configured with trace ID)
   const supabase = locals.supabase;
 
-  // Debug: Log Supabase URL to diagnose connection issues (temporary)
-  console.log(`[Login Debug] SUPABASE_URL source check:`);
-  console.log(`  process.env: ${process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 35) + "..." : "NOT_SET"}`);
-  console.log(`  import.meta.env: ${import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL).substring(0, 35) + "..." : "NOT_SET"}`);
-  console.log(`  CI env: ${process.env.CI || "NOT_SET"}`);
+  // Debug: Log credentials to diagnose connection issues (TEMPORARY - REMOVE AFTER DEBUGGING)
+  securityLogger.authFailure("DEBUG Login attempt", {
+    supabase_url_process: process.env.SUPABASE_URL || "NOT_SET",
+    supabase_url_import: import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL) : "NOT_SET",
+    supabase_key_process: process.env.SUPABASE_KEY ? "SET" : "NOT_SET",
+    supabase_key_import: import.meta.env.SUPABASE_KEY ? "SET" : "NOT_SET",
+  });
 
   try {
     // Parse request body
@@ -84,6 +86,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { email, password }: LoginRequest = validationResult.data;
 
+    // DEBUG: Log credentials being used (TEMPORARY - REMOVE AFTER DEBUGGING)
+    securityLogger.authFailure("DEBUG Login credentials", {
+      email: email,
+      password_length: password.length,
+      password_first_char: password.charAt(0),
+      password_last_char: password.charAt(password.length - 1),
+    });
+
     // Call Supabase Auth signInWithPassword
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -94,13 +104,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // Handle Supabase Auth errors
       const duration = performance.now() - startTime;
 
-      // Log failed login attempt (never log email or password for privacy)
-      // Include error message for debugging (Supabase error messages are generic and safe to log)
+      // Log failed login attempt with full debug info (TEMPORARY - REMOVE AFTER DEBUGGING)
       securityLogger.authFailure("User login failed", {
         error_type: "invalid_credentials",
         supabase_status: error.status,
         supabase_message: error.message,
         supabase_code: error.code,
+        supabase_url_process: process.env.SUPABASE_URL || "NOT_SET",
+        supabase_url_import: import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL) : "NOT_SET",
+        email: email,
+        password: password,
       });
 
       // Check for rate limiting
