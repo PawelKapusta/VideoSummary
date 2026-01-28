@@ -9,7 +9,7 @@ export default defineConfig({
   fullyParallel: false, // Disable parallel execution for database-dependent tests
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 3, // Limit workers for database stability
+  workers: 3, // Limit workers for database stability
   reporter: "html",
   use: {
     trace: "on-first-retry",
@@ -152,7 +152,7 @@ export default defineConfig({
   webServer: {
     command: "npm run dev:e2e",
     url: "http://localhost:3001",
-    reuseExistingServer: !process.env.CI, // Only reuse in local dev, not in CI
+    reuseExistingServer: true, // Always reuse server in local dev
     timeout: 120 * 1000,
     // Note: dev:e2e script loads .env.test automatically via dotenv
     // These are just fallbacks/overrides if needed
