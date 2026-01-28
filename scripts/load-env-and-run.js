@@ -102,11 +102,30 @@ process.on("SIGTERM", () => {
 console.log("✅ E2E environment configured");
 console.log("🚀 Starting Astro dev server on port 3001...\n");
 
-// Run Astro dev server
+// In CI, explicitly pass environment variables to ensure Astro has access
+// This is critical because child process env inheritance can be unreliable
+const astroEnv = {
+  ...process.env,
+  // Explicitly set critical variables (they might come from CI secrets or .env.test)
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_KEY: process.env.SUPABASE_KEY,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  E2E_USERNAME: process.env.E2E_USERNAME,
+  E2E_PASSWORD: process.env.E2E_PASSWORD,
+};
+
+if (isCI) {
+  console.log("🔑 Passing environment variables to Astro process:");
+  console.log("   SUPABASE_URL:", astroEnv.SUPABASE_URL ? "✓ set" : "✗ missing");
+  console.log("   SUPABASE_KEY:", astroEnv.SUPABASE_KEY ? "✓ set" : "✗ missing");
+}
+
+// Run Astro dev server with explicit env
 const astro = spawn("npx", ["astro", "dev", "--port", "3001"], {
   cwd: projectRoot,
   stdio: "inherit",
   shell: true,
+  env: astroEnv,
 });
 
 astro.on("error", (err) => {

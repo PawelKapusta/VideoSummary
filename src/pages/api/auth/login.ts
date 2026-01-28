@@ -89,9 +89,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const duration = performance.now() - startTime;
 
       // Log failed login attempt (never log email or password for privacy)
+      // Include error message for debugging (Supabase error messages are generic and safe to log)
       securityLogger.authFailure("User login failed", {
         error_type: "invalid_credentials",
         supabase_status: error.status,
+        supabase_message: error.message,
+        supabase_code: error.code,
       });
 
       // Check for rate limiting

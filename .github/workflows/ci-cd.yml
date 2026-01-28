@@ -92,8 +92,9 @@ jobs:
           E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
           EOF
 
-      - name: Register Test User
-        run: node scripts/register-test-user.js
+      - name: Verify Test User
+        if: contains(matrix.project, 'auth')
+        run: node scripts/verify-test-user.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
