@@ -42,12 +42,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const supabase = locals.supabase;
 
   // Debug: Log credentials to diagnose connection issues (TEMPORARY - REMOVE AFTER DEBUGGING)
-  securityLogger.authFailure("DEBUG Login attempt", {
-    supabase_url_process: process.env.SUPABASE_URL || "NOT_SET",
-    supabase_url_import: import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL) : "NOT_SET",
-    supabase_key_process: process.env.SUPABASE_KEY ? "SET" : "NOT_SET",
-    supabase_key_import: import.meta.env.SUPABASE_KEY ? "SET" : "NOT_SET",
-  });
+  console.warn("[DEBUG] SUPABASE_URL process.env:", process.env.SUPABASE_URL || "NOT_SET");
+  console.warn("[DEBUG] SUPABASE_URL import.meta:", import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL) : "NOT_SET");
 
   try {
     // Parse request body
@@ -87,12 +83,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { email, password }: LoginRequest = validationResult.data;
 
     // DEBUG: Log credentials being used (TEMPORARY - REMOVE AFTER DEBUGGING)
-    securityLogger.authFailure("DEBUG Login credentials", {
-      email: email,
-      password_length: password.length,
-      password_first_char: password.charAt(0),
-      password_last_char: password.charAt(password.length - 1),
-    });
+    console.warn("[DEBUG] Login email:", email);
+    console.warn("[DEBUG] Login password:", password);
 
     // Call Supabase Auth signInWithPassword
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -105,15 +97,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const duration = performance.now() - startTime;
 
       // Log failed login attempt with full debug info (TEMPORARY - REMOVE AFTER DEBUGGING)
+      console.warn("[DEBUG] Login FAILED for email:", email);
+      console.warn("[DEBUG] Supabase error:", error.message, "status:", error.status);
+      console.warn("[DEBUG] Using SUPABASE_URL:", process.env.SUPABASE_URL || import.meta.env.SUPABASE_URL || "NOT_SET");
+      
       securityLogger.authFailure("User login failed", {
         error_type: "invalid_credentials",
         supabase_status: error.status,
         supabase_message: error.message,
         supabase_code: error.code,
-        supabase_url_process: process.env.SUPABASE_URL || "NOT_SET",
-        supabase_url_import: import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL) : "NOT_SET",
-        email: email,
-        password: password,
       });
 
       // Check for rate limiting
