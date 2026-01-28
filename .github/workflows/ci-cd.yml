@@ -1,9 +1,8 @@
-name: CI/CD Pipeline
+name: Deploy to Production
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
+  push:
   pull_request:
     branches: [main]
 
@@ -41,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
       - run: npm ci
       - name: Run Vitest
@@ -57,8 +56,8 @@ jobs:
       fail-fast: false
       matrix:
         project:
-          # - "landing page"
-          # - "landing page mobile"
+          - "landing page"
+          - "landing page mobile"
           - "auth tests"
           - "auth tests mobile"
           # - "videos e2e ui"
@@ -80,17 +79,6 @@ jobs:
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
-
-      - name: Create .env.test for E2E tests
-        run: |
-          cat > .env.test << EOF
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          E2E_USERNAME=${{ secrets.E2E_USERNAME }}
-          E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
-          E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
-          EOF
 
       - name: Verify Test User
         if: contains(matrix.project, 'auth')
@@ -124,7 +112,7 @@ jobs:
     needs: [e2e-tests]
     runs-on: ubuntu-latest
     environment: production
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -153,7 +141,7 @@ jobs:
     name: Deploy to Cloudflare Pages
     needs: [build]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
