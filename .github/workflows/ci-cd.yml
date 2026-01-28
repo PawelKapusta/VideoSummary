@@ -80,6 +80,17 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
+      - name: Create .env.test for E2E tests
+        run: |
+          cat > .env.test << EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_USERNAME=${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
+          E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
+          EOF
+
       - name: Verify Test User
         if: contains(matrix.project, 'auth')
         run: node scripts/verify-test-user.js
