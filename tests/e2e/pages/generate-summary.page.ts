@@ -39,15 +39,26 @@ export class GenerateSummaryPage {
 
     // Header elements
     this.pageTitle = page.locator('[data-testid="generate-summary-view"] h1').filter({ hasText: /Generate|Summary/i });
-    this.pageDescription = page.locator('[data-testid="generate-summary-view"] p').filter({ hasText: /Enter|video|URL/i });
+    this.pageDescription = page
+      .locator('[data-testid="generate-summary-view"] p')
+      .filter({ hasText: /Enter|video|URL/i });
 
     // AI Disclaimer
-    this.aiDisclaimer = page.locator('[data-testid="generate-summary-view"]').locator('text=/AI.*content|content.*AI/i').locator('..');
+    this.aiDisclaimer = page
+      .locator('[data-testid="generate-summary-view"]')
+      .locator("text=/AI.*content|content.*AI/i")
+      .locator("..");
 
     // Form elements
     this.videoUrlForm = page.locator('[data-testid="video-url-form"]');
-    this.videoUrlInput = page.locator('[data-testid="generate-summary-view"] input[type="url"], [data-testid="generate-summary-view"] input[placeholder*="youtube"]');
-    this.generateButton = page.locator('[data-testid="generate-summary-view"] button[type="submit"], [data-testid="generate-summary-view"] button').filter({ hasText: /generate|Generate/i });
+    this.videoUrlInput = page.locator(
+      '[data-testid="generate-summary-view"] input[type="url"], [data-testid="generate-summary-view"] input[placeholder*="youtube"]'
+    );
+    this.generateButton = page
+      .locator(
+        '[data-testid="generate-summary-view"] button[type="submit"], [data-testid="generate-summary-view"] button'
+      )
+      .filter({ hasText: /generate|Generate/i });
 
     // Validation status
     this.validationStatus = page.locator('[data-testid="validation-status"]');
@@ -117,7 +128,7 @@ export class GenerateSummaryPage {
   }
 
   async expectUrlValidationError(message?: string) {
-    const errorLocator = this.page.locator('[data-testid="generate-summary-view"]').locator('text=/invalid|error/i');
+    const errorLocator = this.page.locator('[data-testid="generate-summary-view"]').locator("text=/invalid|error/i");
     await expect(errorLocator).toBeVisible();
     if (message) {
       await expect(errorLocator).toContainText(message);
@@ -125,7 +136,9 @@ export class GenerateSummaryPage {
   }
 
   async expectUrlValidationSuccess() {
-    const successLocator = this.page.locator('[data-testid="generate-summary-view"]').locator('text=/valid|success|ready/i');
+    const successLocator = this.page
+      .locator('[data-testid="generate-summary-view"]')
+      .locator("text=/valid|success|ready/i");
     await expect(successLocator).toBeVisible();
   }
 
@@ -146,9 +159,13 @@ export class GenerateSummaryPage {
     await this.expectGenerateSummaryPageLoaded();
   }
 
+  async expectOnPage() {
+    await this.expectOnGenerateSummaryPage();
+  }
+
   // Helper methods for validation steps
   async expectValidationStep(stepText: string, status: "checking" | "success" | "error") {
-    const stepLocator = this.validationStatus.locator(`text=${stepText}`).locator('..');
+    const stepLocator = this.validationStatus.locator(`text=${stepText}`).locator("..");
     await expect(stepLocator).toBeVisible();
 
     if (status === "checking") {
@@ -161,6 +178,6 @@ export class GenerateSummaryPage {
   }
 
   async expectValidationComplete() {
-    await expect(this.validationStatus.locator('text=/ready|complete/i')).toBeVisible();
+    await expect(this.validationStatus.locator("text=/ready|complete/i")).toBeVisible();
   }
 }

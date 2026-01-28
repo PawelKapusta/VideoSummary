@@ -153,6 +153,10 @@ export class AuthPage {
     await this.backToLoginLink.click();
   }
 
+  async clickLoginButton() {
+    await this.loginButton.click();
+  }
+
   async expectLoading() {
     await expect(this.loadingSpinner).toBeVisible();
   }
@@ -196,6 +200,32 @@ export class AuthPage {
   async expectEmailFormatValidation() {
     await this.loginEmailInput.fill("invalid-email");
     await this.loginEmailInput.blur();
+    await expect(this.page.locator("text=Please enter a valid email")).toBeVisible();
+  }
+
+  // Additional methods for comprehensive tests
+  async fillEmail(email: string) {
+    await this.registerEmailInput.fill(email);
+  }
+
+  async fillPassword(password: string) {
+    await this.registerPasswordInput.fill(password);
+  }
+
+  async fillConfirmPassword(password: string) {
+    await this.registerConfirmPasswordInput.fill(password);
+  }
+
+  async clickRegisterButton() {
+    await this.registerButton.click();
+  }
+
+  async expectRegistrationSuccess() {
+    // Alias for expectRegisterSuccess
+    await this.expectRegisterSuccess();
+  }
+
+  async expectEmailValidationError() {
     await expect(this.page.locator("text=Please enter a valid email")).toBeVisible();
   }
 }

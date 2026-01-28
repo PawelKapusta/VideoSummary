@@ -47,8 +47,12 @@ test.describe("Registration Page", () => {
 
   test.describe("Registration Form Validation", () => {
     test("should show error for empty email", async ({ page }) => {
-      // Fill only password
+      const emailInput = page.locator('input[type="email"]');
       const passwordInputs = page.locator('input[type="password"]');
+      const submitButton = page.locator('button[type="submit"]');
+
+      // Fill email first to enable button, then clear it to trigger validation
+      await emailInput.fill("temp@example.com");
       await passwordInputs.first().fill("ValidPassword123!");
 
       // If there's a confirm password field
@@ -56,71 +60,99 @@ test.describe("Registration Page", () => {
         await passwordInputs.nth(1).fill("ValidPassword123!");
       }
 
-      await page.locator('button[type="submit"]').click();
+      await expect(submitButton).toBeEnabled(); // Button should be enabled when email is filled
+
+      await emailInput.clear();
+      await expect(submitButton).toBeDisabled(); // Button should be disabled when email is empty
+
+      // Test blur validation: click on email input and then click away
+      await emailInput.click();
+      const passwordInput = passwordInputs.first();
+      await passwordInput.click();
 
       // Email field should be invalid (custom validation, not HTML5 required attribute)
-      const emailInput = page.locator('input[type="email"]');
       await expect(emailInput).toHaveAttribute("aria-invalid", "true");
     });
 
     test("should show error for empty password", async ({ page }) => {
-      await page.locator('input[type="email"]').fill("test@example.com");
-      await page.locator('button[type="submit"]').click();
+      const emailInput = page.locator('input[type="email"]');
+      const passwordInputs = page.locator('input[type="password"]');
+      const submitButton = page.locator('button[type="submit"]');
+
+      await emailInput.fill("test@example.com");
+      const passwordInput = passwordInputs.first();
+      await passwordInput.fill("SomePassword123!");
+
+      await passwordInput.clear();
+      await expect(submitButton).toBeDisabled(); // Button should be disabled when password is empty
+
+      // Test blur validation: click on password input and then click away
+      await passwordInput.click();
+      await emailInput.click();
 
       // Password field should be invalid (custom validation, not HTML5 required attribute)
-      const passwordInput = page.locator('input[type="password"]').first();
       await expect(passwordInput).toHaveAttribute("aria-invalid", "true");
     });
 
     test("should show error for invalid email format", async ({ page }) => {
-      await page.locator('input[type="email"]').fill("invalid-email");
-      await page.locator('input[type="password"]').first().fill("ValidPassword123!");
-      await page.locator('button[type="submit"]').click();
-
-      // Check for invalid email validation
       const emailInput = page.locator('input[type="email"]');
-      const isInvalid = await emailInput.evaluate((el: HTMLInputElement) => !el.validity.valid);
-      expect(isInvalid).toBe(true);
+      const passwordInput = page.locator('input[type="password"]').first();
+      const submitButton = page.locator('button[type="submit"]');
+
+      await emailInput.fill("invalid-email");
+      await passwordInput.fill("ValidPassword123!");
+
+      // Test blur validation: click on email input and then click away
+      await emailInput.click();
+      await passwordInput.click();
+
+      // Email field should be invalid due to incorrect format
+      await expect(emailInput).toHaveAttribute("aria-invalid", "true");
+
+      // Submit button should be disabled for invalid email
+      await expect(submitButton).toBeDisabled();
     });
 
     test("should validate password strength (if implemented)", async ({ page }) => {
-      await page.locator('input[type="email"]').fill("test@example.com");
-      await page.locator('input[type="password"]').first().fill("weak");
-      await page.locator('button[type="submit"]').click();
+      const emailInput = page.locator('input[type="email"]');
+      const passwordInput = page.locator('input[type="password"]').first();
+      const submitButton = page.locator('button[type="submit"]');
 
-      // Look for password strength/validation error
-      // This might be a custom validation message
-      const hasPasswordError = await page
-        .locator("text=/password.*short|password.*weak|password.*character|minimum.*character/i")
-        .isVisible()
-        .catch(() => false);
+      await emailInput.fill("test@example.com");
+      await passwordInput.fill("weak");
 
-      // If no custom validation, at least check the form wasn't submitted
-      // or check for minlength attribute
-      if (!hasPasswordError) {
-        const passwordInput = page.locator('input[type="password"]').first();
-        const minLength = await passwordInput.getAttribute("minlength");
-        if (minLength) {
-          expect(parseInt(minLength)).toBeGreaterThan(4);
-        }
-      }
+      // Test blur validation: click on password input and then click away
+      await passwordInput.click();
+      await emailInput.click();
+
+      // Password field should be invalid due to weak password
+      await expect(passwordInput).toHaveAttribute("aria-invalid", "true");
+
+      // Submit button should be disabled for weak password
+      await expect(submitButton).toBeDisabled();
     });
 
     test("should validate password confirmation match (if field exists)", async ({ page }) => {
+      const emailInput = page.locator('input[type="email"]');
       const passwordInputs = page.locator('input[type="password"]');
+      const submitButton = page.locator('button[type="submit"]');
       const hasConfirmPassword = (await passwordInputs.count()) > 1;
 
       test.skip(!hasConfirmPassword, "No confirm password field");
 
-      await page.locator('input[type="email"]').fill("test@example.com");
+      await emailInput.fill("test@example.com");
       await passwordInputs.first().fill("ValidPassword123!");
       await passwordInputs.nth(1).fill("DifferentPassword456!");
-      await page.locator('button[type="submit"]').click();
 
-      // Look for mismatch error
-      await expect(page.locator("text=/password.*match|passwords.*match/i")).toBeVisible({
-        timeout: 5000,
-      });
+      // Test blur validation: click on confirm password and then click away
+      await passwordInputs.nth(1).click();
+      await emailInput.click();
+
+      // Confirm password field should be invalid due to mismatch
+      await expect(passwordInputs.nth(1)).toHaveAttribute("aria-invalid", "true");
+
+      // Submit button should be disabled when passwords don't match
+      await expect(submitButton).toBeDisabled();
     });
   });
 
@@ -129,23 +161,33 @@ test.describe("Registration Page", () => {
       const existingEmail = process.env.E2E_USERNAME;
       test.skip(!existingEmail, "E2E_USERNAME must be set");
 
-      await page.locator('input[type="email"]').fill(existingEmail as string);
-      await page.locator('input[type="password"]').first().fill("ValidPassword123!");
-
-      // Fill confirm password if exists
+      const password = "ValidPassword123!";
+      const emailInput = page.locator('input[type="email"]');
       const passwordInputs = page.locator('input[type="password"]');
-      if ((await passwordInputs.count()) > 1) {
-        await passwordInputs.nth(1).fill("ValidPassword123!");
-      }
+      const submitButton = page.locator('button[type="submit"]');
 
-      await page.locator('button[type="submit"]').click();
+      // Fill all fields with valid data
+      await emailInput.fill(existingEmail as string);
+      await passwordInputs.first().fill(password);
+      await passwordInputs.nth(1).fill(password); // Confirm password must match
+
+      // Wait for form validation to complete and button to be enabled
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+
+      // Click submit button
+      await submitButton.click();
 
       // Wait for error message about existing user
-      await expect(
-        page
-          .locator('[data-testid="register-error"]')
-          .or(page.locator("text=/already registered|already exists|User already/i"))
-      ).toBeVisible({ timeout: 10000 });
+      const errorMessage = page.locator('[data-testid="form-error-message"]');
+
+      // First wait for the element to be in DOM
+      await errorMessage.waitFor({ state: "attached", timeout: 10000 });
+
+      // Then wait for it to be visible (handles animation)
+      await expect(errorMessage).toBeVisible({ timeout: 5000 });
+
+      // Finally verify the exact error text
+      await expect(errorMessage).toContainText("An account with this email already exists. Please login.");
     });
   });
 
@@ -163,21 +205,26 @@ test.describe("Registration Page", () => {
   // - Running these tests only in specific environments
   // - Using unique emails with timestamps
   // - Having cleanup scripts
-  test.describe.skip("Registration Flow - New User", () => {
+  test.describe("Registration Flow - New User", () => {
     test("should register successfully with valid data", async ({ page }) => {
       // Generate unique email for this test run
       const uniqueEmail = `test-${Date.now()}@example.com`;
+      const password = "ValidPassword123!";
 
-      await page.locator('input[type="email"]').fill(uniqueEmail);
-      await page.locator('input[type="password"]').first().fill("ValidPassword123!");
-
-      // Fill confirm password if exists
+      const emailInput = page.locator('input[type="email"]');
       const passwordInputs = page.locator('input[type="password"]');
-      if ((await passwordInputs.count()) > 1) {
-        await passwordInputs.nth(1).fill("ValidPassword123!");
-      }
+      const submitButton = page.locator('button[type="submit"]');
 
-      await page.locator('button[type="submit"]').click();
+      // Fill all required fields
+      await emailInput.fill(uniqueEmail);
+      await passwordInputs.first().fill(password);
+      await passwordInputs.nth(1).fill(password); // Confirm password must match
+
+      // Wait for form validation to complete and button to be enabled
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+
+      // Click submit button
+      await submitButton.click();
 
       // Either redirect to dashboard or show confirmation message
       await expect(

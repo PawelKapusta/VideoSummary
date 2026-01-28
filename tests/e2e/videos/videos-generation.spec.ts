@@ -20,7 +20,7 @@ test.describe("Videos Page - Summary Generation", () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     expect(videoCards.length).toBeGreaterThan(0);
 
     // Click the first video card to open dialog
@@ -39,22 +39,22 @@ test.describe("Videos Page - Summary Generation", () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     await videoCards[0].click();
 
     // Check validation steps are present
     await videosPage.expectValidationStepsCount(5); // URL, Subscription, Limit, Duration, Generation status
 
     // Check validation passes
-    await videosPage.generateDialog.expectAllValidationStepsSuccess();
-    await videosPage.generateDialog.expectValidationStatus("ready");
+    await videosPage.generateDialogMethods.expectAllValidationStepsSuccess();
+    await videosPage.generateDialogMethods.expectValidationStatus("ready");
   });
 
   test("VID-GEN-03: Successful summary generation flow", async () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     const initialAction = await videoCards[0].getActionText();
 
     // Verify it's a video without summary
@@ -78,7 +78,7 @@ test.describe("Videos Page - Summary Generation", () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     await videoCards[0].click();
 
     // Dialog should be visible
@@ -100,19 +100,19 @@ test.describe("Videos Page - Summary Generation", () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     await videoCards[0].click();
 
     // Verify validation UI is present
-    await videosPage.generateDialog.expectDialogStructure();
-    await videosPage.generateDialog.expectValidationStatus("ready");
+    await videosPage.generateDialogMethods.expectDialogStructure();
+    await videosPage.generateDialogMethods.expectValidationStatus("ready");
   });
 
   test("VID-GEN-06: Dialog keyboard navigation", async ({ page }) => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     await videoCards[0].click();
 
     // Test Escape key closes dialog
@@ -124,18 +124,18 @@ test.describe("Videos Page - Summary Generation", () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     await videoCards[0].click();
 
     // Check accessibility attributes
-    await videosPage.generateDialog.expectAccessible();
+    await videosPage.generateDialogMethods.expectAccessible();
   });
 
   test("VID-GEN-08: Multiple generation attempts are handled", async () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
 
     // Try to generate the same video multiple times quickly
     await videoCards[0].click();
@@ -153,7 +153,7 @@ test.describe("Videos Page - Summary Generation", () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
 
     // Start generation
     await videoCards[0].click();
@@ -174,15 +174,15 @@ test.describe("Videos Page - Summary Generation", () => {
     await videosPage.filterByStatus("without");
     await videosPage.page.waitForTimeout(500);
 
-    const videoCards = await videosPage.videosGrid.getAllVideoCards();
+    const videoCards = await videosPage.getAllVideoCards();
     const cardTitle = await videoCards[0].getTitle();
     const cardChannel = await videoCards[0].getChannelName();
 
     await videoCards[0].click();
 
     // Verify dialog shows same information
-    const dialogTitle = await videosPage.generateDialog.getVideoTitle();
-    const dialogChannel = await videosPage.generateDialog.getVideoChannel();
+    const dialogTitle = await videosPage.generateDialogMethods.getVideoTitle();
+    const dialogChannel = await videosPage.generateDialogMethods.getVideoChannel();
 
     expect(dialogTitle).toBe(cardTitle);
     expect(dialogChannel).toBe(cardChannel);

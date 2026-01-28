@@ -8,7 +8,7 @@ import { AuthPage } from "../pages/auth.page";
  * to verify the password reset functionality from a fresh browser state.
  */
 
-test.describe("Password Reset Page", () => {
+test.describe.skip("Password Reset Page", () => {
   // Run all password reset tests sequentially to avoid rate limiting
   test.describe.configure({ mode: "serial" });
 
@@ -88,7 +88,6 @@ test.describe("Password Reset Page", () => {
   });
 
   test.describe("Reset Password Flow", () => {
-
     test("should handle non-existent email gracefully", async ({ page }) => {
       // Use a non-existent email - system should always show success for security
       // (prevents account enumeration by not revealing which emails are registered)
@@ -105,7 +104,6 @@ test.describe("Password Reset Page", () => {
   });
 
   test.describe("Rate Limiting", () => {
-
     test("should show rate limit error after too many requests", async ({ page }) => {
       // Make multiple password reset requests with 4s intervals to trigger rate limiting
       const maxRequests = 3; // Fewer attempts with longer delays

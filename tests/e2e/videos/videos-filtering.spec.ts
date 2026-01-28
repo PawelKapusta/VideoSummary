@@ -28,10 +28,10 @@ test.describe("Videos Page - Filtering Functionality", () => {
       if (fullTitle) {
         // Search for part of the title
         const searchTerm = fullTitle.split(" ")[0]; // First word of title
-        await videosPage.filterBar.search(searchTerm);
+        await videosPage.filterBarMethods.search(searchTerm);
 
         // Should show filtered results
-        await videosPage.videosGrid.expectVideosContainSearchTerm(searchTerm);
+        await videosPage.videosGridMethods.expectVideosContainSearchTerm(searchTerm);
       }
     } else {
       test.skip(true, "No videos available to test search");
@@ -39,42 +39,42 @@ test.describe("Videos Page - Filtering Functionality", () => {
   });
 
   test("VID-FILT-02: Search with no results shows empty state", async () => {
-    await videosPage.filterBar.search("nonexistent-video-title-12345");
+    await videosPage.filterBarMethods.search("nonexistent-video-title-12345");
     await videosPage.expectNoFiltersMatchState();
   });
 
   test("VID-FILT-03: Filter by channel shows only channel videos", async () => {
     // Get first available channel option (excluding "All Channels")
-    const channelSelect = videosPage.filterBar.filterBar.locator("select").nth(1);
+    const channelSelect = videosPage.filterBarMethods.filterBar.locator("select").nth(1);
     const options = await channelSelect.locator("option").allTextContents();
-    const availableChannels = options.filter((opt) => opt !== "All Channels");
+    const availableChannels = options.filter((opt: string) => opt !== "All Channels");
 
     if (availableChannels.length > 0) {
       const targetChannel = availableChannels[0];
 
-      await videosPage.filterBar.selectChannel(targetChannel);
+      await videosPage.filterBarMethods.selectChannel(targetChannel);
 
       // Wait for filter to apply
       await videosPage.page.waitForTimeout(500);
 
       // Verify all visible videos belong to the selected channel
-      await videosPage.videosGrid.expectAllVideosFromChannel(targetChannel);
+      await videosPage.videosGridMethods.expectAllVideosFromChannel(targetChannel);
     } else {
       test.skip(true, "No channels available for testing");
     }
   });
 
   test('VID-FILT-04: Filter by status "Summary Available" works', async () => {
-    await videosPage.filterBar.selectStatus("with");
+    await videosPage.filterBarMethods.selectStatus("with");
 
     // Wait for filter to apply
     await videosPage.page.waitForTimeout(500);
 
     // Check if any videos are shown (assuming some videos have summaries)
-    const visibleCount = await videosPage.videosGrid.videoCards.count();
+    const visibleCount = await videosPage.videosGridMethods.videoCards.count();
     if (visibleCount > 0) {
       // All visible videos should have summaries available
-      await videosPage.videosGrid.expectAllVideosHaveStatus("summary-available");
+      await videosPage.videosGridMethods.expectAllVideosHaveStatus("summary-available");
     } else {
       // No videos with summaries found - this is also valid
       console.log("No videos with summaries found - filter working correctly");
@@ -82,16 +82,16 @@ test.describe("Videos Page - Filtering Functionality", () => {
   });
 
   test('VID-FILT-05: Filter by status "No Summary" works', async () => {
-    await videosPage.filterBar.selectStatus("without");
+    await videosPage.filterBarMethods.selectStatus("without");
 
     // Wait for filter to apply
     await videosPage.page.waitForTimeout(500);
 
     // Check if any videos are shown (assuming some videos don't have summaries)
-    const visibleCount = await videosPage.videosGrid.videoCards.count();
+    const visibleCount = await videosPage.videosGridMethods.videoCards.count();
     if (visibleCount > 0) {
       // All visible videos should have no summaries
-      await videosPage.videosGrid.expectAllVideosHaveStatus("no-summary");
+      await videosPage.videosGridMethods.expectAllVideosHaveStatus("no-summary");
     } else {
       // No videos without summaries found - this is also valid
       console.log("No videos without summaries found - filter working correctly");
@@ -118,31 +118,31 @@ test.describe("Videos Page - Filtering Functionality", () => {
 
   test("VID-FILT-07: Clear all filters resets to default state", async () => {
     // Apply multiple filters
-    await videosPage.filterBar.search("test");
-    await videosPage.filterBar.selectStatus("with");
+    await videosPage.filterBarMethods.search("test");
+    await videosPage.filterBarMethods.selectStatus("with");
     // Select a channel if available
-    const availableChannels = await videosPage.filterBar.getAvailableChannels();
+    const availableChannels = await videosPage.filterBarMethods.getAvailableChannels();
     if (availableChannels.length > 0) {
-      await videosPage.filterBar.selectChannel(availableChannels[0]);
+      await videosPage.filterBarMethods.selectChannel(availableChannels[0]);
     }
 
     // Wait for filters to apply
     await videosPage.page.waitForTimeout(500);
 
     // Clear all filters
-    await videosPage.filterBar.clearAllFilters();
+    await videosPage.filterBarMethods.clearAllFilters();
 
     // Wait for reset
     await videosPage.page.waitForTimeout(500);
 
     // Should show all videos again (or original filtered set)
-    const visibleCardsCount = await videosPage.videosGrid.videoCards.count();
+    const visibleCardsCount = await videosPage.videosGridMethods.videoCards.count();
     expect(visibleCardsCount).toBeGreaterThan(0);
   });
 
   test("VID-FILT-08: Combined filters work together", async () => {
     // Get available channels
-    const channelSelect = videosPage.filterBar.filterBar.locator("select").nth(1);
+    const channelSelect = videosPage.filterBarMethods.filterBar.locator("select").nth(1);
     const channelOptions = await channelSelect.locator("option").allTextContents();
     const availableChannels = channelOptions.filter((opt) => opt !== "All Channels");
 
@@ -150,14 +150,14 @@ test.describe("Videos Page - Filtering Functionality", () => {
       const targetChannel = availableChannels[0];
 
       // Apply multiple filters
-      await videosPage.filterBar.selectStatus("with");
-      await videosPage.filterBar.selectChannel(targetChannel);
-      await videosPage.filterBar.search("test");
+      await videosPage.filterBarMethods.selectStatus("with");
+      await videosPage.filterBarMethods.selectChannel(targetChannel);
+      await videosPage.filterBarMethods.search("test");
 
       // Wait for all filters to apply
       await videosPage.page.waitForTimeout(1000);
 
-      const visibleCardsCount = await videosPage.videosGrid.videoCards.count();
+      const visibleCardsCount = await videosPage.videosGridMethods.videoCards.count();
 
       if (visibleCardsCount > 0) {
         // All visible cards should match all filter criteria
@@ -180,7 +180,7 @@ test.describe("Videos Page - Filtering Functionality", () => {
 
   test("VID-FILT-09: Filter persistence across page reloads", async () => {
     // Apply a filter
-    await videosPage.searchForVideos("machine learning");
+    await videosPage.searchVideos("machine learning");
 
     // Wait for filter to apply
     await videosPage.page.waitForTimeout(500);
@@ -199,11 +199,11 @@ test.describe("Videos Page - Filtering Functionality", () => {
     if (isMobile) {
       // On mobile, filters should stack vertically
       const filterBar = videosPage.filterBar;
-      await expect(filterBar.filterBar).toHaveClass(/flex-col/);
+      await expect(videosPage.filterBar).toHaveClass(/flex-col/);
     } else {
       // On desktop, filters should be in a row
       const filterBar = videosPage.filterBar;
-      await expect(filterBar.filterBar).toHaveClass(/grid/);
+      await expect(videosPage.filterBar).toHaveClass(/grid/);
     }
   });
 });

@@ -4,7 +4,7 @@ import { securityLogger, errorLogger, performanceLogger, appLogger } from "../..
 import { startBulkSummaryGeneration } from "../../../lib/summaries.service";
 import type { RuntimeEnv } from "../../../lib/env";
 import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "astro:env/server";
+import { requireEnv } from "../../../lib/env";
 
 const ENDPOINT_PATH = "/api/summaries/generate-all";
 
@@ -82,6 +82,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Create Supabase client with SERVICE ROLE key to bypass RLS
     // Required because cron job has no user session
+    const SUPABASE_URL = requireEnv("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
         autoRefreshToken: false,

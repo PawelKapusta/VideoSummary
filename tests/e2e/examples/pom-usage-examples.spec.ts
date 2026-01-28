@@ -22,9 +22,9 @@ test.describe("POM Components Usage Examples", () => {
 
   test.beforeEach(async ({ page }) => {
     videosPage = new VideosPage(page);
-    filterBar = videosPage.filterBar;
-    videosGrid = videosPage.videosGrid;
-    toasts = videosPage.toasts;
+    filterBar = videosPage.filterBarMethods as any;
+    videosGrid = videosPage.videosGridMethods as any;
+    toasts = videosPage.toasts as any;
 
     // User subscriptions assumed to be already configured
     await videosPage.goto();
@@ -169,7 +169,7 @@ test.describe("POM Components Usage Examples", () => {
     await page.reload();
 
     // Check if error state appears
-    await videosPage.errorState.expectVisible();
+    await expect(videosPage.errorState).toBeVisible();
 
     // Restore normal functionality
     await page.unroute("**/api/videos**");

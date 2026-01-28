@@ -2,7 +2,7 @@ import { defineMiddleware } from "astro:middleware";
 import { createSupabaseServerClient } from "../db/supabase.client.ts";
 import { initializeLogging } from "../lib/logger.ts";
 import { getAwsTraceId } from "../lib/trace.ts";
-import { CRON_SECRET } from "astro:env/server";
+import { getEnv } from "../lib/env.ts";
 
 // Initialize logging once
 let loggingInitialized = false;
@@ -92,6 +92,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Allow access to cron endpoints in development or with valid cron secret
   const isDevelopment = import.meta.env.DEV;
+  const CRON_SECRET = getEnv("CRON_SECRET", locals.runtime?.env as any);
   const hasValidCronSecret = cronSecretHeader && CRON_SECRET && cronSecretHeader === CRON_SECRET;
 
   if (cronProtectedPaths.includes(pathname) && (isDevelopment || hasValidCronSecret)) {

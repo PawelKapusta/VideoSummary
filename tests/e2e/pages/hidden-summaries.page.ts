@@ -40,21 +40,36 @@ export class HiddenSummariesPage {
     this.hiddenSummariesView = page.locator('[data-testid="hidden-summaries-view"]');
 
     // Header elements
-    this.pageTitle = page.locator('[data-testid="hidden-summaries-view"] h1, [data-testid="hidden-summaries-view"] [data-testid*="title"]').filter({ hasText: /Hidden|hidden/i });
-    this.pageDescription = page.locator('[data-testid="hidden-summaries-view"] p').filter({ hasText: /restore|hidden/i });
+    this.pageTitle = page
+      .locator('[data-testid="hidden-summaries-view"] h1, [data-testid="hidden-summaries-view"] [data-testid*="title"]')
+      .filter({ hasText: /Hidden|hidden/i });
+    this.pageDescription = page
+      .locator('[data-testid="hidden-summaries-view"] p')
+      .filter({ hasText: /restore|hidden/i });
     this.backButton = page.locator('[data-testid="hidden-summaries-view"] button').filter({ hasText: /back|Back|←/i });
 
     // Summary list
-    this.summaryList = page.locator('[data-testid="hidden-summaries-view"]').locator('[data-testid="summary-list"], .summary-list').first();
+    this.summaryList = page
+      .locator('[data-testid="hidden-summaries-view"]')
+      .locator('[data-testid="summary-list"], .summary-list')
+      .first();
     this.summaryCards = page.locator('[data-testid="hidden-summaries-view"] [data-testid="summary-card"]');
 
     // Bulk actions
-    this.unhideAllButton = page.locator('[data-testid="hidden-summaries-view"] button').filter({ hasText: /unhide all|Unhide All/i });
-    this.unhideAllDialog = page.locator('[role="dialog"], [data-testid*="dialog"]').filter({ hasText: /unhide.*all|restore.*all/i });
-    this.confirmUnhideAllButton = page.locator('[role="dialog"] button').filter({ hasText: /confirm|yes|unhide|restore/i });
+    this.unhideAllButton = page
+      .locator('[data-testid="hidden-summaries-view"] button')
+      .filter({ hasText: /unhide all|Unhide All/i });
+    this.unhideAllDialog = page
+      .locator('[role="dialog"], [data-testid*="dialog"]')
+      .filter({ hasText: /unhide.*all|restore.*all/i });
+    this.confirmUnhideAllButton = page
+      .locator('[role="dialog"] button')
+      .filter({ hasText: /confirm|yes|unhide|restore/i });
 
     // Individual actions
-    this.unhideButtons = page.locator('[data-testid="hidden-summaries-view"] button').filter({ hasText: /unhide|restore/i });
+    this.unhideButtons = page
+      .locator('[data-testid="hidden-summaries-view"] button')
+      .filter({ hasText: /unhide|restore/i });
 
     // Empty state
     this.emptyState = page.locator('[data-testid="empty-state"]');
@@ -133,16 +148,16 @@ export class HiddenSummariesPage {
     await this.confirmUnhideAll();
   }
 
-  async unhideSummary(index: number = 0) {
+  async unhideSummary(index = 0) {
     const summaryCard = this.summaryCards.nth(index);
     await expect(summaryCard).toBeVisible();
 
-    const unhideButton = summaryCard.locator('button').filter({ hasText: /unhide|restore/i });
+    const unhideButton = summaryCard.locator("button").filter({ hasText: /unhide|restore/i });
     await expect(unhideButton).toBeVisible();
     await unhideButton.click();
 
     // Handle confirmation if present
-    const confirmButton = this.page.locator('button').filter({ hasText: /confirm|yes|unhide|restore/i });
+    const confirmButton = this.page.locator("button").filter({ hasText: /confirm|yes|unhide|restore/i });
     if (await confirmButton.isVisible()) {
       await confirmButton.click();
     }

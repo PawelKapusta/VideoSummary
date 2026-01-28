@@ -90,7 +90,7 @@ test.describe("Comprehensive User Flows", () => {
       await authPage.expectLoginPageLoaded();
 
       // Perform login
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
 
       // Verify successful login and redirect to dashboard
       await dashboardPage.expectOnDashboardPage();
@@ -116,14 +116,14 @@ test.describe("Comprehensive User Flows", () => {
   });
 
   test.describe("2. Dashboard Interaction Flow", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // Login first
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
       await dashboardPage.expectOnDashboardPage();
     });
 
@@ -155,14 +155,14 @@ test.describe("Comprehensive User Flows", () => {
   });
 
   test.describe("3. Profile & Channel Management Flow", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // Login first
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
       await profilePage.expectOnProfilePage();
     });
 
@@ -191,7 +191,7 @@ test.describe("Comprehensive User Flows", () => {
       await profilePage.removeChannel("Vercel");
 
       // Verify channel is removed
-      await expect(page.locator('text=Vercel')).not.toBeVisible();
+      await expect(page.locator("text=Vercel")).not.toBeVisible();
     });
 
     test("should display accurate statistics", async ({ page }) => {
@@ -207,14 +207,14 @@ test.describe("Comprehensive User Flows", () => {
   });
 
   test.describe("4. Summary Generation & Management Flow", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // Login first
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
     });
 
     test("should generate summary from URL", async ({ page }) => {
@@ -258,14 +258,14 @@ test.describe("Comprehensive User Flows", () => {
   });
 
   test.describe("5. Summary Browsing & Rating Flow", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // Login first
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
     });
 
     test("should browse and filter summaries", async ({ page }) => {
@@ -344,14 +344,14 @@ test.describe("Comprehensive User Flows", () => {
   });
 
   test.describe("6. Settings & Account Management Flow", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // Login first
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
       await settingsPage.expectOnSettingsPage();
     });
 
@@ -381,7 +381,9 @@ test.describe("Comprehensive User Flows", () => {
       await settingsPage.expectHiddenSummariesSectionVisible();
 
       // Click link to hidden summaries (assuming there's a link)
-      const hiddenSummariesLink = page.locator('[data-testid="hidden-summaries-section"] a, [data-testid="hidden-summaries-section"] button').filter({ hasText: /view|see|manage/i });
+      const hiddenSummariesLink = page
+        .locator('[data-testid="hidden-summaries-section"] a, [data-testid="hidden-summaries-section"] button')
+        .filter({ hasText: /view|see|manage/i });
       if (await hiddenSummariesLink.isVisible()) {
         await hiddenSummariesLink.click();
         await hiddenSummariesPage.expectOnHiddenSummariesPage();
@@ -398,14 +400,14 @@ test.describe("Comprehensive User Flows", () => {
   });
 
   test.describe("7. Hidden Summaries Management Flow", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // Login first
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
       await hiddenSummariesPage.expectOnHiddenSummariesPage();
     });
 
@@ -437,14 +439,14 @@ test.describe("Comprehensive User Flows", () => {
   });
 
   test.describe("8. Navigation & Cross-Page Flows", () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // Login first
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
     });
 
     test("should navigate between all main pages", async ({ page }) => {
@@ -460,21 +462,17 @@ test.describe("Comprehensive User Flows", () => {
 
       for (const pageInfo of pages) {
         await page.goto(pageInfo.url);
-        await pageInfo.page.expectOnPage?.() || await expect(page).toHaveURL(new RegExp(pageInfo.url));
+        if (pageInfo.page.expectOnPage) {
+          await pageInfo.page.expectOnPage();
+        } else {
+          await expect(page).toHaveURL(new RegExp(pageInfo.url));
+        }
       }
     });
 
     test("should handle direct URL navigation", async ({ page }) => {
       // Test direct navigation to protected routes
-      const protectedUrls = [
-        "/dashboard",
-        "/summaries",
-        "/videos",
-        "/profile",
-        "/settings",
-        "/generate",
-        "/hidden"
-      ];
+      const protectedUrls = ["/dashboard", "/summaries", "/videos", "/profile", "/settings", "/generate", "/hidden"];
 
       for (const url of protectedUrls) {
         await page.goto(url);
@@ -489,7 +487,9 @@ test.describe("Comprehensive User Flows", () => {
     test("should handle 404 pages gracefully", async ({ page }) => {
       await page.goto("/nonexistent-page");
       // Should show 404 page or redirect appropriately
-      await expect(page.locator("text=404").or(page.locator("text=Not Found")).or(page.locator("text=Page not found"))).toBeVisible();
+      await expect(
+        page.locator("text=404").or(page.locator("text=Not Found")).or(page.locator("text=Page not found"))
+      ).toBeVisible();
     });
 
     test("should handle invalid summary IDs", async ({ page }) => {
@@ -499,7 +499,7 @@ test.describe("Comprehensive User Flows", () => {
       test.skip(!testEmail || !testPassword, "E2E_USERNAME and E2E_PASSWORD must be set");
 
       await authPage.gotoLogin();
-      await authPage.login(testEmail!, testPassword!);
+      await authPage.login(testEmail as string, testPassword as string);
 
       // Navigate to invalid summary ID
       await page.goto("/summaries/invalid-id-12345");
@@ -514,7 +514,9 @@ test.describe("Comprehensive User Flows", () => {
       await page.goto("/dashboard");
 
       // Verify error handling components are available
-      const errorElements = await page.locator('[data-testid="error-state"], [data-testid="form-error-message"]').count();
+      const errorElements = await page
+        .locator('[data-testid="error-state"], [data-testid="form-error-message"]')
+        .count();
       expect(errorElements).toBeGreaterThan(0);
     });
   });

@@ -16,7 +16,10 @@ export const SuccessMessage: React.FC = () => {
   };
 
   return (
-    <div data-testid="success-message" className="flex flex-col items-center gap-4 rounded-lg border border-green-200 bg-green-50 p-6 text-center text-green-800">
+    <div
+      data-testid="success-message"
+      className="flex flex-col items-center gap-4 rounded-lg border border-green-200 bg-green-50 p-6 text-center text-green-800"
+    >
       <CheckCircle className="h-12 w-12 text-green-600" aria-hidden="true" />
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Password Reset Successful!</h3>

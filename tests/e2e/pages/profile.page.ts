@@ -42,27 +42,50 @@ export class ProfilePage {
 
     // User header
     this.userHeader = page.locator('[data-testid="user-header"]');
-    this.userAvatar = page.locator('[data-testid="user-header"] img, [data-testid="user-header"] [data-testid*="avatar"]');
+    this.userAvatar = page.locator(
+      '[data-testid="user-header"] img, [data-testid="user-header"] [data-testid*="avatar"]'
+    );
     this.userName = page.locator('[data-testid="user-header"] h2, [data-testid="user-header"] [data-testid*="name"]');
     this.userEmail = page.locator('[data-testid="user-header"] p').filter({ hasText: "@" });
-    this.joinDate = page.locator('[data-testid="user-header"]').locator('text=/Joined|Member since/i');
+    this.joinDate = page.locator('[data-testid="user-header"]').locator("text=/Joined|Member since/i");
 
     // Stats section
     this.statsSection = page.locator('[data-testid="stats-section"]');
-    this.totalSummariesStat = page.locator('[data-testid="stats-section"]').locator('text=/Summaries|Generated/i').locator('..').locator('div').filter({ hasText: /^\d+$/ });
-    this.totalChannelsStat = page.locator('[data-testid="stats-section"]').locator('text=/Channels/i').locator('..').locator('div').filter({ hasText: /^\d+$/ });
-    this.thisMonthSummariesStat = page.locator('[data-testid="stats-section"]').locator('text=/This month|Monthly/i').locator('..').locator('div').filter({ hasText: /^\d+$/ });
+    this.totalSummariesStat = page
+      .locator('[data-testid="stats-section"]')
+      .locator("text=/Summaries|Generated/i")
+      .locator("..")
+      .locator("div")
+      .filter({ hasText: /^\d+$/ });
+    this.totalChannelsStat = page
+      .locator('[data-testid="stats-section"]')
+      .locator("text=/Channels/i")
+      .locator("..")
+      .locator("div")
+      .filter({ hasText: /^\d+$/ });
+    this.thisMonthSummariesStat = page
+      .locator('[data-testid="stats-section"]')
+      .locator("text=/This month|Monthly/i")
+      .locator("..")
+      .locator("div")
+      .filter({ hasText: /^\d+$/ });
 
     // Subscription section
     this.subscriptionSection = page.locator('[data-testid="subscription-section"]');
     this.subscriptionTable = page.locator('[data-testid="subscription-table"]');
     this.channelRows = page.locator('[data-testid="channel-row"]');
-    this.addChannelButton = page.locator('[data-testid="subscription-section"] button').filter({ hasText: /Add Channel/i });
+    this.addChannelButton = page
+      .locator('[data-testid="subscription-section"] button')
+      .filter({ hasText: /Add Channel/i });
 
     // Add channel dialog
     this.addChannelDialog = page.locator('[data-testid="add-channel-dialog"]');
-    this.channelUrlInput = page.locator('[data-testid="add-channel-dialog"] input[type="url"], [data-testid="add-channel-dialog"] input[placeholder*="youtube"]');
-    this.addChannelSubmitButton = page.locator('[data-testid="add-channel-dialog"] button[type="submit"], [data-testid="add-channel-dialog"] button').filter({ hasText: /Add|Subscribe/i });
+    this.channelUrlInput = page.locator(
+      '[data-testid="add-channel-dialog"] input[type="url"], [data-testid="add-channel-dialog"] input[placeholder*="youtube"]'
+    );
+    this.addChannelSubmitButton = page
+      .locator('[data-testid="add-channel-dialog"] button[type="submit"], [data-testid="add-channel-dialog"] button')
+      .filter({ hasText: /Add|Subscribe/i });
 
     // Loading states
     this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');
@@ -155,12 +178,12 @@ export class ProfilePage {
 
   async removeChannel(channelName: string) {
     const channelRow = this.channelRows.filter({ hasText: channelName });
-    const removeButton = channelRow.locator('button').filter({ hasText: /remove|delete/i });
+    const removeButton = channelRow.locator("button").filter({ hasText: /remove|delete/i });
     await expect(removeButton).toBeVisible();
     await removeButton.click();
 
     // Handle confirmation dialog if present
-    const confirmButton = this.page.locator('button').filter({ hasText: /confirm|yes|delete/i });
+    const confirmButton = this.page.locator("button").filter({ hasText: /confirm|yes|delete/i });
     if (await confirmButton.isVisible()) {
       await confirmButton.click();
     }
@@ -177,5 +200,9 @@ export class ProfilePage {
   async expectOnProfilePage() {
     await expect(this.page).toHaveURL(/\/profile/);
     await this.expectProfilePageLoaded();
+  }
+
+  async expectOnPage() {
+    await this.expectOnProfilePage();
   }
 }

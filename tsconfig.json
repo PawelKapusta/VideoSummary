@@ -1,7 +1,24 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "**/*.old.ts"],
+  "exclude": [
+    "dist",
+    "**/*.old.ts",
+    "node_modules",
+    "playwright-report",
+    "playwright-reports",
+    "test-results",
+    "coverage",
+    ".astro",
+    ".cache",
+    ".nyc_output",
+    ".parcel-cache",
+    ".next",
+    ".nuxt",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache"
+  ],
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",

@@ -37,7 +37,9 @@ export class DashboardPage {
 
     // Header elements
     this.dashboardTitle = page.locator('[data-testid="dashboard-view"] h1').filter({ hasText: "Dashboard" });
-    this.dashboardDescription = page.locator('[data-testid="dashboard-view"] p').filter({ hasText: /Track your video insights/ });
+    this.dashboardDescription = page
+      .locator('[data-testid="dashboard-view"] p')
+      .filter({ hasText: /Track your video insights/ });
 
     // Stats section (placeholder - add if dashboard has stats)
     this.statsSection = page.locator('[data-testid="stats-section"]');
@@ -95,7 +97,7 @@ export class DashboardPage {
     return await this.summaryCards.count();
   }
 
-  async clickSummaryCard(index: number = 0) {
+  async clickSummaryCard(index = 0) {
     const card = this.summaryCards.nth(index);
     await expect(card).toBeVisible();
     await card.click();
@@ -109,5 +111,9 @@ export class DashboardPage {
   async expectOnDashboardPage() {
     await expect(this.page).toHaveURL(/\/dashboard/);
     await this.expectDashboardLoaded();
+  }
+
+  async expectOnPage() {
+    await this.expectOnDashboardPage();
   }
 }

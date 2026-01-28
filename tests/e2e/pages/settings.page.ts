@@ -39,11 +39,21 @@ export class SettingsPage {
 
     // Header elements
     this.settingsTitle = page.locator('[data-testid="settings-view"] h1').filter({ hasText: "Settings" });
-    this.settingsDescription = page.locator('[data-testid="settings-view"] p').filter({ hasText: /manage|account|preferences/i });
+    this.settingsDescription = page
+      .locator('[data-testid="settings-view"] p')
+      .filter({ hasText: /manage|account|preferences/i });
 
     // Profile settings section
-    this.profileSection = page.locator('[data-testid="settings-view"]').locator('text=/Profile|Account/i').locator('..').locator('..');
-    this.usernameInput = page.locator('[data-testid="settings-view"] input[type="text"], [data-testid="settings-view"] input[placeholder*="username"]').first();
+    this.profileSection = page
+      .locator('[data-testid="settings-view"]')
+      .locator("text=/Profile|Account/i")
+      .locator("..")
+      .locator("..");
+    this.usernameInput = page
+      .locator(
+        '[data-testid="settings-view"] input[type="text"], [data-testid="settings-view"] input[placeholder*="username"]'
+      )
+      .first();
     this.usernameEditButton = page.locator('[data-testid="settings-view"] button').filter({ hasText: /edit|Edit/i });
     this.usernameSaveButton = page.locator('[data-testid="settings-view"] button').filter({ hasText: /save|Save/i });
 
@@ -52,11 +62,17 @@ export class SettingsPage {
 
     // Account actions
     this.logoutButton = page.locator('[data-testid="settings-view"] button').filter({ hasText: /logout|sign out/i });
-    this.deleteAccountButton = page.locator('[data-testid="settings-view"] button').filter({ hasText: /delete.*account|remove.*account/i });
+    this.deleteAccountButton = page
+      .locator('[data-testid="settings-view"] button')
+      .filter({ hasText: /delete.*account|remove.*account/i });
 
     // Dialogs/Modals
-    this.deleteAccountDialog = page.locator('[role="dialog"], [data-testid*="dialog"]').filter({ hasText: /delete.*account|remove.*account/i });
-    this.confirmDeleteButton = page.locator('[role="dialog"] button').filter({ hasText: /confirm.*delete|delete.*account|yes.*delete/i });
+    this.deleteAccountDialog = page
+      .locator('[role="dialog"], [data-testid*="dialog"]')
+      .filter({ hasText: /delete.*account|remove.*account/i });
+    this.confirmDeleteButton = page
+      .locator('[role="dialog"] button')
+      .filter({ hasText: /confirm.*delete|delete.*account|yes.*delete/i });
 
     // Loading states
     this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');
@@ -159,6 +175,10 @@ export class SettingsPage {
   async expectOnSettingsPage() {
     await expect(this.page).toHaveURL(/\/settings/);
     await this.expectSettingsPageLoaded();
+  }
+
+  async expectOnPage() {
+    await this.expectOnSettingsPage();
   }
 
   // Helper methods for common settings operations

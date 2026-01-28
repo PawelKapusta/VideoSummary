@@ -117,47 +117,47 @@ export const ResetPasswordConfirmView: React.FC = () => {
       <AuthLayout
         title={showSuccess ? "Success!" : "Set New Password"}
         description={showSuccess ? "Your password has been reset" : "Create a secure password for your account"}
-      footer={
-        !showSuccess && (
-          <div className="text-center">
-            <a
-              href="/login"
-              className="font-semibold text-slate-600 hover:text-blue-600 transition-colors underline-offset-4 hover:underline"
-            >
-              ← Back to Login
-            </a>
+        footer={
+          !showSuccess && (
+            <div className="text-center">
+              <a
+                href="/login"
+                className="font-semibold text-slate-600 hover:text-blue-600 transition-colors underline-offset-4 hover:underline"
+              >
+                ← Back to Login
+              </a>
+            </div>
+          )
+        }
+      >
+        {showSuccess ? (
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex flex-col items-center gap-6 py-4 text-center"
+          >
+            <div className="rounded-full bg-green-500/10 p-5 ring-1 ring-green-500/20">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-base text-slate-600 font-medium">Your password has been updated.</p>
+              <p className="text-sm text-slate-400">Redirecting you to login...</p>
+            </div>
+          </motion.div>
+        ) : token ? (
+          <ResetPasswordForm
+            formState={formState}
+            handleInputChange={handleInputChange}
+            handleBlur={handleBlur}
+            handleSubmit={handleFormSubmit}
+            isSubmitting={formState.isSubmitting}
+          />
+        ) : (
+          <div className="flex justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           </div>
-        )
-      }
-    >
-      {showSuccess ? (
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center gap-6 py-4 text-center"
-        >
-          <div className="rounded-full bg-green-500/10 p-5 ring-1 ring-green-500/20">
-            <CheckCircle className="h-10 w-10 text-green-600" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-base text-slate-600 font-medium">Your password has been updated.</p>
-            <p className="text-sm text-slate-400">Redirecting you to login...</p>
-          </div>
-        </motion.div>
-      ) : token ? (
-        <ResetPasswordForm
-          formState={formState}
-          handleInputChange={handleInputChange}
-          handleBlur={handleBlur}
-          handleSubmit={handleFormSubmit}
-          isSubmitting={formState.isSubmitting}
-        />
-      ) : (
-        <div className="flex justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        </div>
-      )}
-    </AuthLayout>
+        )}
+      </AuthLayout>
     </div>
   );
 };

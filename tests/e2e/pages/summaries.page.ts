@@ -36,7 +36,9 @@ export class SummariesPage {
 
     // Header elements
     this.summariesTitle = page.locator('[data-testid="summaries-view"] h1').filter({ hasText: /Summaries|summaries/i });
-    this.summariesDescription = page.locator('[data-testid="summaries-view"] p').filter({ hasText: /Browse|manage|filter/i });
+    this.summariesDescription = page
+      .locator('[data-testid="summaries-view"] p')
+      .filter({ hasText: /Browse|manage|filter/i });
 
     // Filter components
     this.filterPanel = page.locator('[data-testid="filter-panel"]');
@@ -95,7 +97,7 @@ export class SummariesPage {
     return await this.summaryCards.count();
   }
 
-  async clickSummaryCard(index: number = 0) {
+  async clickSummaryCard(index = 0) {
     const card = this.summaryCards.nth(index);
     await expect(card).toBeVisible();
     await card.click();
@@ -112,11 +114,11 @@ export class SummariesPage {
 
     let ratingButton: Locator;
     if (rating === true) {
-      ratingButton = card.locator('button').filter({ hasText: /thumbs up|like|positive/i });
+      ratingButton = card.locator("button").filter({ hasText: /thumbs up|like|positive/i });
     } else if (rating === false) {
-      ratingButton = card.locator('button').filter({ hasText: /thumbs down|dislike|negative/i });
+      ratingButton = card.locator("button").filter({ hasText: /thumbs down|dislike|negative/i });
     } else {
-      ratingButton = card.locator('button').filter({ hasText: /neutral|clear/i });
+      ratingButton = card.locator("button").filter({ hasText: /neutral|clear/i });
     }
 
     await expect(ratingButton).toBeVisible();
@@ -127,12 +129,12 @@ export class SummariesPage {
     const card = this.summaryCards.nth(index);
     await expect(card).toBeVisible();
 
-    const hideButton = card.locator('button').filter({ hasText: /hide|Hide/i });
+    const hideButton = card.locator("button").filter({ hasText: /hide|Hide/i });
     await expect(hideButton).toBeVisible();
     await hideButton.click();
 
     // Handle confirmation if present
-    const confirmButton = this.page.locator('button').filter({ hasText: /confirm|yes|hide/i });
+    const confirmButton = this.page.locator("button").filter({ hasText: /confirm|yes|hide/i });
     if (await confirmButton.isVisible()) {
       await confirmButton.click();
     }
@@ -142,7 +144,7 @@ export class SummariesPage {
     const card = this.summaryCards.nth(index);
     await expect(card).toBeVisible();
 
-    const regenerateButton = card.locator('button').filter({ hasText: /regenerate|Regenerate/i });
+    const regenerateButton = card.locator("button").filter({ hasText: /regenerate|Regenerate/i });
     await expect(regenerateButton).toBeVisible();
     await regenerateButton.click();
   }
@@ -150,6 +152,10 @@ export class SummariesPage {
   async expectOnSummariesPage() {
     await expect(this.page).toHaveURL(/\/summaries/);
     await this.expectSummariesPageLoaded();
+  }
+
+  async expectOnPage() {
+    await this.expectOnSummariesPage();
   }
 
   // Filter methods

@@ -21,7 +21,7 @@ test.describe("Login Page", () => {
   });
 
   test.describe("Page Load", () => {
-    test("should display login form with all required elements", async ({ page }) => {
+    test("should display login form with all required elements", async () => {
       // Verify login form is visible
       await expect(authPage.loginForm).toBeVisible();
 
@@ -39,7 +39,7 @@ test.describe("Login Page", () => {
       await expect(page).toHaveTitle(/Log in|Login|Sign in/i);
     });
 
-    test("should show link to registration page", async ({ page }) => {
+    test("should show link to registration page", async () => {
       await expect(authPage.registerLink).toBeVisible();
     });
 
@@ -86,27 +86,60 @@ test.describe("Login Page", () => {
 
   test.describe("Login Flow - Invalid Credentials", () => {
     test("should show error for wrong email", async ({ page }) => {
-      await authPage.login("nonexistent@example.com", "wrongpassword");
+      const errorMessage = page.locator('[data-testid="form-error-message"]');
 
-      // Wait for error message in alert - matches actual error text from backend
-      await expect(
-        page.locator('[data-testid="form-error-message"]').filter({ hasText: "Invalid email or password" })
-      ).toBeVisible({
-        timeout: 10000,
-      });
+      // Ensure no error message is visible before starting
+      await expect(errorMessage).not.toBeVisible();
+
+      // Fill login form with invalid credentials
+      await authPage.loginEmailInput.fill("nonexistent@example.com");
+      await authPage.loginPasswordInput.fill("WrongPassword123!");
+
+      // Click submit and wait for request to complete
+      const submitButton = authPage.loginButton;
+      await submitButton.click();
+
+      // Wait for the submit button to stop loading (request completed)
+      await expect(submitButton).not.toHaveText(/Signing In.../i, { timeout: 15000 });
+
+      // Wait for error message alert to appear
+      // First wait for the element to be in DOM
+      await errorMessage.waitFor({ state: "attached", timeout: 10000 });
+
+      // Then wait for it to be visible (handles animation)
+      await expect(errorMessage).toBeVisible({ timeout: 5000 });
+
+      // Finally verify the text content
+      await expect(errorMessage).toContainText("Invalid email or password");
     });
 
     test("should show error for wrong password", async ({ page }) => {
       const testEmail = process.env.E2E_USERNAME || "test@example.com";
+      const errorMessage = page.locator('[data-testid="form-error-message"]');
 
-      await authPage.login(testEmail, "definitely_wrong_password");
+      // Ensure no error message is visible before starting
+      await expect(errorMessage).not.toBeVisible();
 
-      // Wait for error message in alert - matches actual error text from backend
-      await expect(
-        page.locator('[data-testid="form-error-message"]').filter({ hasText: "Invalid email or password" })
-      ).toBeVisible({
-        timeout: 10000,
-      });
+      // Fill login form with wrong password
+      await authPage.loginEmailInput.fill(testEmail);
+      await authPage.loginPasswordInput.fill("WrongPassword123!");
+
+      // Click submit and wait for request to complete
+      const submitButton = authPage.loginButton;
+      await submitButton.click();
+
+      // Wait for the submit button to stop loading (request completed)
+      await expect(submitButton).not.toHaveText(/Signing In.../i, { timeout: 15000 });
+
+      // Wait for error message alert to appear
+      // First wait for the element to be in DOM
+      await errorMessage.waitFor({ state: "attached", timeout: 10000 });
+
+      // Then wait for it to be visible (handles animation)
+      await expect(errorMessage).toBeVisible({ timeout: 5000 });
+
+      // Finally verify the text content
+      await expect(errorMessage).toContainText("Invalid email or password");
     });
   });
 

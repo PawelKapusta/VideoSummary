@@ -50,31 +50,63 @@ export class SummaryDetailsPage {
     this.summaryDetailsView = page.locator('[data-testid="summary-details-view"]');
 
     // Video header section
-    this.videoHeader = page.locator('[data-testid="summary-details-view"]').locator('.video-header, header').first();
-    this.videoTitle = page.locator('[data-testid="summary-details-view"] h1, [data-testid="summary-details-view"] [data-testid*="title"]').first();
+    this.videoHeader = page.locator('[data-testid="summary-details-view"]').locator(".video-header, header").first();
+    this.videoTitle = page
+      .locator('[data-testid="summary-details-view"] h1, [data-testid="summary-details-view"] [data-testid*="title"]')
+      .first();
     this.videoThumbnail = page.locator('[data-testid="summary-details-view"] img').first();
-    this.channelInfo = page.locator('[data-testid="summary-details-view"]').locator('text=/Channel|By/i').locator('..');
-    this.videoMetadata = page.locator('[data-testid="summary-details-view"]').locator('text=/Published|Duration|Views/i').locator('..');
+    this.channelInfo = page.locator('[data-testid="summary-details-view"]').locator("text=/Channel|By/i").locator("..");
+    this.videoMetadata = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator("text=/Published|Duration|Views/i")
+      .locator("..");
 
     // Summary content
-    this.summaryContent = page.locator('[data-testid="summary-details-view"]').locator('.summary-content, [data-testid*="summary"]').first();
-    this.summaryText = page.locator('[data-testid="summary-details-view"]').locator('text=/Summary|Content/i').locator('..');
-    this.summaryMetadata = page.locator('[data-testid="summary-details-view"]').locator('text=/Generated|Status|Rating/i').locator('..');
+    this.summaryContent = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator('.summary-content, [data-testid*="summary"]')
+      .first();
+    this.summaryText = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator("text=/Summary|Content/i")
+      .locator("..");
+    this.summaryMetadata = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator("text=/Generated|Status|Rating/i")
+      .locator("..");
 
     // Rating section
-    this.ratingSection = page.locator('[data-testid="summary-details-view"]').locator('[data-testid*="rating"], .rating').first();
-    this.thumbsUpButton = page.locator('[data-testid="summary-details-view"] button').filter({ hasText: /thumbs up|like|positive|👍/i });
-    this.thumbsDownButton = page.locator('[data-testid="summary-details-view"] button').filter({ hasText: /thumbs down|dislike|negative|👎/i });
-    this.currentRating = page.locator('[data-testid="summary-details-view"]').locator('text=/Your rating|Rated/i').locator('..');
+    this.ratingSection = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator('[data-testid*="rating"], .rating')
+      .first();
+    this.thumbsUpButton = page
+      .locator('[data-testid="summary-details-view"] button')
+      .filter({ hasText: /thumbs up|like|positive|👍/i });
+    this.thumbsDownButton = page
+      .locator('[data-testid="summary-details-view"] button')
+      .filter({ hasText: /thumbs down|dislike|negative|👎/i });
+    this.currentRating = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator("text=/Your rating|Rated/i")
+      .locator("..");
 
     // Action buttons
-    this.regenerateButton = page.locator('[data-testid="summary-details-view"] button').filter({ hasText: /regenerate|Regenerate/i });
+    this.regenerateButton = page
+      .locator('[data-testid="summary-details-view"] button')
+      .filter({ hasText: /regenerate|Regenerate/i });
     this.hideButton = page.locator('[data-testid="summary-details-view"] button').filter({ hasText: /hide|Hide/i });
     this.shareButton = page.locator('[data-testid="summary-details-view"] button').filter({ hasText: /share|Share/i });
 
     // Status indicators
-    this.statusBadge = page.locator('[data-testid="summary-details-view"]').locator('[data-testid*="badge"], .badge').filter({ hasText: /completed|pending|failed/i });
-    this.processingIndicator = page.locator('[data-testid="summary-details-view"]').locator('text=/processing|generating|loading/i').locator('..');
+    this.statusBadge = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator('[data-testid*="badge"], .badge')
+      .filter({ hasText: /completed|pending|failed/i });
+    this.processingIndicator = page
+      .locator('[data-testid="summary-details-view"]')
+      .locator("text=/processing|generating|loading/i")
+      .locator("..");
 
     // Loading states
     this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');
@@ -109,7 +141,7 @@ export class SummaryDetailsPage {
   }
 
   async getSummaryText(): Promise<string> {
-    return await this.summaryText.textContent() || "";
+    return (await this.summaryText.textContent()) || "";
   }
 
   async expectRatingSectionVisible() {
@@ -154,7 +186,7 @@ export class SummaryDetailsPage {
     await this.hideButton.click();
 
     // Handle confirmation dialog if present
-    const confirmButton = this.page.locator('button').filter({ hasText: /confirm|yes|hide/i });
+    const confirmButton = this.page.locator("button").filter({ hasText: /confirm|yes|hide/i });
     if (await confirmButton.isVisible()) {
       await confirmButton.click();
     }
@@ -205,10 +237,10 @@ export class SummaryDetailsPage {
   }
 
   async getVideoTitle(): Promise<string> {
-    return await this.videoTitle.textContent() || "";
+    return (await this.videoTitle.textContent()) || "";
   }
 
   async getChannelName(): Promise<string> {
-    return await this.channelInfo.textContent() || "";
+    return (await this.channelInfo.textContent()) || "";
   }
 }
