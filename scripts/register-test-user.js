@@ -105,7 +105,32 @@ async function checkUser() {
     console.log("\n✅ Login successful!");
     console.log("   User ID:", loginData.user?.id);
     console.log("   Email:", loginData.user?.email);
-    console.log("   Session expires:", new Date(loginData.session?.expires_at || 0).toISOString());
+    console.log("   Has access token:", !!loginData.session?.access_token);
+    console.log("   Has refresh token:", !!loginData.session?.refresh_token);
+    
+    if (loginData.session?.expires_at) {
+      console.log("   Session expires at (raw):", loginData.session.expires_at);
+      console.log("   Session expires at (type):", typeof loginData.session.expires_at);
+      
+      const expiresDate = new Date(loginData.session.expires_at);
+      console.log("   Session expires at (parsed):", expiresDate.toISOString());
+      
+      // Check if session is valid (not expired)
+      const now = new Date();
+      const timeUntilExpiry = expiresDate.getTime() - now.getTime();
+      const hoursUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60 * 60));
+      
+      if (expiresDate > now) {
+        console.log(`   ✓ Session is valid! Expires in ~${hoursUntilExpiry} hours`);
+      } else {
+        console.log("   ⚠ WARNING: Session appears to be expired!");
+        console.log("   💡 This might indicate email confirmation is required.");
+      }
+    } else {
+      console.log("   ⚠ WARNING: No session expiration time!");
+      console.log("   💡 This usually means email confirmation is required.");
+    }
+    
     console.log("   ✓ Test user is ready for E2E tests!");
     process.exit(0);
   }
