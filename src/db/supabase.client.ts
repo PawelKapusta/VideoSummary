@@ -5,6 +5,9 @@ import { createTraceHeaders } from "../lib/trace.ts";
 import type { APIContext } from "astro";
 import { requireEnv, type RuntimeEnv } from "../lib/env.ts";
 
+// Flag to log Supabase URL only once (for debugging)
+let serverClientInitLogged = false;
+
 // Helper functions to get environment variables with fallback values
 const getSupabaseUrl = (runtimeEnv?: RuntimeEnv) => {
   const value = requireEnv("SUPABASE_URL", runtimeEnv);
@@ -61,7 +64,15 @@ export const createSupabaseServerClient = (context: APIContext, traceId?: string
   // Get runtime env from Cloudflare context
   const runtimeEnv = context.locals.runtime?.env as RuntimeEnv;
 
-  return createServerClient<Database>(getSupabaseUrl(runtimeEnv), getSupabaseAnonKey(runtimeEnv), {
+  const supabaseUrl = getSupabaseUrl(runtimeEnv);
+  
+  // Log Supabase URL on first request (for debugging env issues in CI)
+  if (!serverClientInitLogged) {
+    serverClientInitLogged = true;
+    console.log(`[Supabase] Server client initialized with URL: ${supabaseUrl.substring(0, 30)}...`);
+  }
+
+  return createServerClient<Database>(supabaseUrl, getSupabaseAnonKey(runtimeEnv), {
     cookies: {
       getAll() {
         return parseCookieHeader(context.request.headers.get("Cookie") ?? "") as { name: string; value: string }[];

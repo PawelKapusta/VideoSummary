@@ -17,6 +17,7 @@ import { spawn } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import { existsSync, renameSync, copyFileSync, unlinkSync } from "fs";
+import dotenv from "dotenv";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -99,25 +100,24 @@ process.on("SIGTERM", () => {
   process.exit(0);
 });
 
+// Load .env.test into process.env so we can pass it to Astro
+// This is critical - copying the file alone doesn't load it into this process
+dotenv.config({ path: envTestPath });
+
 console.log("✅ E2E environment configured");
 console.log("🚀 Starting Astro dev server on port 3001...\n");
 
-// In CI, explicitly pass environment variables to ensure Astro has access
-// This is critical because child process env inheritance can be unreliable
+// Build environment for Astro process
+// Priority: process.env (from .env.test we just loaded + CI env vars)
 const astroEnv = {
   ...process.env,
-  // Explicitly set critical variables (they might come from CI secrets or .env.test)
-  SUPABASE_URL: process.env.SUPABASE_URL,
-  SUPABASE_KEY: process.env.SUPABASE_KEY,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  E2E_USERNAME: process.env.E2E_USERNAME,
-  E2E_PASSWORD: process.env.E2E_PASSWORD,
 };
 
+// Log what we're passing to Astro (helpful for debugging)
 if (isCI) {
-  console.log("🔑 Passing environment variables to Astro process:");
-  console.log("   SUPABASE_URL:", astroEnv.SUPABASE_URL ? "✓ set" : "✗ missing");
-  console.log("   SUPABASE_KEY:", astroEnv.SUPABASE_KEY ? "✓ set" : "✗ missing");
+  console.log("🔑 Environment variables for Astro process:");
+  console.log("   SUPABASE_URL:", process.env.SUPABASE_URL ? `✓ set (${process.env.SUPABASE_URL.substring(0, 25)}...)` : "✗ missing");
+  console.log("   SUPABASE_KEY:", process.env.SUPABASE_KEY ? "✓ set" : "✗ missing");
 }
 
 // Run Astro dev server with explicit env
