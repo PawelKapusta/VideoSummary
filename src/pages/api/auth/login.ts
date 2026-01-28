@@ -41,6 +41,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Use Supabase client from middleware (already configured with trace ID)
   const supabase = locals.supabase;
 
+  // Debug: Log Supabase URL to diagnose connection issues (temporary)
+  console.log(`[Login Debug] SUPABASE_URL source check:`);
+  console.log(`  process.env: ${process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 35) + "..." : "NOT_SET"}`);
+  console.log(`  import.meta.env: ${import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL).substring(0, 35) + "..." : "NOT_SET"}`);
+  console.log(`  CI env: ${process.env.CI || "NOT_SET"}`);
+
   try {
     // Parse request body
     const body = await request.json();
