@@ -3,8 +3,8 @@ import { useInView } from "react-intersection-observer";
 import SummaryCard from "./SummaryCard";
 import type { SummaryWithVideo, PaginatedResponse } from "../../types";
 import type { InfiniteData } from "@tanstack/react-query";
-import FuturisticSkeleton from "./FuturisticSkeleton";
 import AppLoader from "../ui/AppLoader";
+import BouncingDots from "../ui/BouncingDots";
 
 interface Props {
   data?: InfiniteData<PaginatedResponse<SummaryWithVideo>>;
@@ -98,8 +98,8 @@ const SummaryList: React.FC<Props> = memo(
         </div>
         <div ref={ref} className="h-10" />
         {isFetchingNextPage && (
-          <div className="text-center py-4">
-            <FuturisticSkeleton />
+          <div className="flex justify-center py-8">
+            <BouncingDots size="md" color="blue" />
           </div>
         )}
         {!hasNextPage && flattenedData.length > 10 && (
