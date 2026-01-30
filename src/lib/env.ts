@@ -31,15 +31,32 @@ export function getEnv(key: string, runtimeEnv?: RuntimeEnv): string | undefined
  * Require an environment variable, throw if not found
  * @param key - Environment variable name
  * @param runtimeEnv - Optional Cloudflare runtime env object from context.locals.runtime.env
+ * @param allowPlaceholder - If true, return placeholder during build time (default: false for runtime safety)
  */
-export function requireEnv(key: string, runtimeEnv?: RuntimeEnv): string {
+export function requireEnv(key: string, runtimeEnv?: RuntimeEnv, allowPlaceholder = false): string {
   const value = getEnv(key, runtimeEnv);
   if (!value) {
-    // In Cloudflare Pages runtime, environment variables might be available later
-    // Return a placeholder that will be checked again at runtime
-    // Note: This is expected during build time - variables will be available in runtime
-    return `__PLACEHOLDER_${key}__`;
+    // If allowPlaceholder is explicitly true, return placeholder
+    // This is used during build time when variables will be available at runtime
+    if (allowPlaceholder) {
+      return `__PLACEHOLDER_${key}__`;
+    }
+
+    // Runtime: throw error if variable is missing
+    throw new Error(
+      `Required environment variable "${key}" is not set. ` +
+        `Please configure it in Cloudflare Pages Settings → Environment variables (Production environment).`
+    );
   }
+
+  // Check if we got a placeholder from build time
+  if (value.startsWith("__PLACEHOLDER_")) {
+    throw new Error(
+      `Environment variable "${key}" is using a build-time placeholder. ` +
+        `Please configure it in Cloudflare Pages Settings → Environment variables (Production environment).`
+    );
+  }
+
   return value;
 }
 

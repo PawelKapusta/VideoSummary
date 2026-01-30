@@ -10,7 +10,7 @@ let serverClientInitLogged = false;
 
 // Helper functions to get environment variables with fallback values
 const getSupabaseUrl = (runtimeEnv?: RuntimeEnv) => {
-  const value = requireEnv("SUPABASE_URL", runtimeEnv);
+  const value = requireEnv("SUPABASE_URL", runtimeEnv, true); // Allow placeholder during build
   if (value && !value.startsWith("__PLACEHOLDER_")) {
     return value;
   }
@@ -19,7 +19,7 @@ const getSupabaseUrl = (runtimeEnv?: RuntimeEnv) => {
 };
 
 const getSupabaseAnonKey = (runtimeEnv?: RuntimeEnv) => {
-  const value = requireEnv("SUPABASE_KEY", runtimeEnv);
+  const value = requireEnv("SUPABASE_KEY", runtimeEnv, true); // Allow placeholder during build
   if (value && !value.startsWith("__PLACEHOLDER_")) {
     return value;
   }
@@ -28,7 +28,7 @@ const getSupabaseAnonKey = (runtimeEnv?: RuntimeEnv) => {
 };
 
 const getSupabaseServiceRoleKey = (runtimeEnv?: RuntimeEnv) => {
-  const value = requireEnv("SUPABASE_SERVICE_ROLE_KEY", runtimeEnv);
+  const value = requireEnv("SUPABASE_SERVICE_ROLE_KEY", runtimeEnv, true); // Allow placeholder during build
   if (value && !value.startsWith("__PLACEHOLDER_")) {
     return value;
   }
@@ -65,7 +65,7 @@ export const createSupabaseServerClient = (context: APIContext, traceId?: string
   const runtimeEnv = context.locals.runtime?.env as RuntimeEnv;
 
   const supabaseUrl = getSupabaseUrl(runtimeEnv);
-  
+
   // Log Supabase URL on first request (for debugging env issues in CI)
   if (!serverClientInitLogged) {
     serverClientInitLogged = true;

@@ -18,14 +18,14 @@ test.describe("Registration Page - Existing User", () => {
     await emailInput.fill(existingEmail as string);
     await emailInput.blur();
     await page.waitForTimeout(200);
-    
+
     await passwordInputs.first().fill(password);
     await passwordInputs.first().blur();
     await page.waitForTimeout(200);
-    
+
     await passwordInputs.nth(1).fill(password); // Confirm password must match
     await passwordInputs.nth(1).blur();
-    
+
     // Wait longer for validation
     await page.waitForTimeout(1000);
 

@@ -35,13 +35,13 @@ let envWasRenamed = false;
 if (isCI) {
   // CI/CD mode: Create .env from .env.test for Astro to load
   console.log("🤖 CI environment detected - creating .env from .env.test");
-  
+
   if (!existsSync(envTestPath)) {
     console.error("❌ .env.test file not found in CI!");
     console.error("   The CI workflow should create .env.test before running tests.");
     process.exit(1);
   }
-  
+
   // Copy .env.test to .env so Astro loads it
   console.log("📋 Copying .env.test to .env for Astro to load");
   copyFileSync(envTestPath, envPath);
@@ -116,7 +116,10 @@ const astroEnv = {
 // Log what we're passing to Astro (helpful for debugging)
 if (isCI) {
   console.log("🔑 Environment variables for Astro process:");
-  console.log("   SUPABASE_URL:", process.env.SUPABASE_URL ? `✓ set (${process.env.SUPABASE_URL.substring(0, 25)}...)` : "✗ missing");
+  console.log(
+    "   SUPABASE_URL:",
+    process.env.SUPABASE_URL ? `✓ set (${process.env.SUPABASE_URL.substring(0, 25)}...)` : "✗ missing"
+  );
   console.log("   SUPABASE_KEY:", process.env.SUPABASE_KEY ? "✓ set" : "✗ missing");
 }
 

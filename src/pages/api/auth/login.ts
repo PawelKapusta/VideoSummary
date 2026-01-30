@@ -43,7 +43,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   // Debug: Log credentials to diagnose connection issues (TEMPORARY - REMOVE AFTER DEBUGGING)
   console.warn("[DEBUG] SUPABASE_URL process.env:", process.env.SUPABASE_URL || "NOT_SET");
-  console.warn("[DEBUG] SUPABASE_URL import.meta:", import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL) : "NOT_SET");
+  console.warn(
+    "[DEBUG] SUPABASE_URL import.meta:",
+    import.meta.env.SUPABASE_URL ? String(import.meta.env.SUPABASE_URL) : "NOT_SET"
+  );
 
   try {
     // Parse request body
@@ -99,8 +102,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // Log failed login attempt with full debug info (TEMPORARY - REMOVE AFTER DEBUGGING)
       console.warn("[DEBUG] Login FAILED for email:", email);
       console.warn("[DEBUG] Supabase error:", error.message, "status:", error.status);
-      console.warn("[DEBUG] Using SUPABASE_URL:", process.env.SUPABASE_URL || import.meta.env.SUPABASE_URL || "NOT_SET");
-      
+      console.warn(
+        "[DEBUG] Using SUPABASE_URL:",
+        process.env.SUPABASE_URL || import.meta.env.SUPABASE_URL || "NOT_SET"
+      );
+
       securityLogger.authFailure("User login failed", {
         error_type: "invalid_credentials",
         supabase_status: error.status,

@@ -23,7 +23,7 @@ test.describe("Login Page - Invalid Credentials", () => {
 
     // Should remain on login page (not redirect to dashboard)
     await expect(page).toHaveURL(/\/login/);
-    
+
     // Button should be back to "Sign In" (not loading)
     await expect(submitButton).toHaveText(/Sign In/i);
   });
@@ -44,7 +44,7 @@ test.describe("Login Page - Invalid Credentials", () => {
 
     // Should remain on login page (not redirect to dashboard)
     await expect(page).toHaveURL(/\/login/);
-    
+
     // Button should be back to "Sign In" (not loading)
     await expect(submitButton).toHaveText(/Sign In/i);
   });

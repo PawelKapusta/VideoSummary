@@ -28,7 +28,7 @@ test.describe("Registration Page - Form Validation", () => {
     // Clear email and trigger blur to show validation error
     await emailInput.clear();
     await emailInput.blur();
-    
+
     // Wait for validation to process
     await page.waitForTimeout(200);
 

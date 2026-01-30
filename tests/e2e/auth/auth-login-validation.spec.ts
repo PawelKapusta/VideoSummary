@@ -22,9 +22,9 @@ test.describe("Login Page - Form Validation", () => {
   test("should show error for empty password", async ({ page }) => {
     // Fill email, leave password empty, try to submit
     await authPage.loginEmailInput.fill("test@example.com");
-    
+
     // Don't fill password - leave it empty
-    
+
     // Try to submit
     await authPage.loginButton.click();
 

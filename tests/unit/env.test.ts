@@ -88,25 +88,30 @@ describe("Environment Variables Utilities", () => {
       expect(result).toBe("found_value");
     });
 
-    it("should return placeholder when value not found", () => {
+    it("should throw error when value not found in runtime", () => {
       const runtimeEnv: RuntimeEnv = {};
 
-      const result = requireEnv("TEST_VAR", runtimeEnv);
-      expect(result).toBe("__PLACEHOLDER_TEST_VAR__");
+      expect(() => requireEnv("TEST_VAR", runtimeEnv)).toThrow('Required environment variable "TEST_VAR" is not set');
     });
 
-    it("should return placeholder for empty string value", () => {
+    it("should throw error for empty string value in runtime", () => {
       const runtimeEnv: RuntimeEnv = { TEST_VAR: "" };
 
-      const result = requireEnv("TEST_VAR", runtimeEnv);
+      expect(() => requireEnv("TEST_VAR", runtimeEnv)).toThrow('Required environment variable "TEST_VAR" is not set');
+    });
+
+    it("should return placeholder when allowPlaceholder is true", () => {
+      const runtimeEnv: RuntimeEnv = {};
+
+      const result = requireEnv("TEST_VAR", runtimeEnv, true);
       expect(result).toBe("__PLACEHOLDER_TEST_VAR__");
     });
 
-    it("should work with different variable names", () => {
+    it("should work with different variable names when allowPlaceholder is true", () => {
       const runtimeEnv: RuntimeEnv = {};
 
-      expect(requireEnv("API_KEY", runtimeEnv)).toBe("__PLACEHOLDER_API_KEY__");
-      expect(requireEnv("DATABASE_URL", runtimeEnv)).toBe("__PLACEHOLDER_DATABASE_URL__");
+      expect(requireEnv("API_KEY", runtimeEnv, true)).toBe("__PLACEHOLDER_API_KEY__");
+      expect(requireEnv("DATABASE_URL", runtimeEnv, true)).toBe("__PLACEHOLDER_DATABASE_URL__");
     });
   });
 
