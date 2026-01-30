@@ -43,7 +43,7 @@ jobs:
     name: Test Before Deploy
     needs: [validate]
     if: |
-      (needs.validate.outputs.is_deployment_tag != 'true' || inputs.skip_tests == false)
+      needs.validate.outputs.is_deployment_tag != 'true' || !inputs.skip_tests
     uses: ./.github/workflows/tests.yml
     secrets: inherit
     with:
