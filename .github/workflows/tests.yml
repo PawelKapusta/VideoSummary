@@ -1,0 +1,156 @@
+name: Tests
+
+on:
+  workflow_call:
+    inputs:
+      run_e2e:
+        description: 'Run E2E tests'
+        required: false
+        default: false
+        type: boolean
+      git_ref:
+        description: 'Git ref to test'
+        required: false
+        default: ''
+        type: string
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: 'Run E2E tests'
+        required: false
+        default: true
+        type: boolean
+      git_ref:
+        description: 'Git ref to test (commit SHA, tag, or branch)'
+        required: false
+        default: 'main'
+        type: string
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref || github.sha }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      
+      - run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref || github.sha }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      
+      - run: npm ci
+      
+      - name: Run Astro TS Check
+        run: npm run typecheck
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref || github.sha }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      
+      - run: npm ci
+      
+      - name: Run Vitest
+        run: npm run test
+
+  e2e-tests:
+    name: E2E (${{ matrix.project }})
+    needs: [lint, typecheck, unit-tests]
+    runs-on: ubuntu-latest
+    if: inputs.run_e2e == true
+    environment: testing
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - "landing page"
+          - "landing page mobile"
+          - "auth tests"
+          - "auth tests mobile"
+          # - "videos e2e ui"
+          # - "videos e2e api"
+          # - "videos mobile ui"
+          # - "videos mobile api"
+          # - "dashboard e2e"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Create .env.test for E2E tests
+        run: |
+          cat > .env.test << EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_USERNAME=${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
+          E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
+          EOF
+
+      - name: Verify Test User
+        if: contains(matrix.project, 'auth')
+        run: node scripts/verify-test-user.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+      - name: Run Playwright Tests
+        run: npx playwright test --project="${{ matrix.project }}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_USERNAME_ID: ${{ secrets.E2E_USERNAME_ID }}
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 3

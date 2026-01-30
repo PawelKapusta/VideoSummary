@@ -306,26 +306,32 @@ Video Summary uses Supabase with the following main tables:
 - Follow conventional commit messages
 - Use the established project structure for consistency
 
-## 🤝 Contributing
+## 🏗️ CI/CD Architecture
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Video Summary uses a modern, modular CI/CD pipeline with GitHub Actions for automated testing and deployment.
 
-### Development Workflow
+### Workflows
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Run the test suite: `npm test` and `npm run test:e2e`
-5. Commit your changes: `git commit -m 'Add amazing feature'`
-6. Push to the branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
+- **`tests.yml`** - Reusable test workflow (lint, typecheck, unit tests, E2E tests)
+- **`ci.yml`** - Continuous integration for PRs and main branch
+- **`deploy.yml`** - Manual production deployment with approval
+- **`preview.yml`** - Automatic preview deployments for pull requests
 
-### Code Style
+### Key Features
 
-- Use TypeScript for all new code
-- Follow the existing patterns for component structure
-- Add JSDoc comments for complex functions
-- Ensure all tests pass before submitting PRs
+- ✅ **Smart Testing Strategy**: Fast tests on PRs (~2-3 min), full E2E tests on main (~15-20 min)
+- ✅ **Preview Deployments**: Automatic preview for every PR on Cloudflare Pages
+- ✅ **Deployment Tags**: Auto-created tags (`deploy-*`) mark tested commits ready for production
+- ✅ **Easy Rollback**: Deploy any previous deployment tag with one click
+- ✅ **Environment Protection**: Production deployments require manual approval
+
+### Deployment Flow
+
+1. Create PR → Fast tests + preview deployment
+2. Merge to main → Full tests + deployment tag created
+3. Manual deployment → Select deployment tag → Approve → Deploy to production
+
+For detailed documentation, see [`.github/workflows/README.md`](.github/workflows/README.md) or the [Quick Start Guide](.github/workflows/QUICKSTART.md).
 
 ### Logging & Monitoring
 

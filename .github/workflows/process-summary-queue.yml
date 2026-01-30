@@ -2,8 +2,8 @@ name: Process Summary Queue
 
 on:
   schedule:
-    # Every 10 minutes - process pending summary queue items
-    - cron: "*/10 * * * *"
+    # Every 2 hours - process pending summary queue items
+    - cron: "0 */2 * * *"
   workflow_dispatch:
 
 jobs:

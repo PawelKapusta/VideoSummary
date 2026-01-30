@@ -1,0 +1,135 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: 'Git ref to deploy (commit SHA, tag, or branch). Use deployment tags (deploy-*) for tested commits.'
+        required: true
+        default: 'main'
+        type: string
+      skip_tests:
+        description: 'Skip tests (only if git_ref is a deployment tag that already passed tests)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate:
+    name: Validate Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      is_deployment_tag: ${{ steps.check.outputs.is_deployment_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+          fetch-depth: 0
+      
+      - name: Check if deployment tag
+        id: check
+        run: |
+          if [[ "${{ inputs.git_ref }}" == deploy-* ]]; then
+            echo "is_deployment_tag=true" >> $GITHUB_OUTPUT
+            echo "### ℹ️ Deploying from deployment tag" >> $GITHUB_STEP_SUMMARY
+            echo "Tag \`${{ inputs.git_ref }}\` has already passed all tests." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "is_deployment_tag=false" >> $GITHUB_OUTPUT
+            echo "### ⚠️ Deploying from non-deployment ref" >> $GITHUB_STEP_SUMMARY
+            echo "Ref \`${{ inputs.git_ref }}\` will be tested before deployment." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  test:
+    name: Test Before Deploy
+    needs: [validate]
+    if: |
+      (needs.validate.outputs.is_deployment_tag != 'true' || inputs.skip_tests == false)
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+    with:
+      run_e2e: true
+      git_ref: ${{ inputs.git_ref }}
+
+  build:
+    name: Build Application
+    needs: [validate, test]
+    if: |
+      always() && 
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application
+        run: npm run build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.run_id }}
+          path: dist/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.run_id }}
+          path: dist/
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch=main
+
+      - name: Create deployment record
+        run: |
+          echo "### 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Git Ref:** ${{ inputs.git_ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** $(git rev-parse HEAD)" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Rollback:** To rollback, run this workflow again with a previous deployment tag." >> $GITHUB_STEP_SUMMARY
+
+      - name: Create release tag
+        if: startsWith(inputs.git_ref, 'deploy-')
+        run: |
+          RELEASE_TAG="release-$(date +%Y%m%d-%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" -m "Production release from ${{ inputs.git_ref }}"
+          git push origin "$RELEASE_TAG"
+          echo "**Release Tag:** \`$RELEASE_TAG\`" >> $GITHUB_STEP_SUMMARY

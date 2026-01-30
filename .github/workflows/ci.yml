@@ -1,0 +1,49 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-pr:
+    name: Test PR
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+    with:
+      run_e2e: false
+
+  test-main:
+    name: Test Main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+    with:
+      run_e2e: true
+
+  create-deployment-tag:
+    name: Create Deployment Tag
+    needs: [test-main]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create deployment tag
+        run: |
+          TAG="deploy-$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA:0:7}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Deployment candidate from commit ${GITHUB_SHA}"
+          git push origin "$TAG"
+          echo "### ✅ Deployment Tag Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`$TAG\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${GITHUB_SHA}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This commit has passed all tests and is ready for deployment." >> $GITHUB_STEP_SUMMARY
+          echo "To deploy, run the [Deploy workflow](../actions/workflows/deploy.yml) with this tag." >> $GITHUB_STEP_SUMMARY
