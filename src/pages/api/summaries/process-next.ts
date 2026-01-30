@@ -53,8 +53,8 @@ export const POST: APIRoute = async ({ locals }) => {
     let SUPABASE_SERVICE_ROLE_KEY: string;
 
     try {
-      SUPABASE_URL = requireEnv("SUPABASE_URL");
-      SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+      SUPABASE_URL = requireEnv("SUPABASE_URL", runtimeEnv);
+      SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY", runtimeEnv);
 
       appLogger.info("Environment variables loaded", {
         hasSupabaseUrl: !!SUPABASE_URL,
