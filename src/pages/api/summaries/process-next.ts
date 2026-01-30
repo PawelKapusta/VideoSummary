@@ -42,14 +42,33 @@ export const POST: APIRoute = async ({ locals }) => {
     appLogger.info("Queue processing triggered", {
       endpoint: ENDPOINT_PATH,
       timestamp: new Date().toISOString(),
+      hasRuntimeEnv: !!locals.runtime?.env,
     });
 
     // Get runtime environment and create admin client
     const runtimeEnv = locals.runtime?.env as RuntimeEnv;
 
     // Create Supabase client with SERVICE ROLE key to bypass RLS
-    const SUPABASE_URL = requireEnv("SUPABASE_URL");
-    const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+    let SUPABASE_URL: string;
+    let SUPABASE_SERVICE_ROLE_KEY: string;
+
+    try {
+      SUPABASE_URL = requireEnv("SUPABASE_URL");
+      SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+
+      appLogger.info("Environment variables loaded", {
+        hasSupabaseUrl: !!SUPABASE_URL,
+        hasServiceRoleKey: !!SUPABASE_SERVICE_ROLE_KEY,
+        supabaseUrlLength: SUPABASE_URL?.length || 0,
+      });
+    } catch (envError) {
+      const errorMsg = envError instanceof Error ? envError.message : String(envError);
+      appLogger.error("Failed to load required environment variables", {
+        error: errorMsg,
+      });
+      throw new Error(`Environment configuration error: ${errorMsg}`);
+    }
+
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
         autoRefreshToken: false,

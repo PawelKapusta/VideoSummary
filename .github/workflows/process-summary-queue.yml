@@ -18,7 +18,12 @@ jobs:
         run: |
           TARGET_URL="${{ secrets.APP_URL || 'https://videosummary.org' }}/api/summaries/process-next"
 
-          echo "Processing queue at $TARGET_URL"
+          echo "🔍 Debugging information:"
+          echo "  - Target URL: $TARGET_URL"
+          echo "  - Has CRON_SECRET: ${{ secrets.CRON_SECRET != '' }}"
+          echo "  - Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo ""
+          echo "🚀 Processing queue at $TARGET_URL"
 
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "$TARGET_URL" \
@@ -30,13 +35,22 @@ jobs:
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
 
-          echo "Response Code: $http_code"
-          echo "Response Body: $body"
+          echo ""
+          echo "📊 Response Code: $http_code"
+          echo "📝 Response Body: $body"
+          echo ""
 
           # Success even if no items to process (200 with processed: false)
           if [ "$http_code" -ne 200 ]; then
-            echo "Failed to process queue."
+            echo "❌ Failed to process queue."
+            echo ""
+            echo "🔍 Troubleshooting tips:"
+            echo "  1. Check if CRON_SECRET is set in GitHub Secrets (production environment)"
+            echo "  2. Check if SUPABASE_URL is set in GitHub Secrets (production environment)"
+            echo "  3. Check if SUPABASE_SERVICE_ROLE_KEY is set in GitHub Secrets (production environment)"
+            echo "  4. Verify the secrets match your production Supabase project"
+            echo "  5. Check application logs for detailed error messages"
             exit 1
           fi
 
-          echo "Queue processing completed successfully"
+          echo "✅ Queue processing completed successfully"

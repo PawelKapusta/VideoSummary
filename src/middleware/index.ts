@@ -2,7 +2,7 @@ import { defineMiddleware } from "astro:middleware";
 import { createSupabaseServerClient } from "../db/supabase.client.ts";
 import { initializeLogging } from "../lib/logger.ts";
 import { getAwsTraceId } from "../lib/trace.ts";
-import { getEnv } from "../lib/env.ts";
+import { getEnv, type RuntimeEnv } from "../lib/env.ts";
 
 // Initialize logging once
 let loggingInitialized = false;
@@ -92,11 +92,42 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Allow access to cron endpoints in development or with valid cron secret
   const isDevelopment = import.meta.env.DEV;
-  const CRON_SECRET = getEnv("CRON_SECRET", locals.runtime?.env as any);
+  const CRON_SECRET = getEnv("CRON_SECRET", locals.runtime?.env as RuntimeEnv);
   const hasValidCronSecret = cronSecretHeader && CRON_SECRET && cronSecretHeader === CRON_SECRET;
 
-  if (cronProtectedPaths.includes(pathname) && (isDevelopment || hasValidCronSecret)) {
-    return next();
+  if (cronProtectedPaths.includes(pathname)) {
+    // Log cron endpoint access attempt for debugging
+    console.log("Cron endpoint access attempt:", {
+      pathname,
+      isDevelopment,
+      hasCronSecretHeader: !!cronSecretHeader,
+      hasCronSecretEnv: !!CRON_SECRET,
+      hasValidCronSecret,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (isDevelopment || hasValidCronSecret) {
+      return next();
+    }
+
+    // Return 401 if cron secret is invalid
+    console.error("Cron endpoint access denied:", {
+      pathname,
+      reason: !CRON_SECRET ? "CRON_SECRET not configured" : "Invalid cron secret provided",
+    });
+
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Invalid or missing cron secret",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   // If no user and trying to access protected route
