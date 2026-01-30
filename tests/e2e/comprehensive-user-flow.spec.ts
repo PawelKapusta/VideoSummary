@@ -76,7 +76,7 @@ test.describe("Comprehensive User Flows", () => {
       }
     });
 
-    test("should complete login flow with valid credentials", async ({ page }) => {
+    test("should complete login flow with valid credentials", async () => {
       // This test assumes test credentials are set up
       const testEmail = process.env.E2E_USERNAME;
       const testPassword = process.env.E2E_PASSWORD;
@@ -97,7 +97,7 @@ test.describe("Comprehensive User Flows", () => {
       await dashboardPage.expectAiDisclaimerVisible();
     });
 
-    test("should handle invalid login attempts", async ({ page }) => {
+    test("should handle invalid login attempts", async () => {
       await authPage.gotoLogin();
       await authPage.expectLoginPageLoaded();
 
@@ -127,7 +127,7 @@ test.describe("Comprehensive User Flows", () => {
       await dashboardPage.expectOnDashboardPage();
     });
 
-    test("should display dashboard with all elements", async ({ page }) => {
+    test("should display dashboard with all elements", async () => {
       await dashboardPage.expectDashboardLoaded();
       await dashboardPage.expectAiDisclaimerVisible();
 
@@ -140,7 +140,7 @@ test.describe("Comprehensive User Flows", () => {
       }
     });
 
-    test("should navigate to summary details from dashboard", async ({ page }) => {
+    test("should navigate to summary details from dashboard", async () => {
       const summaryCount = await dashboardPage.getSummaryCount();
 
       test.skip(summaryCount === 0, "No summaries available for testing");
@@ -166,7 +166,7 @@ test.describe("Comprehensive User Flows", () => {
       await profilePage.expectOnProfilePage();
     });
 
-    test("should display profile information correctly", async ({ page }) => {
+    test("should display profile information correctly", async () => {
       await profilePage.expectProfilePageLoaded();
       await profilePage.expectUserHeaderVisible();
       await profilePage.expectStatsSectionVisible();
@@ -194,7 +194,7 @@ test.describe("Comprehensive User Flows", () => {
       await expect(page.locator("text=Vercel")).not.toBeVisible();
     });
 
-    test("should display accurate statistics", async ({ page }) => {
+    test("should display accurate statistics", async () => {
       const totalSummaries = await profilePage.getTotalSummariesCount();
       const totalChannels = await profilePage.getTotalChannelsCount();
       const thisMonthSummaries = await profilePage.getThisMonthSummariesCount();
@@ -243,7 +243,7 @@ test.describe("Comprehensive User Flows", () => {
       }
     });
 
-    test("should validate YouTube URLs correctly", async ({ page }) => {
+    test("should validate YouTube URLs correctly", async () => {
       await generateSummaryPage.goto();
       await generateSummaryPage.expectGenerateSummaryPageLoaded();
 
@@ -289,7 +289,7 @@ test.describe("Comprehensive User Flows", () => {
       }
     });
 
-    test("should view summary details and rate summary", async ({ page }) => {
+    test("should view summary details and rate summary", async () => {
       const summaryCount = await summariesPage.getSummaryCount();
       test.skip(summaryCount === 0, "No summaries available for testing");
 
@@ -309,7 +309,7 @@ test.describe("Comprehensive User Flows", () => {
       await summaryDetailsPage.expectCurrentRating("negative");
     });
 
-    test("should hide and unhide summaries", async ({ page }) => {
+    test("should hide and unhide summaries", async () => {
       const summaryCount = await summariesPage.getSummaryCount();
       test.skip(summaryCount === 0, "No summaries available for testing");
 
@@ -355,13 +355,13 @@ test.describe("Comprehensive User Flows", () => {
       await settingsPage.expectOnSettingsPage();
     });
 
-    test("should display settings page correctly", async ({ page }) => {
+    test("should display settings page correctly", async () => {
       await settingsPage.expectSettingsPageLoaded();
       await settingsPage.expectProfileSectionVisible();
       await settingsPage.expectHiddenSummariesSectionVisible();
     });
 
-    test("should update username", async ({ page }) => {
+    test("should update username", async () => {
       const originalUsername = await settingsPage.getCurrentUsername();
       const newUsername = `TestUser${Date.now()}`;
 
@@ -411,7 +411,7 @@ test.describe("Comprehensive User Flows", () => {
       await hiddenSummariesPage.expectOnHiddenSummariesPage();
     });
 
-    test("should display hidden summaries page", async ({ page }) => {
+    test("should display hidden summaries page", async () => {
       await hiddenSummariesPage.expectHiddenSummariesPageLoaded();
       await hiddenSummariesPage.expectBackButtonVisible();
     });
@@ -423,7 +423,7 @@ test.describe("Comprehensive User Flows", () => {
       await expect(page).not.toHaveURL(/\/hidden/);
     });
 
-    test("should unhide all summaries when available", async ({ page }) => {
+    test("should unhide all summaries when available", async () => {
       const hiddenCount = await hiddenSummariesPage.getHiddenSummaryCount();
 
       if (hiddenCount > 0) {

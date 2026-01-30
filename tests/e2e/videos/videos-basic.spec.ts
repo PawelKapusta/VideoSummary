@@ -101,7 +101,6 @@ test.describe("Videos Page - Basic Functionality", () => {
     await videosPage.expectLoaded();
 
     // On mobile, cards should be in single column
-    const grid = videosPage.videosGrid;
     await expect(videosPage.videosGrid).toHaveClass(/grid-cols-1/);
   });
 

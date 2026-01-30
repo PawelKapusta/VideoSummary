@@ -329,15 +329,14 @@ export class VideosPage {
 
   // Toast methods
   get toasts() {
-    const self = this;
     return {
-      async expectSuccessToast(message: string) {
-        const toast = self.page.locator('[data-testid*="toast"]').filter({ hasText: message });
+      expectSuccessToast: async (message: string) => {
+        const toast = this.page.locator('[data-testid*="toast"]').filter({ hasText: message });
         await expect(toast).toBeVisible();
       },
 
-      async expectErrorToast(message: string) {
-        const toast = self.page.locator('[data-testid*="toast"]').filter({ hasText: message });
+      expectErrorToast: async (message: string) => {
+        const toast = this.page.locator('[data-testid*="toast"]').filter({ hasText: message });
         await expect(toast).toBeVisible();
       },
     };
@@ -390,7 +389,6 @@ export class VideosPage {
   // Videos grid methods
   get videosGridMethods() {
     const gridLocator = this.videosGrid;
-    const self = this;
     return {
       get videoCards() {
         return gridLocator.locator('[data-testid="video-card"]');

@@ -198,11 +198,9 @@ test.describe("Videos Page - Filtering Functionality", () => {
   test("VID-FILT-10: Filter bar is responsive", async ({ isMobile }) => {
     if (isMobile) {
       // On mobile, filters should stack vertically
-      const filterBar = videosPage.filterBar;
       await expect(videosPage.filterBar).toHaveClass(/flex-col/);
     } else {
       // On desktop, filters should be in a row
-      const filterBar = videosPage.filterBar;
       await expect(videosPage.filterBar).toHaveClass(/grid/);
     }
   });
