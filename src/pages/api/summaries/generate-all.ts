@@ -16,11 +16,17 @@ const ENDPOINT_PATH = "/api/summaries/generate-all";
  *
  * Process:
  * 1. Cleans up stale generations (stuck > 1 hour)
- * 2. Fetches all channels from the database
- * 3. For each channel, gets the latest video
- * 4. Checks if summary is needed (not generated today, video not too long)
+ * 2. Fetches all channels that have at least one subscription
+ * 3. For each channel, gets the latest video from YouTube API
+ * 4. Checks if summary is needed:
+ *    - Video must not have a completed summary already (regardless of date)
+ *    - Video must not be in queue (pending/in_progress)
+ *    - Video must not be too long (> 45 minutes)
  * 5. Adds videos to the summary_queue table
- * 6. Processes queue with parallel workers (3 concurrent)
+ * 6. Queue is processed by GitHub Actions workflow calling /api/summaries/process-next
+ *
+ * Daily generation rule: 1 summary per channel per day = 1 summary for latest video
+ * If a channel's latest video already has a summary, it's skipped (no duplicate summaries)
  *
  * Authentication: x-cron-secret header (validated in middleware)
  * Request Body: Empty (no parameters needed)
@@ -29,7 +35,7 @@ const ENDPOINT_PATH = "/api/summaries/generate-all";
  * {
  *   data: {
  *     id: string,                    // Bulk generation ID
- *     status: "pending",             // Initial status
+ *     status: "in_progress",         // Initial status
  *     message: string,               // Success message with queue stats
  *     estimated_completion_time: string // Estimated time in minutes
  *   }

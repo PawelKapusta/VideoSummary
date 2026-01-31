@@ -732,21 +732,6 @@ const STALE_GENERATION_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
 const MAX_VIDEO_DURATION_SECONDS = 2700; // 45 minutes
 
 // ---------------------------------------------------------------------------
-// Helper: Get UTC date boundaries for "today"
-// ---------------------------------------------------------------------------
-function getUTCDayBoundaries(): { todayStart: string; tomorrowStart: string } {
-  const now = new Date();
-  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const tomorrowStart = new Date(todayStart);
-  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
-
-  return {
-    todayStart: todayStart.toISOString(),
-    tomorrowStart: tomorrowStart.toISOString(),
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Cleanup stale generations (stuck in pending/in_progress for > 1 hour)
 // ---------------------------------------------------------------------------
 async function cleanupStaleGenerations(supabase: SupabaseClient): Promise<number> {
@@ -819,7 +804,6 @@ async function queueVideosForGeneration(
   channels: { id: string; youtube_channel_id: string; name: string }[],
   runtimeEnv?: RuntimeEnv
 ): Promise<{ queued: number; skipped: number; errors: string[] }> {
-  const { todayStart, tomorrowStart } = getUTCDayBoundaries();
   const errors: string[] = [];
   let queued = 0;
   let skipped = 0;
@@ -912,17 +896,20 @@ async function queueVideosForGeneration(
         continue;
       }
 
-      // 2. Check if this channel already has a summary generated today (UTC)
-      const { data: existingSummaryToday } = await supabase
+      // 2. Check if completed summary already exists for this video (any day)
+      // Daily generation rule: 1 summary per channel per day = 1 summary for latest video
+      // If latest video already has a completed summary, skip it (regardless of when it was generated)
+      const { data: existingSummary } = await supabase
         .from("summaries")
-        .select("id, status")
+        .select("id, status, generated_at")
         .eq("video_id", latestVideo.id)
-        .gte("generated_at", todayStart)
-        .lt("generated_at", tomorrowStart)
+        .eq("status", "completed")
         .maybeSingle();
 
-      if (existingSummaryToday && existingSummaryToday.status === "completed") {
-        appLogger.info(`Channel "${channel.name}" skipped: summary already generated today`);
+      if (existingSummary) {
+        appLogger.info(
+          `Channel "${channel.name}" skipped: summary already exists for latest video (generated: ${existingSummary.generated_at})`
+        );
         skipped++;
         continue;
       }
@@ -941,21 +928,7 @@ async function queueVideosForGeneration(
         continue;
       }
 
-      // 4. Check if completed summary already exists for this video (any day)
-      const { data: existingSummary } = await supabase
-        .from("summaries")
-        .select("id, status")
-        .eq("video_id", latestVideo.id)
-        .eq("status", "completed")
-        .maybeSingle();
-
-      if (existingSummary) {
-        appLogger.info(`Channel "${channel.name}" skipped: summary already exists for latest video`);
-        skipped++;
-        continue;
-      }
-
-      // 5. Add to queue
+      // 4. Add to queue
       const { error: queueError } = await supabase.from("summary_queue").insert({
         video_id: latestVideo.id,
         priority: 1, // Normal priority for daily generation
