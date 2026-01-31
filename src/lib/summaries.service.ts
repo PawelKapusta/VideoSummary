@@ -1087,6 +1087,7 @@ async function processQueueItem(
     let errorCode: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG" | null = null;
     let shouldRetry = true; // Default: retry on transient errors
 
+    // Non-retryable errors (permanent issues with video content or API limits)
     if (errorMsg.includes("transcript") || errorMsg.includes("subtitle") || errorMsg.includes("TRANSCRIPT")) {
       errorCode = "NO_SUBTITLES";
       shouldRetry = false; // Don't retry - transcript won't magically appear
@@ -1096,6 +1097,18 @@ async function processQueueItem(
     } else if (errorMsg.includes("TOO_LONG")) {
       errorCode = "VIDEO_TOO_LONG";
       shouldRetry = false; // Don't retry - video duration won't change
+    } else if (
+      errorMsg.includes("GRADIO_RATE_LIMIT") ||
+      errorMsg.includes("GRADIO_API_ERROR") ||
+      errorMsg.includes("429")
+    ) {
+      // Don't retry Gradio errors - they consume rate limit quota
+      // Better to fail fast and let other videos try
+      shouldRetry = false;
+      appLogger.warn("Gradio API error - marking as failed to preserve rate limit", {
+        queueItemId: queueItem.id,
+        error: errorMsg,
+      });
     }
 
     // Check if should retry (only for transient errors like network issues, API timeouts)

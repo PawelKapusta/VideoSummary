@@ -146,6 +146,29 @@ async function fetchWithGradioClient(videoId: string, runtimeEnv?: RuntimeEnv): 
         fullText = result.data;
       } else if (Array.isArray(result.data) && result.data.length > 0) {
         fullText = result.data[0];
+
+        // Check for error messages in second array element (Gradio error format)
+        if (result.data.length > 1 && typeof result.data[1] === "string") {
+          const errorMsg = result.data[1];
+
+          // Check for rate limiting (429) or other API errors
+          if (errorMsg.includes("429") || errorMsg.includes("rate limit") || errorMsg.includes("mã lỗi 429")) {
+            appLogger.warn("Gradio Client: Rate limit exceeded (429)", {
+              videoId,
+              errorMessage: errorMsg,
+            });
+            throw new Error("GRADIO_RATE_LIMIT");
+          }
+
+          // Check for other error indicators
+          if (errorMsg.startsWith("❌") || errorMsg.toLowerCase().includes("error") || errorMsg.includes("lỗi")) {
+            appLogger.warn("Gradio Client: API error detected", {
+              videoId,
+              errorMessage: errorMsg,
+            });
+            throw new Error("GRADIO_API_ERROR");
+          }
+        }
       }
     }
 
