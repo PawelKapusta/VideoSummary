@@ -87,8 +87,12 @@ jobs:
 
   deploy:
     name: Deploy to Cloudflare Pages
-    needs: [build]
-    if: needs.build.result == 'success'
+    needs: [validate, test, build]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      needs.build.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
