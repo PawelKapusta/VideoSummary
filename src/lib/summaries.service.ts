@@ -1085,17 +1085,22 @@ async function processQueueItem(
 
     // Determine error code for summary
     let errorCode: "NO_SUBTITLES" | "VIDEO_PRIVATE" | "VIDEO_TOO_LONG" | null = null;
+    let shouldRetry = true; // Default: retry on transient errors
+
     if (errorMsg.includes("transcript") || errorMsg.includes("subtitle") || errorMsg.includes("TRANSCRIPT")) {
       errorCode = "NO_SUBTITLES";
+      shouldRetry = false; // Don't retry - transcript won't magically appear
     } else if (errorMsg.includes("private") || errorMsg.includes("unavailable")) {
       errorCode = "VIDEO_PRIVATE";
+      shouldRetry = false; // Don't retry - video is private/unavailable
     } else if (errorMsg.includes("TOO_LONG")) {
       errorCode = "VIDEO_TOO_LONG";
+      shouldRetry = false; // Don't retry - video duration won't change
     }
 
-    // Check if should retry
+    // Check if should retry (only for transient errors like network issues, API timeouts)
     const newRetryCount = queueItem.retry_count + 1;
-    if (newRetryCount < queueItem.max_retries) {
+    if (shouldRetry && newRetryCount < queueItem.max_retries) {
       // Reset to pending for retry
       await supabase
         .from("summary_queue")
@@ -1108,9 +1113,15 @@ async function processQueueItem(
         })
         .eq("id", queueItem.id);
 
-      appLogger.warn(`Queue item failed, will retry (attempt ${newRetryCount}/${queueItem.max_retries}): ${errorMsg}`);
+      appLogger.warn(`Queue item failed, will retry (attempt ${newRetryCount}/${queueItem.max_retries}): ${errorMsg}`, {
+        queueItemId: queueItem.id,
+      });
     } else {
-      // Mark queue item as failed
+      // Mark queue item as failed (either max retries reached or non-retryable error)
+      const reason = !shouldRetry ? "non-retryable error" : "max retries reached";
+      appLogger.error(`Queue item failed permanently (${reason}): ${errorMsg}`, {
+        queueItemId: queueItem.id,
+      });
       await supabase
         .from("summary_queue")
         .update({
@@ -1129,10 +1140,6 @@ async function processQueueItem(
             error_code: errorCode,
           })
           .eq("id", summaryId);
-
-        appLogger.error(`Summary ${summaryId} failed permanently: ${errorMsg}`);
-      } else {
-        appLogger.error(`Queue item failed permanently (no summaryId): ${errorMsg}`);
       }
     }
 
