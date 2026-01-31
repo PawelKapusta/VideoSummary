@@ -79,3 +79,27 @@ jobs:
 
           echo ""
           echo "Daily summary generation completed!"
+
+      - name: Mark Bulk Generation as Completed
+        run: |
+          COMPLETE_URL="${{ secrets.APP_URL || 'https://videosummary.org' }}/api/summaries/complete-bulk"
+
+          echo "Marking bulk generation as completed..."
+
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "$COMPLETE_URL" \
+            --http1.1 \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response Code: $http_code"
+          echo "Response Body: $body"
+
+          if [ "$http_code" -ne 200 ] && [ "$http_code" -ne 404 ]; then
+            echo "Warning: Failed to mark bulk generation as completed (non-critical)"
+          else
+            echo "Bulk generation marked as completed!"
+          fi
