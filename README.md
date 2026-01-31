@@ -33,9 +33,10 @@ The domain has been acquired specifically for this project, providing a producti
   - [Configuration](#configuration)
   - [Development](#development)
 - [📋 Available Scripts](#-available-scripts)
+- [🧪 Testing](#-testing)
 - [🔧 Tech Stack](#-tech-stack)
 - [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
+- [🔍 Troubleshooting](#-troubleshooting)
 - [📄 License](#-license)
 
 ## ✨ Features
@@ -102,19 +103,20 @@ Get Video Summary running locally in minutes.
 
 ### Prerequisites
 
-- **[Node.js](https://nodejs.org/)** (LTS version 18+ recommended)
-- **[npm](https://www.npmjs.com/)** (comes with Node.js)
-- **Supabase Account** - For database and authentication
-- **YouTube Data API Key** - For YouTube integration
-- **OpenRouter API Key** - For AI summarization
+- **[Node.js](https://nodejs.org/)** v18.0.0 or higher (LTS v20+ recommended)
+- **[npm](https://www.npmjs.com/)** v9.0.0 or higher (comes with Node.js)
+- **Operating System**: macOS, Linux, or Windows with WSL2
+- **Supabase Account** - For database and authentication ([Sign up](https://supabase.com/))
+- **YouTube Data API Key** - For YouTube integration ([Get API Key](https://developers.google.com/youtube/v3/getting-started))
+- **OpenRouter API Key** - For AI summarization ([Get API Key](https://openrouter.ai/))
 
 ### Installation
 
 1. **Clone the repository**
 
    ```bash
-   git clone <repository-url>
-   cd videosummary
+   git clone https://github.com/yourusername/YTInsightsapp.git
+   cd YTInsightsapp
    ```
 
 2. **Install dependencies**
@@ -199,6 +201,94 @@ Get Video Summary running locally in minutes.
 | `npm run check-bulk-status status` | Check bulk generation status                |
 | `npm run check-bulk-status reset`  | Reset stuck bulk generation status          |
 | `npm run check-bulk-status-cli`    | Check/reset status via Supabase CLI         |
+
+## 🧪 Testing
+
+Video Summary uses a comprehensive testing strategy with multiple testing tools to ensure code quality and reliability.
+
+### Unit & Integration Tests (Vitest)
+
+Run fast unit and integration tests with API mocking:
+
+```bash
+# Run all unit tests once
+npm run test
+
+# Run tests in watch mode (recommended for development)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test -- --coverage
+```
+
+**Testing Stack:**
+- **Vitest** - Fast unit test runner with native ESM support
+- **React Testing Library** - Component testing focused on user interactions
+- **MSW (Mock Service Worker)** - API mocking for integration tests
+
+### End-to-End Tests (Playwright)
+
+Run comprehensive E2E tests that simulate real user workflows:
+
+```bash
+# Run all E2E tests in headless mode
+npm run test:e2e
+
+# Run E2E tests with interactive UI
+npm run test:e2e:ui
+
+# Run specific test file
+npx playwright test tests/e2e/auth.spec.ts
+
+# Run tests in headed mode (see browser)
+npx playwright test --headed
+
+# Debug a specific test
+npx playwright test --debug tests/e2e/dashboard.spec.ts
+```
+
+**Playwright Features:**
+- Cross-browser testing (Chromium, Firefox, WebKit)
+- Visual regression testing with screenshots
+- Network interception and mocking
+- Parallel test execution
+
+### Component Development (Storybook)
+
+Develop and test UI components in isolation:
+
+```bash
+# Start Storybook development server
+npm run storybook
+
+# Build Storybook for production
+npm run build-storybook
+```
+
+### Code Quality
+
+```bash
+# Run TypeScript type checking
+npm run typecheck
+
+# Lint code for errors
+npm run lint
+
+# Auto-fix linting issues
+npm run lint:fix
+
+# Format code with Prettier
+npm run format
+```
+
+### Testing Best Practices
+
+- Write tests alongside your code (co-located in `__tests__` directories)
+- Use React Testing Library for component tests (test user behavior, not implementation)
+- Use MSW to mock API calls in integration tests
+- Use Playwright for critical user flows (auth, dashboard, summary generation)
+- Run `npm run test:watch` during development for instant feedback
+- Ensure all tests pass before committing (`npm run lint && npm run test`)
 
 ## ⚙️ GitHub Actions Workflows
 
@@ -343,6 +433,164 @@ Video Summary uses **LogTape** for production-ready logging with:
 - Type-safe logging functions with hierarchical categories
 
 For detailed logging documentation, see [`docs/logging.md`](docs/logging.md).
+
+## 🔍 Troubleshooting
+
+### Common Issues and Solutions
+
+#### Installation Issues
+
+**Problem**: `npm install` fails with dependency errors
+
+```bash
+# Solution 1: Clear npm cache and reinstall
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+
+# Solution 2: Use specific Node.js version (via nvm)
+nvm install 20
+nvm use 20
+npm install
+```
+
+**Problem**: TypeScript errors after installation
+
+```bash
+# Rebuild TypeScript declarations
+npm run typecheck
+```
+
+#### Development Server Issues
+
+**Problem**: Port 3000 already in use
+
+```bash
+# Solution: Kill process using port 3000
+# macOS/Linux:
+lsof -ti:3000 | xargs kill -9
+
+# Windows:
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# Or use a different port
+npm run dev -- --port 3001
+```
+
+**Problem**: Hot reload not working
+
+```bash
+# Solution: Restart dev server and clear cache
+rm -rf .astro node_modules/.vite
+npm run dev
+```
+
+#### Database & Authentication Issues
+
+**Problem**: Supabase connection errors
+
+- ✅ Verify `SUPABASE_URL` and `SUPABASE_KEY` in `.env`
+- ✅ Check if Supabase project is active (not paused)
+- ✅ Ensure database migrations are applied
+- ✅ Verify Row Level Security (RLS) policies are enabled
+
+**Problem**: Authentication not working
+
+```bash
+# Check Supabase Auth settings:
+# 1. Go to Supabase Dashboard → Authentication → Settings
+# 2. Verify "Enable Email Confirmations" matches your setup
+# 3. Check Site URL and Redirect URLs are correct
+```
+
+#### API & Summary Generation Issues
+
+**Problem**: YouTube API quota exceeded
+
+- YouTube Data API has a daily quota limit (10,000 units by default)
+- Each video fetch uses ~3 units
+- **Solution**: Request quota increase from Google Cloud Console or wait for daily reset
+
+**Problem**: OpenRouter API errors
+
+```bash
+# Verify API key is valid
+curl -H "Authorization: Bearer YOUR_OPENROUTER_API_KEY" \
+  https://openrouter.ai/api/v1/models
+
+# Check account credits at https://openrouter.ai/
+```
+
+**Problem**: Summary generation stuck in queue
+
+```bash
+# Check queue status
+npm run check-bulk-status status
+
+# Reset stuck processes
+npm run check-bulk-status reset
+
+# Manually process queue
+npm run process-queue
+```
+
+**Problem**: Transcript extraction fails
+
+- Some videos don't have transcripts available
+- Private/age-restricted videos can't be accessed
+- **Solution**: Check video settings on YouTube, try a different video
+
+#### Build & Deployment Issues
+
+**Problem**: Build fails with memory errors
+
+```bash
+# Increase Node.js memory limit
+NODE_OPTIONS="--max-old-space-size=4096" npm run build
+```
+
+**Problem**: Environment variables not working in production
+
+- ✅ Verify all required env vars are set in Cloudflare Pages dashboard
+- ✅ Check variable names match exactly (case-sensitive)
+- ✅ Redeploy after adding/changing environment variables
+
+#### Testing Issues
+
+**Problem**: E2E tests failing locally
+
+```bash
+# Install Playwright browsers
+npx playwright install
+
+# Run with debug mode
+npx playwright test --debug
+
+# Update snapshots if UI changed intentionally
+npx playwright test --update-snapshots
+```
+
+**Problem**: Tests pass locally but fail in CI
+
+- Check Node.js version matches between local and CI
+- Verify all environment variables are set in GitHub Secrets
+- Review CI logs for specific error messages
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. **Check logs**: Look for error messages in browser console and terminal
+2. **Review documentation**: See [`docs/`](docs/) folder for detailed guides
+3. **GitHub Issues**: Search existing issues or create a new one
+4. **Supabase Logs**: Check Supabase Dashboard → Logs for database errors
+
+### Performance Tips
+
+- **Slow dashboard loading**: Enable database indexes (see `supabase/migrations/`)
+- **High API costs**: Adjust `OPENROUTER_MODEL` to a cheaper model (e.g., `gpt-3.5-turbo`)
+- **Slow builds**: Use `npm run build -- --parallel` for faster builds
 
 ## 📄 License
 
